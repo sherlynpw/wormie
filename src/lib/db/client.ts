@@ -1,5 +1,6 @@
 import DbDedicatedWorker from './worker?worker';
 import { jobs } from '$lib/stores/jobs.svelte';
+import { recoverFromStaleServiceWorker } from '$lib/sw-recovery';
 
 export interface TaskProgress {
   phase: string;
@@ -19,14 +20,19 @@ type InitOptions = {
   onStatus?: (message: string) => void;
 };
 
-// Per-tab dedicated worker. OPFS/SAH-Pool gives ~30 MB page cache per tab vs. 512 MB in-RAM.
-// First tab holds the SAH lock; concurrent tabs fall back to memory mode (see ensureDbOpfs in worker.ts).
 type WorkerLike = {
   postMessage: (msg: unknown) => void;
   addEventListener: (type: 'message', listener: (e: MessageEvent) => void) => void;
 };
 function createWorker(): WorkerLike {
   const w = new DbDedicatedWorker();
+  let booted = false;
+  w.addEventListener('message', () => (booted = true), { once: true });
+  w.addEventListener('error', (ev) => {
+    if (booted) return;
+    ev.preventDefault?.();
+    void recoverFromStaleServiceWorker();
+  });
   return {
     postMessage: (m) => w.postMessage(m),
     addEventListener: (t, l) => w.addEventListener(t, l),
