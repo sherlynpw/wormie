@@ -1,0 +1,23 @@
+# Cloudflare Worker: serves the SvelteKit SPA via Static Assets, and proxies
+# the /data/* paths (DB + version.json) from an R2 bucket because the gzipped
+# SQLite (~36 MB) exceeds the 25 MiB per-asset Workers limit.
+#
+# Deploy:  bunx wrangler deploy
+# Upload DB to R2:  bunx wrangler r2 object put wormie-data/wormie.sqlite.gz --file static/data/wormie.sqlite.gz
+
+name = "wormie"
+main = "src/worker.ts"
+tsconfig = "src/worker.tsconfig.json"
+compatibility_date = "2025-09-01"
+
+[assets]
+directory = "./build"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[[r2_buckets]]
+binding = "DB_BUCKET"
+bucket_name = "wormie-data"
+
+[observability]
+enabled = true

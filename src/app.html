@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WormIE: Worm Integrated Explorer</title>
+    <meta
+      name="description"
+      content="Offline-first WormBase gene browser with WormCat, neuronal classification, and GO ontology."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- iOS Safari "Add to Home Screen" requires a PNG, not SVG. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#825F8A" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
+    <script>
+      // Apply persisted theme before paint to avoid flash
+      (function () {
+        try {
+          const stored = localStorage.getItem('theme');
+          const dark = stored
+            ? stored === 'dark'
+            : matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch {}
+      })();
+    </script>
+    %sveltekit.head%
+  </head>
+  <body
+    data-sveltekit-preload-data="hover"
+    class="bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100"
+  >
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+<script lang="ts">
+  // "+N more / show fewer" toggle used inline at the tail of a long chip
+  // cluster or table. Caller owns the expanded state and the onToggle handler;
+  // this component just renders the affordance when something can be expanded.
+
+  let {
+    total,
+    shown,
+    expanded,
+    onToggle,
+    label = 'more',
+  }: {
+    total: number;
+    shown: number;
+    expanded: boolean;
+    onToggle: (next: boolean) => void;
+    label?: string;
+  } = $props();
+</script>
+
+{#if total > shown}
+  <button
+    type="button"
+    onclick={() => onToggle(!expanded)}
+    class="self-center rounded border border-dashed px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+  >
+    {expanded ? 'show fewer' : `+${total - shown} ${label}`}
+  </button>
+{/if}

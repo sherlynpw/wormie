@@ -1,0 +1,354 @@
+name: Build WASM artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Upload artifacts to R2 after build"
+        type: boolean
+        default: true
+      subread_ver:
+        description: "subread version (featureCounts module only)"
+        required: false
+        default: "2.0.6"
+  push:
+    branches: [trunk]
+    paths:
+      - "scripts/wasm-build/**"
+      - ".github/workflows/build-wasm.yml"
+
+concurrency:
+  group: build-wasm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      deseq2: ${{ steps.decide.outputs.deseq2 }}
+      featurecounts: ${{ steps.decide.outputs.featurecounts }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'push'
+        with:
+          filters: |
+            deseq2:
+              - 'scripts/wasm-build/**'
+              - '!scripts/wasm-build/featurecounts-wasm/**'
+              - '.github/workflows/build-wasm.yml'
+            featurecounts:
+              - 'scripts/wasm-build/featurecounts-wasm/**'
+              - '.github/workflows/build-wasm.yml'
+      - id: decide
+        # workflow_dispatch has no diff context, so run everything on manual runs.
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "deseq2=true" >> "$GITHUB_OUTPUT"
+            echo "featurecounts=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deseq2=${{ steps.filter.outputs.deseq2 }}" >> "$GITHUB_OUTPUT"
+            echo "featurecounts=${{ steps.filter.outputs.featurecounts }}" >> "$GITHUB_OUTPUT"
+          fi
+
+  deseq2-bundle:
+    needs: changes
+    if: needs.changes.outputs.deseq2 == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache wormie-wasm-build image
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache-deseq
+          key: deseq-bundle-v0.5.9-${{ hashFiles('scripts/wasm-build/Dockerfile', 'scripts/wasm-build/build-pkgs.sh', 'scripts/wasm-build/bake-bundle.sh', 'scripts/wasm-build/webr-vars-augment.mk', 'scripts/wasm-build/blas-wasm/**', 'scripts/wasm-build/sync-webr-runtime.sh') }}
+          restore-keys: |
+            deseq-bundle-v0.5.9-
+
+      - name: Cache WASM host R library
+        uses: actions/cache@v4
+        with:
+          path: .cache/wasm-host-rlib
+          key: wasm-rlib-v0.5.9-${{ hashFiles('scripts/wasm-build/Dockerfile', 'scripts/wasm-build/build-pkgs.sh', 'scripts/wasm-build/webr-vars-augment.mk') }}
+          restore-keys: |
+            wasm-rlib-v0.5.9-
+
+      - name: Build wormie-wasm-build image
+        uses: docker/build-push-action@v6
+        with:
+          context: scripts/wasm-build
+          tags: wormie-wasm-build:v0.5.9
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache-deseq
+          cache-to: type=local,dest=/tmp/.buildx-cache-deseq,mode=max
+
+      - name: Seed host R library cache
+        run: |
+          mkdir -p .cache/wasm-host-rlib
+          if [ ! -e .cache/wasm-host-rlib/base ]; then
+            echo "==> seeding host R library cache from image (one-time)"
+            docker run --rm --entrypoint /bin/sh \
+              -v "$(pwd)/.cache/wasm-host-rlib":/cache \
+              wormie-wasm-build:v0.5.9 \
+              -c 'cp -a /opt/webr/host/R-4.5.1/lib/R/library/. /cache/'
+          fi
+
+      - name: Build local WASM packages
+        run: |
+          mkdir -p scripts/wasm-cran
+          docker run --rm \
+            -v "$(pwd)/scripts/wasm-cran":/out \
+            -v "$(pwd)/.cache/wasm-host-rlib":/opt/webr/host/R-4.5.1/lib/R/library \
+            wormie-wasm-build:v0.5.9 build-pkgs \
+              locfit Rsubread \
+              BiocGenerics zlibbioc S4Vectors IRanges XVector \
+              GenomeInfoDbData GenomeInfoDb Seqinfo GenomicRanges \
+              MatrixGenerics S4Arrays SparseArray DelayedArray \
+              Biobase BiocParallel SummarizedExperiment apeglm DESeq2
+
+      - name: Bake DESeq2 + apeglm + Rsubread bundle
+        run: |
+          docker run --rm \
+            -v "$(pwd)/scripts/wasm-cran":/out \
+            -v "$(pwd)/.cache/wasm-host-rlib":/opt/webr/host/R-4.5.1/lib/R/library \
+            wormie-wasm-build:v0.5.9 bake-bundle
+
+      - name: Build SIMD libRblas + libRlapack
+        run: |
+          mkdir -p out-blas
+          docker run --rm --entrypoint bash \
+            -v "$(pwd)/scripts/wasm-build/blas-wasm":/work:ro \
+            -v "$(pwd)/out-blas":/out \
+            wormie-wasm-build:v0.5.9 /work/build.sh
+          docker run --rm --entrypoint bash \
+            -v "$(pwd)/scripts/wasm-build/blas-wasm":/work:ro \
+            -v "$(pwd)/out-blas":/out \
+            wormie-wasm-build:v0.5.9 /work/build-lapack.sh
+          sudo chown -R $(id -u):$(id -g) out-blas
+
+      - name: Sync upstream WebR runtime + overlay SIMD libs
+        run: bash scripts/wasm-build/sync-webr-runtime.sh
+
+      - name: Report artifacts in job summary
+        run: |
+          echo "## DESeq2 bundle" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          find scripts/wasm-cran -type f -printf '%P\t%s\n' | sort >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deseq2-bundle
+          path: |
+            scripts/wasm-cran/deseq2-bundle.data
+            scripts/wasm-cran/deseq2-bundle.js.metadata
+            scripts/wasm-cran/bin/emscripten/contrib/4.5/*.tgz
+            scripts/wasm-cran/bin/emscripten/contrib/4.5/PACKAGES*
+            scripts/wasm-cran/webr-pthread/v0.5.9/**
+          retention-days: 30
+
+      - name: Ensure R2 bucket exists
+        if: ${{ github.event.inputs.deploy != 'false' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          set -uo pipefail
+          BUCKET=wormie-data
+          # Idempotent: create first time; on re-runs CF returns code 10004
+          # ("already exists and you own it"), treated as success.
+          out="$(bunx wrangler@4 r2 bucket create "$BUCKET" 2>&1)" && { echo "$out"; exit 0; }
+          echo "$out"
+          echo "$out" | grep -qiE 'already (exists|owned)|10004' \
+            && { echo "R2 bucket $BUCKET already exists, continuing"; exit 0; }
+          echo "Failed to create R2 bucket $BUCKET" >&2
+          exit 1
+
+      - name: Upload deseq2-bundle.data to R2
+        if: ${{ github.event.inputs.deploy != 'false' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          packageManager: bun
+          wranglerVersion: "4"
+          command: r2 object put wormie-data/wasm-cran/deseq2-bundle.data --file scripts/wasm-cran/deseq2-bundle.data --content-type application/octet-stream --remote
+
+      - name: Upload deseq2-bundle.js.metadata to R2
+        if: ${{ github.event.inputs.deploy != 'false' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          packageManager: bun
+          wranglerVersion: "4"
+          command: r2 object put wormie-data/wasm-cran/deseq2-bundle.js.metadata --file scripts/wasm-cran/deseq2-bundle.js.metadata --content-type application/json --remote
+
+      - name: Upload local CRAN .tgz packages to R2
+        if: ${{ github.event.inputs.deploy != 'false' }}
+        run: |
+          for f in scripts/wasm-cran/bin/emscripten/contrib/4.5/*.tgz \
+                   scripts/wasm-cran/bin/emscripten/contrib/4.5/PACKAGES \
+                   scripts/wasm-cran/bin/emscripten/contrib/4.5/PACKAGES.gz \
+                   scripts/wasm-cran/bin/emscripten/contrib/4.5/PACKAGES.rds; do
+            [ -f "$f" ] || continue
+            key="wasm-cran/${f#scripts/wasm-cran/}"
+            case "$f" in
+              *.tgz|*.gz) ctype=application/gzip ;;
+              *.rds)      ctype=application/octet-stream ;;
+              *)          ctype=text/plain ;;
+            esac
+            echo "Uploading ${key} (${ctype})"
+            bunx wrangler@4 r2 object put "wormie-data/${key}" --file "$f" --content-type "$ctype" --remote
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Upload WebR runtime + SIMD libs to R2
+        if: ${{ github.event.inputs.deploy != 'false' }}
+        run: |
+          base=scripts/wasm-cran/webr-pthread/v0.5.9
+          for f in webr.mjs webr-worker.js R.js R.wasm libRblas.so libRlapack.so libRblas.reference.so; do
+            src="$base/$f"
+            [ -f "$src" ] || continue
+            key="wasm-cran/webr-pthread/v0.5.9/$f"
+            case "$f" in
+              *.wasm) ctype=application/wasm ;;
+              *.mjs|*.js) ctype=application/javascript ;;
+              *.so)  ctype=application/wasm ;;
+              *)     ctype=application/octet-stream ;;
+            esac
+            echo "Uploading ${key} (${ctype})"
+            bunx wrangler@4 r2 object put "wormie-data/${key}" --file "$src" --content-type "$ctype" --remote
+          done
+          for sub in vfs; do
+            [ -d "$base/$sub" ] || continue
+            find "$base/$sub" -type f | while read -r f; do
+              key="wasm-cran/webr-pthread/v0.5.9/${f#$base/}"
+              case "$f" in
+                *.metadata|*.json) ctype=application/json ;;
+                *)                 ctype=application/octet-stream ;;
+              esac
+              echo "Uploading ${key} (${ctype})"
+              bunx wrangler@4 r2 object put "wormie-data/${key}" --file "$f" --content-type "$ctype" --remote
+            done
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+  featurecounts:
+    needs: changes
+    if: needs.changes.outputs.featurecounts == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUBREAD_VER: ${{ github.event.inputs.subread_ver || '2.0.6' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache build image layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache-fc
+          key: featurecounts-${{ env.SUBREAD_VER }}-${{ hashFiles('scripts/wasm-build/featurecounts-wasm/Dockerfile', 'scripts/wasm-build/featurecounts-wasm/Makefile.emscripten') }}
+          restore-keys: |
+            featurecounts-${{ env.SUBREAD_VER }}-
+
+      - name: Build featureCounts WASM image
+        uses: docker/build-push-action@v6
+        with:
+          context: scripts/wasm-build/featurecounts-wasm
+          tags: wormie-featurecounts:${{ env.SUBREAD_VER }}
+          build-args: |
+            SUBREAD_VER=${{ env.SUBREAD_VER }}
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache-fc
+          cache-to: type=local,dest=/tmp/.buildx-cache-fc,mode=max
+
+      - name: Extract artifacts
+        run: |
+          mkdir -p scripts/wasm-cran
+          docker run --rm \
+            -v "$(pwd)/scripts/wasm-cran":/out \
+            -e SUBREAD_VER="${SUBREAD_VER}" \
+            wormie-featurecounts:${SUBREAD_VER}
+          ls -lah scripts/wasm-cran/featurecounts/
+
+      - name: Report artifacts in job summary
+        run: |
+          echo "## featureCounts WASM (subread-${SUBREAD_VER})" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          ls -lah scripts/wasm-cran/featurecounts/ >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: featurecounts-wasm
+          path: scripts/wasm-cran/featurecounts/
+          retention-days: 30
+
+      - name: Ensure R2 bucket exists
+        if: ${{ github.event.inputs.deploy != 'false' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          set -uo pipefail
+          BUCKET=wormie-data
+          # Idempotent: create first time; on re-runs CF returns code 10004
+          # ("already exists and you own it"), treated as success.
+          out="$(bunx wrangler@4 r2 bucket create "$BUCKET" 2>&1)" && { echo "$out"; exit 0; }
+          echo "$out"
+          echo "$out" | grep -qiE 'already (exists|owned)|10004' \
+            && { echo "R2 bucket $BUCKET already exists, continuing"; exit 0; }
+          echo "Failed to create R2 bucket $BUCKET" >&2
+          exit 1
+
+      - name: Upload featureCounts.js to R2
+        if: ${{ github.event.inputs.deploy != 'false' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          packageManager: bun
+          wranglerVersion: "4"
+          command: r2 object put wormie-data/wasm-cran/featurecounts/featureCounts.js --file scripts/wasm-cran/featurecounts/featureCounts.js --content-type application/javascript --remote
+
+      - name: Upload featureCounts.wasm to R2
+        if: ${{ github.event.inputs.deploy != 'false' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          packageManager: bun
+          wranglerVersion: "4"
+          command: r2 object put wormie-data/wasm-cran/featurecounts/featureCounts.wasm --file scripts/wasm-cran/featurecounts/featureCounts.wasm --content-type application/wasm --remote

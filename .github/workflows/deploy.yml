@@ -1,0 +1,188 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [trunk]
+  schedule:
+    - cron: "0 5 * * 1" # Mondays 05:00 UTC
+  workflow_dispatch:
+    inputs:
+      wb_release:
+        description: "Pin to a specific WormBase release (e.g. WS298). Leave empty for auto-latest."
+        required: false
+        default: ""
+      force_refresh:
+        description: "Ignore the data cache and re-fetch every source."
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  WB_RELEASE: ${{ github.event.inputs.wb_release }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Resolve WB release
+        id: wb
+        run: |
+          if [[ -n "${WB_RELEASE:-}" ]]; then
+            echo "release=$WB_RELEASE" >> "$GITHUB_OUTPUT"
+          else
+            R="$(curl -fsS --max-time 10 'https://ftp.ebi.ac.uk/pub/databases/wormbase/releases/' 2>/dev/null \
+              | grep -oE 'WS[0-9]+' | sort -u -t S -k 2 -n | tail -1)"
+            echo "release=${R:-WS298}" >> "$GITHUB_OUTPUT"
+          fi
+          # ISO week stamp so the always-latest sources (GO/Alliance/BioGRID)
+          # get re-fetched at least weekly.
+          echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache data sources
+        if: ${{ github.event.inputs.force_refresh != 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: data-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}
+          restore-keys: |
+            data-${{ steps.wb.outputs.release }}-
+
+      - name: Cache built DB output
+        id: db-cache
+        if: ${{ github.event_name == 'push' && github.event.inputs.force_refresh != 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: |
+            static/data/wormie.sqlite.gz
+            static/data/version.json
+          key: db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-${{ hashFiles('scripts/build-db.sh', 'data/**') }}
+          restore-keys: |
+            db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-
+            db-${{ steps.wb.outputs.release }}-
+
+      - name: Build DB
+        if: ${{ steps.db-cache.outputs.cache-hit != 'true' }}
+        run: bun run build-db
+
+      - name: Typecheck
+        run: bun run check
+
+      - name: Stash DB for R2 upload
+        run: |
+          set -euo pipefail
+          mkdir -p deploy-data
+          ls -lh static/data/
+          mv static/data/wormie.sqlite.gz deploy-data/
+          mv static/data/version.json deploy-data/
+          ls -lh deploy-data/
+
+      - name: Build SvelteKit
+        run: bun run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: build
+          retention-days: 7
+
+      - name: Upload DB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-data
+          path: deploy-data
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: build
+
+      - name: Download DB artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-data
+          path: deploy-data
+
+      - name: Ensure R2 bucket exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          set -uo pipefail
+          BUCKET=wormie-data
+          # Idempotent provision: first run creates the bucket; on re-runs CF
+          # returns "already exists and you own it" (code 10004), treated as success.
+          out="$(bunx wrangler@4 r2 bucket create "$BUCKET" 2>&1)" && { echo "$out"; exit 0; }
+          echo "$out"
+          echo "$out" | grep -qiE 'already (exists|owned)|10004' \
+            && { echo "R2 bucket $BUCKET already exists, continuing"; exit 0; }
+          echo "Failed to create R2 bucket $BUCKET" >&2
+          exit 1
+
+      - name: Upload DB to R2
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          packageManager: bun
+          wranglerVersion: "4"
+          command: r2 object put wormie-data/wormie.sqlite.gz --file deploy-data/wormie.sqlite.gz --content-type application/gzip --remote
+
+      - name: Upload version.json to R2
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          packageManager: bun
+          wranglerVersion: "4"
+          command: r2 object put wormie-data/version.json --file deploy-data/version.json --content-type application/json --remote
+
+      # `wrangler deploy` is create-or-update: it provisions the `wormie` worker
+      # on first run and updates it thereafter, so an existing worker never fails.
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          packageManager: bun
+          wranglerVersion: "4"
+          command: deploy

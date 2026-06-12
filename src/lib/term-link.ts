@@ -1,0 +1,26 @@
+// Maps a term to its in-app detail URL. Returns null for kinds without
+// per-term routes (wormcat, neuronal, tissue).
+
+export type TermKind =
+  | 'go'
+  | 'phenotype'
+  | 'wormcat'
+  | 'neuronal'
+  | 'tissue'
+  | 'disease'
+  | 'cell-type'
+  | 'synaptogenesis'
+  | 'pathway';
+
+export function termHref(kind: TermKind, termId: string): string | null {
+  if (kind === 'go') return `/go/${termId}`;
+  if (kind === 'phenotype') return `/phenotype/${termId}`;
+  if (kind === 'disease') return `/disease/${termId}`;
+  if (kind === 'cell-type') return `/cell-type/${encodeURIComponent(termId)}`;
+  if (kind === 'pathway') {
+    // Strip "path:" prefix for human-friendly URLs; the route accepts both forms.
+    const id = termId.replace(/^path:/, '');
+    return `/pathway/${id}`;
+  }
+  return null;
+}

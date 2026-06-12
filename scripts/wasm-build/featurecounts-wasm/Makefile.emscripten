@@ -1,0 +1,79 @@
+# Build featureCounts as a standalone WASM ES module with pthread support.
+# Based on subread's Makefile.Linux but retargeted for emscripten + WASM.
+#
+# Output:
+#   featureCounts.js   ES module loader (uses emscripten runtime)
+#   featureCounts.wasm WASM binary
+#
+# Usage from JS:
+#   import createFeatureCounts from './featureCounts.js';
+#   const fc = await createFeatureCounts();
+#   fc.FS.writeFile('/sample.bam', bamBytes);
+#   fc.FS.writeFile('/anno.gtf',  gtfBytes);
+#   fc.callMain(['-a','/anno.gtf','-F','GTF','-T','4','-o','/counts.txt','/sample.bam']);
+#   const counts = fc.FS.readFile('/counts.txt', { encoding: 'utf8' });
+
+SUBREAD_VERSION = $(shell cat ../VERSION 2>/dev/null || echo 2.0.6)
+
+CC_EXEC = emcc
+
+# emcc-friendly compile flags. Notes:
+#   -D MAKE_STANDALONE selects the CLI main() in readSummary.c
+#   -D _FILE_OFFSET_BITS=64 keeps off_t 64-bit (matches BGZF format)
+#   -D fopen64=fopen + friends: glibc-only large-file symbols; WASM is always 64-bit-offset
+#   -pthread enables threading at compile time
+CCFLAGS = -O3 \
+          -DMAKE_FOR_EXON -DMAKE_STANDALONE \
+          -DSUBREAD_VERSION=\"subread-$(SUBREAD_VERSION)\" \
+          -D_FILE_OFFSET_BITS=64 \
+          -Dfopen64=fopen -Dftello64=ftello -Dfseeko64=fseeko -Doff64_t=off_t \
+          --use-port=zlib \
+          -pthread
+
+CC = $(CC_EXEC) $(CCFLAGS) -fmessage-length=0
+
+# emcc link flags:
+#   USE_PTHREADS=1 + SHARED_MEMORY=1 enable real thread support
+#   PTHREAD_POOL_SIZE=8 pre-spawns workers so featureCounts -T<=8 doesn't stall
+#   ALLOW_MEMORY_GROWTH lets the wasm heap grow past INITIAL_MEMORY as BAMs need it
+#   MODULARIZE + EXPORT_ES6 makes the .js a proper ES module
+#   FORCE_FILESYSTEM ensures FS.writeFile is available
+#   EXIT_RUNTIME lets callMain() return cleanly after featureCounts finishes
+LDFLAGS = -O3 -pthread \
+          --use-port=zlib \
+          -sUSE_PTHREADS=1 \
+          -sSHARED_MEMORY=1 \
+          -sPTHREAD_POOL_SIZE=8 \
+          -sALLOW_MEMORY_GROWTH=1 \
+          -sINITIAL_MEMORY=128MB \
+          -sMAXIMUM_MEMORY=4GB \
+          -sSTACK_SIZE=16MB \
+          -sDEFAULT_PTHREAD_STACK_SIZE=32MB \
+          -sASSERTIONS=1 \
+          -sMODULARIZE=1 \
+          -sEXPORT_NAME=createFeatureCounts \
+          -sFORCE_FILESYSTEM=1 \
+          -sEXIT_RUNTIME=0 \
+          -sINVOKE_RUN=0 \
+          -sEXPORTED_RUNTIME_METHODS='["FS","callMain","ENV","HEAP8","HEAPU8","PThread"]' \
+          -lworkerfs.js
+
+ALL_LIBS = core core-junction core-indel sambam-file sublog gene-algorithms \
+           hashtable input-files sorted-hashtable gene-value-index \
+           exon-algorithms HelperFunctions interval_merge long-hashtable \
+           core-bigtable seek-zlib input-blc
+
+ALL_OBJECTS = $(addsuffix .o, $(ALL_LIBS))
+
+.PHONY: featureCounts clean
+
+featureCounts: featureCounts.js
+
+featureCounts.js: readSummary.c $(ALL_OBJECTS) subread.h
+	$(CC) -o featureCounts.js readSummary.c $(ALL_OBJECTS) $(LDFLAGS)
+
+%.o: %.c
+	$(CC) -c -o $@ $<
+
+clean:
+	rm -f *.o featureCounts.js featureCounts.wasm featureCounts.worker.js

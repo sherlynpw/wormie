@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#825F8A"/>
+
+  <!-- pirate cutlass, behind worm -->
+  <g transform="translate(14 54) rotate(-50)">
+    <rect x="0" y="-1.6" width="34" height="3.2" rx="1.6" fill="#E5E7EB" stroke="#161616" stroke-width="0.5"/>
+    <line x1="2" y1="0" x2="31" y2="0" stroke="#9AA0A6" stroke-width="0.5" stroke-linecap="round"/>
+    <rect x="-1.6" y="-5.5" width="3.2" height="11" rx="1" fill="#161616"/>
+    <rect x="-7" y="-1.5" width="6" height="3" rx="0.8" fill="#161616"/>
+    <circle cx="-8.5" cy="0" r="1.7" fill="#161616"/>
+  </g>
+
+  <!-- worm body (cream) S-curve -->
+  <path d="M 12 50 C 8 38, 28 42, 24 30 S 38 22, 42 26"
+        stroke="#F4ECD8" stroke-width="9" stroke-linecap="round" fill="none"/>
+
+  <!-- tail taper -->
+  <circle cx="10" cy="51" r="2.4" fill="#F4ECD8"/>
+  <circle cx="7.5" cy="52" r="1.2" fill="#F4ECD8"/>
+
+  <!-- cuticle annulations: transverse rings spanning body -->
+  <path d="M 12 50 C 8 38, 28 42, 24 30 S 38 22, 42 26"
+        stroke="#ffffff" stroke-width="9"
+        stroke-dasharray="1.6 4.2" stroke-dashoffset="2.5"
+        fill="none" opacity="0.85"/>
+
+  <!-- head bulge -->
+  <circle cx="44" cy="26" r="9" fill="#F4ECD8"/>
+
+  <!-- eyepatch strap -->
+  <path d="M 36 22 Q 44 20 52 24" stroke="#161616" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <!-- eyepatch -->
+  <rect x="39" y="22" width="5" height="4.2" rx="0.8" fill="#161616"/>
+  <!-- good eye -->
+  <circle cx="48" cy="25" r="2.2" fill="#fff"/>
+  <circle cx="48.5" cy="25.3" r="1.2" fill="#161616"/>
+  <circle cx="48.8" cy="24.9" r="0.4" fill="#fff"/>
+  <!-- smile -->
+  <path d="M 45 30 Q 47 31.6 49.5 30.3" stroke="#3a1f44" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+
+  <!-- tricorn hat -->
+  <g fill="#161616">
+    <path d="M 30 16 Q 44 -2 58 16 Q 50 13 44 13 Q 38 13 30 16 Z"/>
+    <ellipse cx="44" cy="16" rx="14" ry="2.2"/>
+  </g>
+
+  <!-- skull & crossbones -->
+  <g fill="#F4ECD8">
+    <circle cx="44" cy="11" r="2"/>
+    <rect x="43.1" y="12.6" width="1.8" height="1.4" rx="0.25"/>
+    <rect x="41" y="13.8" width="6" height="0.8" rx="0.35" transform="rotate(20 44 14.2)"/>
+    <rect x="41" y="13.8" width="6" height="0.8" rx="0.35" transform="rotate(-20 44 14.2)"/>
+  </g>
+  <g fill="#161616">
+    <circle cx="43.2" cy="10.8" r="0.45"/>
+    <circle cx="44.8" cy="10.8" r="0.45"/>
+  </g>
+</svg>

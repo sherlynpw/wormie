@@ -1,0 +1,265 @@
+symbol	class	subclass	notes
+# ============================================================================
+# Synaptogenesis gene panel for C. elegans (v3 - PDF-verified)
+# 13 classes spanning regulatory layer (TFs + mRNA export) -> effector
+# machinery (adhesion, AZ, SV, innexins, receptors) -> signaling (Wnt, PHR/MAPK)
+# v3 changes: cross-checked against 7 primary papers (Hendi 2019, Klassen 2007,
+# Maeder 2018, Bhattacharya 2019, Yee 2024, Cuentas-Condori 2020, Hobert 2016)
+# AND against WormBase WS298 GO annotations (gene_db.sqlite). See
+# SYNAPTOGENESIS.txt for per-class references and per-gene verification status.
+# ============================================================================
+# ---- Class 01: Proneural / fate-specifying TFs (upstream, transient) -------
+lin-32	01_proneural_fate	proneural_bHLH	Atonal homolog; sensory ray neurogenesis
+hlh-14	01_proneural_fate	proneural_bHLH	Achaete-Scute; neuroblast vs hypodermal fate
+cnd-1	01_proneural_fate	proneural_bHLH	NeuroD; RME/DD fate (with ceh-5, ceh-13)
+ngn-1	01_proneural_fate	proneural_bHLH	Neurogenin; activates multiple terminal selectors
+hlh-2	01_proneural_fate	bHLH_partner	Daughterless/E; class I heterodimer partner
+hlh-3	01_proneural_fate	proneural_bHLH	AS-C family
+hlh-4	01_proneural_fate	dual_proneural_selector	Both proneural AND terminal selector for ADL
+ceh-5	01_proneural_fate	homeobox	Vax2; RME fate with cnd-1
+ceh-13	01_proneural_fate	hox	labial Hox; anterior neural fate
+lin-22	01_proneural_fate	hes	Hes; lateral inhibition
+pag-3	01_proneural_fate	zinc_finger	Gfi1; touch + interneuron fate
+ham-1	01_proneural_fate	asymmetric_division	asymmetric neuroblast division
+unc-130	01_proneural_fate	forkhead	FoxD; ASG/AWA fate
+cog-1	01_proneural_fate	asymmetric_LR	ASE L/R asymmetry (with lsy-6, die-1)
+die-1	01_proneural_fate	asymmetric_LR	ASE L/R asymmetry
+lsy-6	01_proneural_fate	mirna_LR	miRNA; ASE L/R asymmetry; primed embryonically then boosted via CHE-1 (Cochella & Hobert 2012)
+# ---- Class 02: Terminal selector TFs (continuous, lifelong) ----------------
+che-1	02_terminal_selector	zinc_finger	Glass; ASE master selector
+unc-3	02_terminal_selector	collier_ebf	Cholinergic motor neurons (DA/DB/VA/VB/AS)
+unc-86	02_terminal_selector	pou_homeobox	Touch, HSN, serotonergic
+ast-1	02_terminal_selector	ets	Dopaminergic (PDE/CEP/ADE)
+lin-39	02_terminal_selector	hox	Mid-body MNs (VC, VA, VB)
+ttx-3	02_terminal_selector	lim_homeobox	AIY cholinergic interneuron
+mec-3	02_terminal_selector	lim_homeobox	Touch receptor neurons
+unc-30	02_terminal_selector	paired_homeobox	GABAergic DD/VD MNs
+cfi-1	02_terminal_selector	arid	Cholinergic MN identity
+ceh-14	02_terminal_selector	lim_homeobox	AFD thermosensory
+ceh-36	02_terminal_selector	otx	AWC/ASE sensory
+fax-1	02_terminal_selector	nuclear_receptor	AVA/AVB/AVE/AVK identity
+ceh-10	02_terminal_selector	paired_homeobox	AIY/CAN/RID/RMED
+ttx-1	02_terminal_selector	otx	AFD thermosensory
+mls-2	02_terminal_selector	nk_homeobox	M4/I3/RMD identity
+nhr-67	02_terminal_selector	nuclear_receptor	tailless; multiple neuron types
+hlh-17	02_terminal_selector	bHLH	CEPsh glia / neuron-glia identity
+odr-7	02_terminal_selector	nuclear_receptor	AWA chemosensory neuron identity (Hobert 2016)
+unc-42	02_terminal_selector	homeobox	ASH + interneurons (AVA/AVE/AVD) identity (Hobert 2016)
+lim-4	02_terminal_selector	lim_homeobox	AWB, RID, SIA, RMD identity
+lin-11	02_terminal_selector	lim_homeobox	AVG, VC, ADL, ASG, ASJ identity
+ceh-37	02_terminal_selector	otx	AWB, ASEL identity
+sox-2	02_terminal_selector	sox	Pan-neuronal regulator; ADL, AWB, BAG identity
+egl-13	02_terminal_selector	sox	Sox-D family; multiple sensory identities
+ahr-1	02_terminal_selector	bhlh_pas	AhR; touch + interneuron identity
+lim-6	02_terminal_selector	lim_homeobox	GABAergic VC/RIS + ASE-L identity (moved from class 01)
+vab-3	02_terminal_selector	pax	Pax6; head sensory neuron identity (moved from class 01)
+daf-19	02_terminal_selector	rfx	RFX; master selector for ALL ciliated sensory neurons; DAF-19A/B also maintains synaptic activity in non-ciliated neurons (Senti & Swoboda 2008)
+dmd-3	02_terminal_selector	dmrt	DMRT; master selector for male-specific tail tip morphogenesis (Mason 2008)
+bnc-1	02_terminal_selector	c2h2_zf	Basonuclin/Disco; repressor for VA motor neuron subtype identity (with UNC-4); continuously required (Li/Kratsios 2020 eLife)
+ceh-17	02_terminal_selector	homeobox	ALA + SIA selector (with ceh-14); Hobert 2016 map table
+egl-5	02_terminal_selector	hox	Posterior Hox; PLM touch + tail neuron identity (Hobert 2016 map)
+egl-44	02_terminal_selector	tead	TEAD-family; co-selector for FLP head touch neuron (with egl-46)
+egl-46	02_terminal_selector	zinc_finger	Zn-finger; co-selector for FLP head touch (with egl-44)
+# ---- Class 03: Activity-regulated / feed-forward synaptogenesis TFs --------
+egl-43	03_activity_regulated	mecom_zf	MECOM; co-activator with fos-1 for synaptic genes
+fos-1	03_activity_regulated	bzip	FOS; activity-induced; mutual feedback with egl-43
+ceh-44	03_activity_regulated	cut_homeobox	CUT family; co-binds with EGL-43/FOS-1 at synaptic promoters
+ceh-48	03_activity_regulated	cut_homeobox	CUT family; co-binds with EGL-43/FOS-1 at synaptic promoters
+ceh-21	03_activity_regulated	cut_homeobox	CUT family
+ceh-20	03_activity_regulated	pbx_homeobox	PBX cofactor (Yee 2024); dopaminergic neuron diff
+ceh-43	03_activity_regulated	dll_homeobox	Distal-less; activity-regulated cofactor (Yee 2024) AND terminal selector for dopaminergic neurons (Doitsidou 2008; Hobert 2016 map)
+unc-62	03_activity_regulated	meis_homeobox	MEIS Hox cofactor (Yee 2024); neuron fate
+mef-2	03_activity_regulated	mads_box	MEF2; activity-regulated TF (Yee 2024)
+jun-1	03_activity_regulated	bzip_jun	JUN; AP-1 partner of FOS-1 (Yee 2024)
+swsn-4	03_activity_regulated	swi_snf	SWI/SNF chromatin remodeler (Yee 2024)
+egrh-1	03_activity_regulated	egr	EGR-like activity-regulated TF (Yee 2024)
+# ---- Class 04: Remodeling-specific TFs + effectors (DAUER-RELEVANT) --------
+irx-1	04_remodeling	iroquois_homeobox	Pro-remodeling TF; DD GABA synapse remodeling
+hbl-1	04_remodeling	hunchback	Pro-remodeling; heterochronic
+myrf-1	04_remodeling	myrf	Myelin Regulatory Factor; pro-remodeling
+myrf-2	04_remodeling	myrf	MYRF family; pro-remodeling
+lin-14	04_remodeling	heterochronic	Anti-remodeling TF; gates timing
+unc-55	04_remodeling	coup_tf	Anti-remodeling TF in VD GABAergic MNs
+oig-1	04_remodeling	ig_domain_anti	Ig-domain effector; anti-remodeling; downstream of UNC-30, repressed by IRX-1
+daf-16	04_remodeling	foxo	FoxO; intersects with terminal selectors for innexin plasticity
+daf-12	04_remodeling	nuclear_receptor	Dauer master switch; nervous-system remodeling input
+lin-28	04_remodeling	heterochronic	Heterochronic gating
+lin-29	04_remodeling	zinc_finger	Heterochronic; L4-adult transition
+slo-1	04_remodeling	bk_channel	BK Ca-activated K channel; modulates remodeling output (Cuentas-Condori 2020)
+mir-84	04_remodeling	let7_family	miRNA; heterochronic let-7 family (Cuentas-Condori 2020)
+daf-2	04_remodeling	insulin_receptor	Insulin/IGF-1 receptor; master upstream of daf-16; alters synapse connectome (Bhattacharya 2019)
+daf-7	04_remodeling	tgf_beta	TGF-beta ligand; parallel master pathway with daf-2 driving dauer entry (Nolan 2002)
+# ---- Class 05: Synaptic specificity / cell-adhesion ------------------------
+syg-1	05_adhesion_specificity	igsf_nephrin	Neph1/2; instructs presynaptic assembly in HSN
+syg-2	05_adhesion_specificity	igsf_nephrin	Nephrin; SYG-1 ligand on vulval epithelia
+nrx-1	05_adhesion_specificity	neurexin	Presynaptic; partner-specific connectivity
+nlg-1	05_adhesion_specificity	neuroligin	Postsynaptic; retrograde inhibition with NRX-1
+cam-1	05_adhesion_specificity	ror_kinase	Ror RTK; synaptic positioning
+madd-4	05_adhesion_specificity	punctin	Punctin; cholinergic vs GABAergic clustering
+rig-3	05_adhesion_specificity	igsf	IgSF; presynaptic
+rig-5	05_adhesion_specificity	igsf	IgSF; presynaptic
+rig-6	05_adhesion_specificity	igsf_contactin	Contactin
+sax-7	05_adhesion_specificity	l1cam	L1CAM; neurite/synapse maintenance
+zig-4	05_adhesion_specificity	igsf	Two-Ig domain
+ina-1	05_adhesion_specificity	integrin	alpha-integrin
+unc-40	05_adhesion_specificity	dcc	DCC; presynaptic vesicle clustering (netrin receptor)
+sax-3	05_adhesion_specificity	robo	Roundabout
+unc-6	05_adhesion_specificity	netrin	Netrin; secreted guidance + synapse cue (UNC-40 ligand)
+smp-1	05_adhesion_specificity	semaphorin	Semaphorin
+plx-1	05_adhesion_specificity	plexin	Plexin; semaphorin receptor
+fmi-1	05_adhesion_specificity	flamingo_celsr	Flamingo/CELSR; planar polarity + axon guidance
+abi-1	05_adhesion_specificity	abi_wave	Abi/WAVE complex; presynaptic actin (Hendi 2019)
+mig-10	05_adhesion_specificity	lpd_riam	Lpd/MIG-10; presynaptic clustering
+mig-15	05_adhesion_specificity	nik_kinase	NIK kinase; synaptic positioning
+nab-1	05_adhesion_specificity	neurabin	Neurabin; postsynaptic actin scaffold
+zig-10	05_adhesion_specificity	igsf	IgSF; synapse organization
+cima-1	05_adhesion_specificity	slc12	SLC12; regulates synapse organization
+rap-2	05_adhesion_specificity	rap_gtpase	Rap2 GTPase; downstream of PLX-1, restricts synapse formation for tiling in DA9 (Chen/Mizumoto 2018)
+# ---- Class 06: Active zone scaffolding -------------------------------------
+syd-1	06_active_zone	rhogap_scaffold	Master AZ assembly factor; upstream of syd-2
+syd-2	06_active_zone	liprin_alpha	Liprin-alpha; recruits ELKS, UNC-10
+elks-1	06_active_zone	elks_cast	ELKS/CAST; AZ tripartite complex
+unc-10	06_active_zone	rim	RIM; SV localization to release sites
+rimb-1	06_active_zone	rim_bp	RIM-binding protein; Ca-channel coupling
+cla-1	06_active_zone	clarinet_piccolo	Clarinet; Piccolo/Bassoon homolog; recruits RIMB-1 + UNC-13
+ptp-3	06_active_zone	lar_rptp	LAR receptor PTP; partners with SYD-2
+clr-1	06_active_zone	receptor_tyrosine_phosphatase	RPTP; AZ organization
+sad-1	06_active_zone	kinase	SAD kinase; presynaptic assembly
+hlb-1	06_active_zone	highwire_adapter	AZ scaffold
+rsy-1	06_active_zone	regulator	Regulator of synaptogenesis (PNISR homolog)
+strd-1	06_active_zone	strad_pseudokinase	STRADα pseudokinase; cooperates with SAD-1 to regulate neuronal polarity + synaptic organization (Kim/Zhen 2010)
+# ---- Class 07: Synaptic vesicle / release machinery (pan-neuronal core) ----
+unc-13	07_SV_release	munc13	Munc13; SV priming
+unc-18	07_SV_release	munc18	Munc18; SNARE chaperone
+unc-64	07_SV_release	syntaxin	Syntaxin-1A; SNARE
+snb-1	07_SV_release	synaptobrevin	VAMP/synaptobrevin; v-SNARE
+ric-4	07_SV_release	snap25	SNAP-25; t-SNARE
+snt-1	07_SV_release	synaptotagmin	Synaptotagmin-1; Ca sensor
+unc-31	07_SV_release	caps	CAPS; dense-core vesicle release
+rab-3	07_SV_release	rab_gtpase	Rab3; SV trafficking
+unc-26	07_SV_release	synaptojanin	Synaptojanin; SV recycling
+unc-104	07_SV_release	kinesin3	KIF1A; SV axonal transport
+unc-57	07_SV_release	endophilin	Endophilin; SV endocytosis
+dyn-1	07_SV_release	dynamin	Dynamin; clathrin-mediated SV endocytosis
+egl-3	07_SV_release	pc2_propeptide	PC2 proprotein convertase; processes pro-NLP-40 for gut->brain AIY presynaptic assembly (Shi 2022)
+egl-21	07_SV_release	cpe_propeptide	Carboxypeptidase E; pathway partner of EGL-3 in NLP processing; supports synaptic transmission/assembly at NMJ (Jacob & Kaplan 2003)
+cyy-1	07_SV_release	cyclin_y	Cyclin Y; partners with CDK-5 to drive presynaptic component trafficking + synapse elimination (Park 2011)
+ccb-1	07_SV_release	cav_beta	CaV2 beta auxiliary subunit; presynaptic active zone; stabilizes UNC-2 (Oh 2023)
+snn-1	07_SV_release	synapsin	Synapsin
+sng-1	07_SV_release	synaptogyrin	Synaptogyrin
+tom-1	07_SV_release	tomosyn	Tomosyn; SV release brake
+unc-2	07_SV_release	cav2_alpha	CaV2 alpha; presynaptic Ca channel
+unc-36	07_SV_release	cav_alpha2delta	CaV alpha2/delta
+egl-19	07_SV_release	cav1_alpha	CaV1 L-type alpha
+cdk-5	07_SV_release	kinase_cdk5	CDK5; GLR-1 trafficking, presynaptic morphology
+klp-4	07_SV_release	kinesin_kif13	KIF13A; GLR-1 trafficking
+arl-8	07_SV_release	arl8_gtpase	ARL8; SV anterograde transport (Hendi 2019)
+atg-9	07_SV_release	autophagy	ATG9; SV biogenesis at presynapse
+unc-116	07_SV_release	kinesin1_khc	Kinesin-1 KHC; axonal cargo transport
+unc-51	07_SV_release	ulk_kinase	ULK kinase; axon guidance + SV regulation
+# ---- Class 08: Electrical synapse / innexins (DAUER-REMODELED) -------------
+inx-1	08_innexin	innexin	Plastic in dauer
+inx-2	08_innexin	innexin
+inx-3	08_innexin	innexin	Plastic in dauer
+inx-6	08_innexin	innexin	Dauer-specific expression in AIB
+inx-7	08_innexin	innexin	Plastic in dauer
+inx-18	08_innexin	innexin	Plastic in dauer
+inx-19	08_innexin	innexin	Plastic in dauer
+unc-7	08_innexin	innexin	Locomotor electrical synapses
+unc-9	08_innexin	innexin	Locomotor electrical synapses
+che-7	08_innexin	innexin	Chemosensory
+eat-5	08_innexin	innexin	Pharyngeal
+inx-5	08_innexin	innexin	Bhattacharya 2019 expression mapped
+inx-8	08_innexin	innexin	Gonad sheath/neuron
+inx-9	08_innexin	innexin	Gonad sheath/neuron
+inx-10	08_innexin	innexin	Plastic in dauer (Bhattacharya 2019)
+inx-11	08_innexin	innexin
+inx-12	08_innexin	innexin
+inx-13	08_innexin	innexin
+inx-14	08_innexin	innexin
+inx-15	08_innexin	innexin
+inx-16	08_innexin	innexin	Chemical + electrical signaling
+inx-17	08_innexin	innexin
+inx-20	08_innexin	innexin
+# ---- Class 09: Postsynaptic receptors / clustering -------------------------
+unc-29	09_postsynaptic	nachr	Levamisole nAChR subunit
+unc-38	09_postsynaptic	nachr	Levamisole nAChR alpha
+unc-63	09_postsynaptic	nachr	Levamisole nAChR
+lev-1	09_postsynaptic	nachr	Levamisole nAChR non-alpha
+lev-8	09_postsynaptic	nachr	Levamisole nAChR alpha
+acr-16	09_postsynaptic	nachr	Nicotine-sensitive homomeric nAChR
+acr-12	09_postsynaptic	nachr	GABA MN nAChR; remodeling readout in DD/VD
+acr-2	09_postsynaptic	nachr	Cholinergic MN nAChR
+unc-49	09_postsynaptic	gaba_a	GABA-A receptor; postsynaptic at NMJ
+glr-1	09_postsynaptic	ampa_glur	AMPA-type GluR; command interneurons
+glr-2	09_postsynaptic	ampa_glur	AMPA-type GluR
+nmr-1	09_postsynaptic	nmda_glur	NMDA receptor subunit
+nmr-2	09_postsynaptic	nmda_glur	NMDA receptor subunit
+mgl-1	09_postsynaptic	mglur	Metabotropic GluR
+unc-43	09_postsynaptic	camk2	CaMKII; postsynaptic kinase
+lev-9	09_postsynaptic	extracellular_scaffold	Secreted scaffold for L-AChR clustering
+lev-10	09_postsynaptic	extracellular_scaffold	Transmembrane CUB-domain L-AChR clustering
+oig-4	09_postsynaptic	extracellular_scaffold	Secreted Ig protein; L-AChR cluster
+lin-10	09_postsynaptic	mint_scaffold	Mint/X11; GluR trafficking
+lin-2	09_postsynaptic	cask	CASK; postsynaptic scaffold
+lin-7	09_postsynaptic	veli	Veli; postsynaptic scaffold
+dlg-1	09_postsynaptic	psd95	Discs-large/PSD-95
+magi-1	09_postsynaptic	maguk	MAGI scaffold
+acr-14	09_postsynaptic	nachr	nAChR subunit
+acr-15	09_postsynaptic	nachr	nAChR subunit
+gar-2	09_postsynaptic	machr	Muscarinic AChR
+gbb-1	09_postsynaptic	gaba_b	GABA-B receptor subunit
+gbb-2	09_postsynaptic	gaba_b	GABA-B receptor subunit
+lgc-46	09_postsynaptic	lgic	Ligand-gated Cl channel; chemical synaptic transmission
+mod-1	09_postsynaptic	5ht_cl	Serotonin-gated Cl channel
+ace-2	09_postsynaptic	ache	Acetylcholinesterase; synaptic cleft
+dop-1	09_postsynaptic	d1_dopamine	D1-like dopamine receptor
+dop-2	09_postsynaptic	d2_dopamine	D2-like dopamine receptor
+dop-3	09_postsynaptic	d2_dopamine	D2-like dopamine receptor
+ser-2	09_postsynaptic	5ht_gpcr	Serotonin/dopamine GPCR
+ser-4	09_postsynaptic	5ht_gpcr	Serotonin GPCR
+glc-3	09_postsynaptic	glu_cl	Glutamate-gated Cl channel
+aex-2	09_postsynaptic	neuropeptide_gpcr	GPCR for NLP-40; neuronal receiver of gut neuroendocrine signal driving AIY presynaptic assembly (Shi 2022)
+# ---- Class 10: mRNA export / RNA processing for synaptic transcripts -------
+thoc-1	10_mRNA_export	tho_complex	THO/TREX subunit; dopaminergic synaptogenesis (Maeder 2018)
+thoc-2	10_mRNA_export	tho_complex	THO/TREX subunit
+thoc-5	10_mRNA_export	tho_complex	THO/TREX subunit; conserved in mouse SNc DA neuron synapse maintenance
+crh-1	10_mRNA_export	creb	CREB; binds THOC to mark synaptic transcripts for nuclear export
+aly-1	10_mRNA_export	trex_adaptor	ALY/REF-1; TREX mRNA-export adaptor (Maeder 2018)
+aly-2	10_mRNA_export	trex_adaptor	ALY/REF-2; TREX adaptor
+aly-3	10_mRNA_export	trex_adaptor	ALY/REF-3; TREX adaptor
+# ---- Class 11: PHR / MAPK ubiquitin signaling at synapse -------------------
+rpm-1	11_PHR_MAPK	phr_ubiquitin	PHR ligase; synapse formation + axon termination
+fsn-1	11_PHR_MAPK	fbox	F-box partner of RPM-1
+skr-1	11_PHR_MAPK	skp1	SKP1-like; SCF complex with RPM-1/FSN-1
+dlk-1	11_PHR_MAPK	mapkkk	DLK MAPKKK; regulated by RPM-1; synapse formation
+mkk-4	11_PHR_MAPK	mapkk	MKK4 in DLK-1 -> PMK-3 cascade
+pmk-3	11_PHR_MAPK	p38_mapk	p38 MAPK; AMPA receptor trafficking
+glo-4	11_PHR_MAPK	rab_gef	RAB GEF; RPM-1 effector; axon termination
+# ---- Class 12: Wnt / morphogen synaptic positioning ------------------------
+lin-44	12_wnt_morphogen	wnt	Posterior Wnt; inhibits synapse formation in DA9 posterior axon
+egl-20	12_wnt_morphogen	wnt	Posterior Wnt; co-acts with lin-44
+mom-2	12_wnt_morphogen	wnt	Wnt; anterior gradient
+cwn-1	12_wnt_morphogen	wnt	Wnt
+cwn-2	12_wnt_morphogen	wnt	Wnt
+lin-17	12_wnt_morphogen	frizzled	Frizzled receptor for LIN-44; restricts DA9 synaptic domain
+dsh-1	12_wnt_morphogen	dishevelled	Dishevelled
+mig-1	12_wnt_morphogen	frizzled	Frizzled; Wnt receptor (Klassen 2007)
+mig-13	12_wnt_morphogen	lrp	LRP coreceptor
+lrp-1	12_wnt_morphogen	lrp	LRP coreceptor
+bar-1	12_wnt_morphogen	beta_catenin	beta-catenin; canonical Wnt
+pry-1	12_wnt_morphogen	axin	Axin; Wnt destruction complex
+# ---- Class 13: Neurotransmitter identity (terminal selector targets) ------
+unc-17	13_NT_identity	vacht_cholinergic	VAChT; cholinergic identity
+cha-1	13_NT_identity	chat_cholinergic	ChAT; cholinergic
+unc-25	13_NT_identity	gad_gabaergic	GAD; GABAergic
+unc-47	13_NT_identity	vgat_gabaergic	VGAT/SLC32; GABAergic
+unc-46	13_NT_identity	lamp_gabaergic	LAMP; GABAergic
+eat-4	13_NT_identity	vglut_glutamatergic	VGLUT/SLC17; glutamatergic identity
+cat-1	13_NT_identity	vmat_monoamine	VMAT; monoamine vesicular
+cat-2	13_NT_identity	th_dopamine	Tyrosine hydroxylase; dopamine biosynthesis
+tph-1	13_NT_identity	tph_serotonin	Tryptophan hydroxylase; serotonin biosynthesis
+mod-5	13_NT_identity	sert_serotonin	SERT; serotonin reuptake
+dat-1	13_NT_identity	dat_dopamine	DAT; dopamine reuptake transporter
+cho-1	13_NT_identity	cht_choline	CHT; high-affinity choline transporter (cholinergic)
+nlp-40	13_NT_identity	neuropeptide_ligand	Neuropeptide-like protein; gut-derived ligand for AEX-2; drives AIY presynaptic assembly (Shi 2022)

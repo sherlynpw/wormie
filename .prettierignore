@@ -1,0 +1,8 @@
+node_modules
+.svelte-kit
+build
+.wrangler
+.cache
+static/data
+bun.lock
+package-lock.json

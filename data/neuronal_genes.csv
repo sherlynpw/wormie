@@ -1,0 +1,1346 @@
+gene_name,wormbase_id,category,supercategory
+shk-1,WBGene00014261,Potassium channels,Ion channels
+exp-2,WBGene00001374,Potassium channels,Ion channels
+kvs-1,WBGene00002242,Potassium channels,Ion channels
+kvs-2,WBGene00007862,Potassium channels,Ion channels
+kvs-3,WBGene00018402,Potassium channels,Ion channels
+kvs-4,WBGene00012967,Potassium channels,Ion channels
+kvs-5,WBGene00021948,Potassium channels,Ion channels
+shw-1,WBGene00008819,Potassium channels,Ion channels
+egl-36,WBGene00001202,Potassium channels,Ion channels
+shw-3,WBGene00004793,Potassium channels,Ion channels
+shl-1,WBGene00022240,Potassium channels,Ion channels
+kqt-1,WBGene00002233,Potassium channels,Ion channels
+kqt-2,WBGene00002234,Potassium channels,Ion channels
+kqt-3,WBGene00002235,Potassium channels,Ion channels
+egl-2,WBGene00001171,Potassium channels,Ion channels
+unc-103,WBGene00006830,Potassium channels,Ion channels
+slo-1,WBGene00004830,Potassium channels,Ion channels
+slo-2,WBGene00004831,Potassium channels,Ion channels
+kcnl-1,WBGene00007176,Potassium channels,Ion channels
+kcnl-2,WBGene00008570,Potassium channels,Ion channels
+kcnl-3,WBGene00015387,Potassium channels,Ion channels
+kcnl-4,WBGene00008265,Potassium channels,Ion channels
+egl-23,WBGene00001190,Potassium channels,Ion channels
+twk-41,,Potassium channels,Ion channels
+sup-9,WBGene00006318,Potassium channels,Ion channels
+twk-38,,Potassium channels,Ion channels
+unc-58,WBGene00006792,Potassium channels,Ion channels
+unc-110,,Potassium channels,Ion channels
+twk-18,WBGene00006672,Potassium channels,Ion channels
+twk-1,WBGene00006656,Potassium channels,Ion channels
+twk-2,WBGene00006657,Potassium channels,Ion channels
+twk-3,WBGene00006658,Potassium channels,Ion channels
+twk-4,WBGene00006659,Potassium channels,Ion channels
+twk-5,WBGene00006660,Potassium channels,Ion channels
+twk-6,WBGene00006661,Potassium channels,Ion channels
+twk-7,WBGene00006662,Potassium channels,Ion channels
+twk-8,WBGene00006663,Potassium channels,Ion channels
+twk-19,,Potassium channels,Ion channels
+twk-9,WBGene00006664,Potassium channels,Ion channels
+twk-10,WBGene00006665,Potassium channels,Ion channels
+twk-11,WBGene00006666,Potassium channels,Ion channels
+twk-12,WBGene00006667,Potassium channels,Ion channels
+twk-13,WBGene00006668,Potassium channels,Ion channels
+twk-15,,Potassium channels,Ion channels
+twk-14,WBGene00006669,Potassium channels,Ion channels
+twk-16,WBGene00006670,Potassium channels,Ion channels
+twk-17,WBGene00006671,Potassium channels,Ion channels
+twk-20,WBGene00006673,Potassium channels,Ion channels
+twk-21,WBGene00006674,Potassium channels,Ion channels
+twk-22,WBGene00006675,Potassium channels,Ion channels
+twk-23,WBGene00006676,Potassium channels,Ion channels
+twk-24,WBGene00006677,Potassium channels,Ion channels
+twk-25,WBGene00006678,Potassium channels,Ion channels
+twk-26,WBGene00006679,Potassium channels,Ion channels
+twk-28,WBGene00006680,Potassium channels,Ion channels
+twk-29,WBGene00006681,Potassium channels,Ion channels
+twk-30,WBGene00006682,Potassium channels,Ion channels
+twk-31,WBGene00006683,Potassium channels,Ion channels
+twk-32,WBGene00006684,Potassium channels,Ion channels
+twk-33,WBGene00006685,Potassium channels,Ion channels
+twk-34,WBGene00006686,Potassium channels,Ion channels
+twk-35,WBGene00006687,Potassium channels,Ion channels
+twk-36,WBGene00006688,Potassium channels,Ion channels
+twk-37,WBGene00006689,Potassium channels,Ion channels
+twk-39,WBGene00006690,Potassium channels,Ion channels
+twk-40,WBGene00006691,Potassium channels,Ion channels
+twk-42,WBGene00006692,Potassium channels,Ion channels
+twk-43,WBGene00006693,Potassium channels,Ion channels
+twk-44,WBGene00006694,Potassium channels,Ion channels
+twk-45,WBGene00006695,Potassium channels,Ion channels
+twk-46,WBGene00006696,Potassium channels,Ion channels
+twk-47,WBGene00018002,Potassium channels,Ion channels
+twk-48,WBGene00010784,Potassium channels,Ion channels
+twk-49,WBGene00019904,Potassium channels,Ion channels
+irk-1,WBGene00002149,Potassium channels,Ion channels
+irk-2,WBGene00002150,Potassium channels,Ion channels
+irk-3,WBGene00002151,Potassium channels,Ion channels
+mps-1,WBGene00003403,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mps-2,WBGene00019282,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mps-3,WBGene00020282,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mps-4,WBGene00017323,Candidate auxiliary subunits for various types of ion channels,Ion channels
+sssh-1,WBGene00044138,Candidate auxiliary subunits for various types of ion channels,Ion channels
+ncs-6,WBGene00021116,Candidate auxiliary subunits for various types of ion channels,Ion channels
+ncs-7,WBGene00015867,Candidate auxiliary subunits for various types of ion channels,Ion channels
+ncs-8,,Candidate auxiliary subunits for various types of ion channels,Ion channels
+ncs-9,,Candidate auxiliary subunits for various types of ion channels,Ion channels
+dpf-1,WBGene00001054,Candidate auxiliary subunits for various types of ion channels,Ion channels
+dpf-2,WBGene00001055,Candidate auxiliary subunits for various types of ion channels,Ion channels
+dfp-3,,Candidate auxiliary subunits for various types of ion channels,Ion channels
+dpf-4,WBGene00001057,Candidate auxiliary subunits for various types of ion channels,Ion channels
+dpf-5,WBGene00001058,Candidate auxiliary subunits for various types of ion channels,Ion channels
+dpf-6,WBGene00001059,Candidate auxiliary subunits for various types of ion channels,Ion channels
+dpf-7,WBGene00001060,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mec-14,WBGene00003176,Candidate auxiliary subunits for various types of ion channels,Ion channels
+ctf-1,,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mrp-1,WBGene00003407,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mrp-2,WBGene00003408,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mrp-3,WBGene00003409,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mrp-4,WBGene00003410,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mrp-7,WBGene00003413,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mrp-8,WBGene00003414,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mrp-5,WBGene00003411,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mrp-6,WBGene00003412,Candidate auxiliary subunits for various types of ion channels,Ion channels
+bkip-1,WBGene00014569,Candidate auxiliary subunits for various types of ion channels,Ion channels
+sup-10,WBGene00006319,Candidate auxiliary subunits for various types of ion channels,Ion channels
+unc-93,WBGene00006822,Candidate auxiliary subunits for various types of ion channels,Ion channels
+unc-79,WBGene00006811,Candidate auxiliary subunits for various types of ion channels,Ion channels
+unc-80,WBGene00006812,Candidate auxiliary subunits for various types of ion channels,Ion channels
+lev-9,WBGene00002976,Candidate auxiliary subunits for various types of ion channels,Ion channels
+lev-10,WBGene00002977,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mig-13,WBGene00003245,Candidate auxiliary subunits for various types of ion channels,Ion channels
+neto-1,WBGene00019360,Candidate auxiliary subunits for various types of ion channels,Ion channels
+molo-1,WBGene00017299,Candidate auxiliary subunits for various types of ion channels,Ion channels
+lurp-1,WBGene00009700,Candidate auxiliary subunits for various types of ion channels,Ion channels
+lurp-2,WBGene00009134,Candidate auxiliary subunits for various types of ion channels,Ion channels
+lurp-3,WBGene00009136,Candidate auxiliary subunits for various types of ion channels,Ion channels
+lurp-4,WBGene00077698,Candidate auxiliary subunits for various types of ion channels,Ion channels
+odr-2,WBGene00003849,Candidate auxiliary subunits for various types of ion channels,Ion channels
+hot-1,WBGene00001986,Candidate auxiliary subunits for various types of ion channels,Ion channels
+hot-2,WBGene00001987,Candidate auxiliary subunits for various types of ion channels,Ion channels
+hot-3,WBGene00001988,Candidate auxiliary subunits for various types of ion channels,Ion channels
+hot-4,WBGene00001989,Candidate auxiliary subunits for various types of ion channels,Ion channels
+hot-5,WBGene00001990,Candidate auxiliary subunits for various types of ion channels,Ion channels
+hot-6,WBGene00001991,Candidate auxiliary subunits for various types of ion channels,Ion channels
+hot-7,WBGene00001992,Candidate auxiliary subunits for various types of ion channels,Ion channels
+hot-8,WBGene00020489,Candidate auxiliary subunits for various types of ion channels,Ion channels
+hot-9,WBGene00044484,Candidate auxiliary subunits for various types of ion channels,Ion channels
+sol-1,WBGene00004944,Candidate auxiliary subunits for various types of ion channels,Ion channels
+stg-1,WBGene00007670,Candidate auxiliary subunits for various types of ion channels,Ion channels
+stg-2,WBGene00017400,Candidate auxiliary subunits for various types of ion channels,Ion channels
+cni-1,WBGene00011648,Candidate auxiliary subunits for various types of ion channels,Ion channels
+mec-2,WBGene00003166,Candidate auxiliary subunits for various types of ion channels,Ion channels
+unc-1,WBGene00006741,Candidate auxiliary subunits for various types of ion channels,Ion channels
+unc-24,WBGene00006761,Candidate auxiliary subunits for various types of ion channels,Ion channels
+stl-1,WBGene00006061,Candidate auxiliary subunits for various types of ion channels,Ion channels
+sto-1,WBGene00006063,Candidate auxiliary subunits for various types of ion channels,Ion channels
+sto-2,WBGene00006064,Candidate auxiliary subunits for various types of ion channels,Ion channels
+sto-3,WBGene00006065,Candidate auxiliary subunits for various types of ion channels,Ion channels
+sto-4,WBGene00006066,Candidate auxiliary subunits for various types of ion channels,Ion channels
+sto-5,WBGene00006067,Candidate auxiliary subunits for various types of ion channels,Ion channels
+sto-6,WBGene00006068,Candidate auxiliary subunits for various types of ion channels,Ion channels
+egl-19,WBGene00001187,Voltage-gated calcium channels,Ion channels
+unc-2,WBGene00006742,Voltage-gated calcium channels,Ion channels
+cca-1,WBGene00000367,Voltage-gated calcium channels,Ion channels
+nca-1,,Voltage-gated calcium channels,Ion channels
+nca-2,WBGene00003558,Voltage-gated calcium channels,Ion channels
+unc-36,WBGene00006772,Voltage-gated calcium channels,Ion channels
+tag-180,WBGene00007041,Voltage-gated calcium channels,Ion channels
+ccb-1,WBGene00000368,Voltage-gated calcium channels,Ion channels
+ccb-2,WBGene00021125,Voltage-gated calcium channels,Ion channels
+eat-4,WBGene00001135,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+vglu-2,WBGene00010755,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+vglu-3,WBGene00011556,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+vnut-1,WBGene00010758,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+cat-1,WBGene00000295,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+unc-17,WBGene00006756,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+unc-47,WBGene00006783,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+glt-1,WBGene00001620,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+glt-3,WBGene00001621,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+glt-4,WBGene00001622,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+glt-5,WBGene00001623,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+glt-6,WBGene00001624,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+glt-7,WBGene00001625,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+dat-1,WBGene00000934,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+mod-5,WBGene00003387,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-1,WBGene00004900,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-2,WBGene00004901,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-3,WBGene00004902,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-4,WBGene00004903,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-5,WBGene00004904,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-6,WBGene00004905,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-7,WBGene00004906,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-8,WBGene00004907,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-9,WBGene00004908,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-10,WBGene00004909,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-11,WBGene00004910,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+snf-12,WBGene00004911,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ent-1,WBGene00001320,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ent-2,WBGene00010701,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ent-3,WBGene00010510,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ent-4,WBGene00008123,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ent-5,WBGene00017532,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ent-6,WBGene00009499,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ent-7,WBGene00009686,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-1,WBGene00003566,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-2,WBGene00003567,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-3,WBGene00003568,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-4,WBGene00003569,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-5,WBGene00003570,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-6,WBGene00003571,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-7,WBGene00003572,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-8,WBGene00003573,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-9,WBGene00003574,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ncx-10,WBGene00003575,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+cdf-2,WBGene00011821,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+ttm-1,WBGene00012712,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+cdf-1,WBGene00000393,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+toc-1,WBGene00006590,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+kcc-1,WBGene00006504,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+kcc-2,WBGene00019205,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+kcc-3,WBGene00019289,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+nkcc-1,WBGene00012543,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+abts-1,WBGene00009920,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+abts-2,WBGene00009929,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+abts-3,WBGene00019018,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+abts-4,WBGene00019844,SLC transporters with confirmed or putative neuronal functions,Neurotransmitter pathways
+cmd-1,WBGene00000552,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cal-1,WBGene00000285,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cal-2,WBGene00000286,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cal-3,WBGene00000287,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cal-4,WBGene00000288,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cal-5,WBGene00006861,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cal-6,WBGene00022214,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cal-7,WBGene00009585,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cal-8,WBGene00017394,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+ncs-1,WBGene00003563,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+ncs-2,WBGene00003564,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+ncs-3,WBGene00003565,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+ncs-4,WBGene00008998,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+ncs-5,WBGene00008307,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+ncs-6,WBGene00021116,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+ncs-7,WBGene00015867,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cnb-1,WBGene00000554,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+rsa-1,WBGene00007710,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cex-1,WBGene00023407,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cex-2,WBGene00023408,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+efdh-1,WBGene00012980,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+pbo-1,WBGene00003941,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+micu-1,WBGene00013462,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+calm-1,WBGene00009260,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+calu-1,WBGene00019760,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+calu-2,WBGene00017240,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+nucb-1,WBGene00009674,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+reps-1,WBGene00012696,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+mlc-1,WBGene00003369,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+mlc-2,WBGene00003370,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+mlc-3,WBGene00003371,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+mlc-4,WBGene00003372,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+mlc-5,WBGene00011734,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+mlc-6,WBGene00010554,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+mlc-7,WBGene00023451,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+tnc-2,WBGene00006583,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+cbn-1,WBGene00019285,Calcium binding proteins - the “EF hand-only” proteins,Ion channels
+ocr-1,WBGene00003838,TRP channels,Ion channels
+ocr-2,WBGene00003839,TRP channels,Ion channels
+ocr-3,WBGene00003840,TRP channels,Ion channels
+ocr-4,WBGene00003841,TRP channels,Ion channels
+osm-9,WBGene00003889,TRP channels,Ion channels
+lov-1,WBGene00003058,TRP channels,Ion channels
+pkd-2,WBGene00004035,TRP channels,Ion channels
+trp-4,WBGene00006616,TRP channels,Ion channels
+cup-5,WBGene00000846,TRP channels,Ion channels
+ced-11,WBGene00000425,TRP channels,Ion channels
+gon-2,WBGene00001651,TRP channels,Ion channels
+gtl-1,WBGene00001795,TRP channels,Ion channels
+gtl-2,WBGene00001796,TRP channels,Ion channels
+trp-1,WBGene00006614,TRP channels,Ion channels
+trp-2,WBGene00006615,TRP channels,Ion channels
+spe-41,WBGene00004976,TRP channels,Ion channels
+trpa-1,WBGene00007801,TRP channels,Ion channels
+trpa-2,WBGene00010873,TRP channels,Ion channels
+trpl-1,WBGene00018992,TRP channels,Ion channels
+trpl-2,WBGene00020972,TRP channels,Ion channels
+trpl-3,WBGene00021404,TRP channels,Ion channels
+trpl-4,WBGene00021408,TRP channels,Ion channels
+trpl-5,WBGene00004149,TRP channels,Ion channels
+tax-2,WBGene00006525,Cyclic nucleotide gated channels,Ion channels
+tax-4,WBGene00006526,Cyclic nucleotide gated channels,Ion channels
+cng-1,WBGene00000562,Cyclic nucleotide gated channels,Ion channels
+cng-2,WBGene00022295,Cyclic nucleotide gated channels,Ion channels
+cng-3,WBGene00000563,Cyclic nucleotide gated channels,Ion channels
+che-6,WBGene00000487,Cyclic nucleotide gated channels,Ion channels
+acr-2,WBGene00000042,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-3,WBGene00000043,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-5,WBGene00000044,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-6,WBGene00000045,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-7,WBGene00000046,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-8,WBGene00000047,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-9,WBGene00000048,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-10,WBGene00000049,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-11,WBGene00000050,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-12,WBGene00000051,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-13,WBGene00002975,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lev-8,WBGene00002975,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-14,WBGene00000053,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-15,WBGene00000054,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-16,WBGene00000055,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-17,WBGene00000056,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-18,WBGene00000057,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-19,WBGene00000058,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-20,WBGene00000059,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-21,WBGene00000060,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-23,WBGene00000062,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-24,WBGene00013534,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-25,WBGene00043066,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+cup-4,WBGene00000845,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+deg-3,WBGene00000951,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+des-2,WBGene00000955,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-4,,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+eat-2,WBGene00001133,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lev-1,WBGene00002974,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+unc-29,WBGene00006765,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+unc-38,WBGene00006774,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+unc-63,WBGene00006797,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-1,WBGene00020236,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+pbo-5,WBGene00012857,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-2,,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+pbo-6,WBGene00017375,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-3,,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-4,WBGene00017580,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-5,WBGene00017543,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-6,WBGene00017544,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-7,WBGene00013300,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-8,WBGene00013338,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-9,WBGene00015412,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-10,WBGene00022247,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-11,WBGene00000061,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-12,WBGene00020048,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-13,WBGene00011354,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-14,WBGene00011355,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-15,WBGene00011356,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-16,WBGene00011358,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-17,WBGene00011359,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-18,WBGene00011360,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-19,WBGene00013655,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-20,WBGene00007191,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-21,WBGene00007903,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-22,WBGene00017483,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-23,WBGene00007594,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-24,WBGene00045385,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-25,WBGene00010994,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-26,WBGene00021981,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-27,WBGene00022283,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-28,WBGene00044301,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-29,WBGene00044528,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-30,WBGene00019069,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-31,WBGene00008997,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+gab-1,WBGene00001512,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+unc-49,WBGene00006784,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+exp-1,WBGene00001373,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-35,WBGene00012915,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-36,WBGene00008551,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-37,WBGene00013914,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-38,WBGene00017389,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+mod-1,WBGene00003386,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-50,WBGene00020605,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-51,WBGene00017399,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-52,WBGene00013517,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-53,WBGene00020657,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-54,WBGene00020528,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-55,WBGene00013746,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+ggr-3,,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+avr-14,WBGene00000232,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+avr-15,WBGene00000233,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+glc-1,WBGene00001591,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+glc-2,WBGene00001592,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+glc-3,WBGene00001593,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+glc-4,WBGene00001594,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acc-1,WBGene00010275,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acc-2,WBGene00008280,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acc-3,WBGene00018880,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acc-4,WBGene00012099,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-46,WBGene00022106,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-47,WBGene00009799,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-48,WBGene00008223,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-49,WBGene00010741,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-32,WBGene00020569,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-33,WBGene00021941,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-34,WBGene00020836,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+ggr-1,WBGene00001586,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+ggr-2,,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-39,WBGene00017314,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-40,WBGene00020767,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-41,WBGene00008022,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-42,WBGene00021437,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-43,WBGene00008076,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-44,WBGene00009790,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-45,WBGene00021146,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+nmr-1,WBGene00003774,Ionotropic glutamate receptors,Ion channels
+nmr-2,WBGene00003775,Ionotropic glutamate receptors,Ion channels
+glr-1,WBGene00001612,Ionotropic glutamate receptors,Ion channels
+glr-2,WBGene00001613,Ionotropic glutamate receptors,Ion channels
+glr-3,WBGene00001614,Ionotropic glutamate receptors,Ion channels
+glr-4,WBGene00001615,Ionotropic glutamate receptors,Ion channels
+glr-5,WBGene00001616,Ionotropic glutamate receptors,Ion channels
+glr-6,WBGene00001617,Ionotropic glutamate receptors,Ion channels
+glr-7,WBGene00001618,Ionotropic glutamate receptors,Ion channels
+glr-8,WBGene00001619,Ionotropic glutamate receptors,Ion channels
+flr-1,WBGene00001465,DEG/ENaC channels,Ion channels
+acd-1,WBGene00016064,DEG/ENaC channels,Ion channels
+acd-2,WBGene00016066,DEG/ENaC channels,Ion channels
+acd-3,WBGene00007775,DEG/ENaC channels,Ion channels
+acd-4,WBGene00017879,DEG/ENaC channels,Ion channels
+acd-5,WBGene00020903,DEG/ENaC channels,Ion channels
+delm-1,WBGene00009073,DEG/ENaC channels,Ion channels
+delm-2,WBGene00016063,DEG/ENaC channels,Ion channels
+asic-1,WBGene00022815,DEG/ENaC channels,Ion channels
+asic-2,WBGene00012137,DEG/ENaC channels,Ion channels
+mec-4,WBGene00003168,DEG/ENaC channels,Ion channels
+del-4,WBGene00012116,DEG/ENaC channels,Ion channels
+unc-105,WBGene00006832,DEG/ENaC channels,Ion channels
+deg-1,WBGene00000950,DEG/ENaC channels,Ion channels
+del-1,WBGene00000952,DEG/ENaC channels,Ion channels
+mec-10,WBGene00003174,DEG/ENaC channels,Ion channels
+egas-1,WBGene00013486,DEG/ENaC channels,Ion channels
+egas-2,WBGene00013487,DEG/ENaC channels,Ion channels
+egas-3,WBGene00013480,DEG/ENaC channels,Ion channels
+egas-4,WBGene00018906,DEG/ENaC channels,Ion channels
+degt-1,WBGene00009109,DEG/ENaC channels,Ion channels
+del-2,WBGene00000953,DEG/ENaC channels,Ion channels
+del-3,WBGene00009144,DEG/ENaC channels,Ion channels
+del-5,WBGene00010334,DEG/ENaC channels,Ion channels
+del-6,WBGene00011891,DEG/ENaC channels,Ion channels
+del-7,WBGene00016699,DEG/ENaC channels,Ion channels
+del-8,WBGene00007518,DEG/ENaC channels,Ion channels
+unc-8,WBGene00006748,DEG/ENaC channels,Ion channels
+del-9,WBGene00015957,DEG/ENaC channels,Ion channels
+del-10,WBGene00020897,DEG/ENaC channels,Ion channels
+clh-1,WBGene00000528,Chloride channels,Ion channels
+clc-1,WBGene00000522,Chloride channels,Ion channels
+clh-2,WBGene00000529,Chloride channels,Ion channels
+clc-2,WBGene00000523,Chloride channels,Ion channels
+clh-3,WBGene00000530,Chloride channels,Ion channels
+clc-3,WBGene00000524,Chloride channels,Ion channels
+clh-4,WBGene00000531,Chloride channels,Ion channels
+clc-4,WBGene00000525,Chloride channels,Ion channels
+clh-5,WBGene00000532,Chloride channels,Ion channels
+clc-5,WBGene00000526,Chloride channels,Ion channels
+clh-6,WBGene00000533,Chloride channels,Ion channels
+anoh-1,WBGene00010138,Chloride channels,Ion channels
+anoh-2,WBGene00013326,Chloride channels,Ion channels
+ttyh-1,WBGene00009632,Chloride channels,Ion channels
+best-1,WBGene00007203,Chloride channels,Ion channels
+best-2,WBGene00007204,Chloride channels,Ion channels
+best-3,WBGene00015286,Chloride channels,Ion channels
+best-4,WBGene00015288,Chloride channels,Ion channels
+best-5,WBGene00007404,Chloride channels,Ion channels
+best-6,WBGene00015628,Chloride channels,Ion channels
+best-7,WBGene00007808,Chloride channels,Ion channels
+best-8,WBGene00007988,Chloride channels,Ion channels
+best-9,WBGene00016613,Chloride channels,Ion channels
+best-10,WBGene00008185,Chloride channels,Ion channels
+best-11,WBGene00008186,Chloride channels,Ion channels
+best-12,WBGene00008821,Chloride channels,Ion channels
+best-13,WBGene00009323,Chloride channels,Ion channels
+best-14,WBGene00009340,Chloride channels,Ion channels
+best-15,WBGene00011258,Chloride channels,Ion channels
+best-16,WBGene00020046,Chloride channels,Ion channels
+best-17,WBGene00020559,Chloride channels,Ion channels
+best-18,WBGene00011868,Chloride channels,Ion channels
+best-19,WBGene00206487,Chloride channels,Ion channels
+best-20,WBGene00021368,Chloride channels,Ion channels
+best-21,WBGene00013520,Chloride channels,Ion channels
+best-22,WBGene00013921,Chloride channels,Ion channels
+best-23,WBGene00014989,Chloride channels,Ion channels
+best-24,WBGene00022797,Chloride channels,Ion channels
+best-25,WBGene00014102,Chloride channels,Ion channels
+best-26,WBGene00014103,Chloride channels,Ion channels
+cha-1,WBGene00000481,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+acly-1,WBGene00016995,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+acly-2,WBGene00007150,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+pmt-1,WBGene00022781,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+pmt-2,WBGene00018811,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+unc-25,WBGene00006762,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+tph-1,WBGene00006600,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+tbh-1,WBGene00006541,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+cat-2,WBGene00000296,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+cat-4,WBGene00000298,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+gfrp-1,WBGene00044736,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+ptps-1,WBGene00015010,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+pcbd-1,WBGene00020397,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+qdpr-1,WBGene00011398,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+tdc-1,WBGene00006562,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+bas-1,WBGene00000239,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+hdl-1,WBGene00001839,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+tag-19,,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+basl-1,WBGene00015467,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+anat-1,WBGene00015938,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+homt-1,WBGene00022277,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+anmt-1,WBGene00015124,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+anmt-2,WBGene00018340,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+anmt-3,WBGene00011573,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+ace-1,WBGene00000035,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+ace-2,WBGene00000036,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+ace-3,WBGene00000037,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+ace-4,WBGene00000038,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+amx-2,WBGene00000138,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+comt-1,WBGene00018741,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+comt-2,WBGene00012518,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+comt-3,WBGene00021487,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+comt-4,WBGene00021491,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+comt-5,WBGene00021492,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+gta-1,WBGene00001794,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+adh-7,,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+daf-28,WBGene00000920,Neuropeptide-encoding genes,Neuropeptides
+ins-1,WBGene00002084,Neuropeptide-encoding genes,Neuropeptides
+ins-39,WBGene00017668,Neuropeptide-encoding genes,Neuropeptides
+flp-1,WBGene00001444,Neuropeptide-encoding genes,Neuropeptides
+flp-28,WBGene00044686,Neuropeptide-encoding genes,Neuropeptides
+flp-32,WBGene00010982,Neuropeptide-encoding genes,Neuropeptides
+flp-2,WBGene00001445,Neuropeptide-encoding genes,Neuropeptides
+flp-3,WBGene00001446,Neuropeptide-encoding genes,Neuropeptides
+flp-4,WBGene00001447,Neuropeptide-encoding genes,Neuropeptides
+flp-5,WBGene00001448,Neuropeptide-encoding genes,Neuropeptides
+flp-6,WBGene00001449,Neuropeptide-encoding genes,Neuropeptides
+flp-7,WBGene00001450,Neuropeptide-encoding genes,Neuropeptides
+flp-8,WBGene00001451,Neuropeptide-encoding genes,Neuropeptides
+flp-9,WBGene00001452,Neuropeptide-encoding genes,Neuropeptides
+flp-10,WBGene00001453,Neuropeptide-encoding genes,Neuropeptides
+flp-11,WBGene00001454,Neuropeptide-encoding genes,Neuropeptides
+flp-12,WBGene00001455,Neuropeptide-encoding genes,Neuropeptides
+flp-13,WBGene00001456,Neuropeptide-encoding genes,Neuropeptides
+flp-14,WBGene00001457,Neuropeptide-encoding genes,Neuropeptides
+flp-15,WBGene00001458,Neuropeptide-encoding genes,Neuropeptides
+flp-16,WBGene00001459,Neuropeptide-encoding genes,Neuropeptides
+flp-17,WBGene00001460,Neuropeptide-encoding genes,Neuropeptides
+flp-18,WBGene00001461,Neuropeptide-encoding genes,Neuropeptides
+flp-19,WBGene00001462,Neuropeptide-encoding genes,Neuropeptides
+flp-20,WBGene00001463,Neuropeptide-encoding genes,Neuropeptides
+flp-21,WBGene00001464,Neuropeptide-encoding genes,Neuropeptides
+flp-22,WBGene00009562,Neuropeptide-encoding genes,Neuropeptides
+flp-23,WBGene00017693,Neuropeptide-encoding genes,Neuropeptides
+flp-24,WBGene00016028,Neuropeptide-encoding genes,Neuropeptides
+flp-25,WBGene00010575,Neuropeptide-encoding genes,Neuropeptides
+flp-26,WBGene00020126,Neuropeptide-encoding genes,Neuropeptides
+flp-27,WBGene00016114,Neuropeptide-encoding genes,Neuropeptides
+nlp-1,WBGene00003739,Neuropeptide-encoding genes,Neuropeptides
+nlp-2,WBGene00003740,Neuropeptide-encoding genes,Neuropeptides
+nlp-3,WBGene00003741,Neuropeptide-encoding genes,Neuropeptides
+nlp-4,WBGene00003742,Neuropeptide-encoding genes,Neuropeptides
+nlp-5,WBGene00003743,Neuropeptide-encoding genes,Neuropeptides
+nlp-6,WBGene00003744,Neuropeptide-encoding genes,Neuropeptides
+nlp-7,WBGene00003745,Neuropeptide-encoding genes,Neuropeptides
+nlp-8,WBGene00003746,Neuropeptide-encoding genes,Neuropeptides
+nlp-9,WBGene00003747,Neuropeptide-encoding genes,Neuropeptides
+nlp-10,WBGene00003748,Neuropeptide-encoding genes,Neuropeptides
+nlp-11,WBGene00003749,Neuropeptide-encoding genes,Neuropeptides
+nlp-12,WBGene00003750,Neuropeptide-encoding genes,Neuropeptides
+nlp-13,WBGene00003751,Neuropeptide-encoding genes,Neuropeptides
+nlp-14,WBGene00003752,Neuropeptide-encoding genes,Neuropeptides
+nlp-15,WBGene00003753,Neuropeptide-encoding genes,Neuropeptides
+nlp-16,WBGene00003754,Neuropeptide-encoding genes,Neuropeptides
+nlp-17,WBGene00003755,Neuropeptide-encoding genes,Neuropeptides
+nlp-18,WBGene00003756,Neuropeptide-encoding genes,Neuropeptides
+nlp-19,WBGene00003757,Neuropeptide-encoding genes,Neuropeptides
+nlp-20,WBGene00003758,Neuropeptide-encoding genes,Neuropeptides
+nlp-21,WBGene00003759,Neuropeptide-encoding genes,Neuropeptides
+nlp-22,WBGene00003760,Neuropeptide-encoding genes,Neuropeptides
+nlp-23,WBGene00003761,Neuropeptide-encoding genes,Neuropeptides
+nlp-24,WBGene00003762,Neuropeptide-encoding genes,Neuropeptides
+nlp-25,WBGene00003763,Neuropeptide-encoding genes,Neuropeptides
+nlp-26,WBGene00003764,Neuropeptide-encoding genes,Neuropeptides
+nlp-27,WBGene00003765,Neuropeptide-encoding genes,Neuropeptides
+nlp-28,WBGene00003766,Neuropeptide-encoding genes,Neuropeptides
+nlp-29,WBGene00003767,Neuropeptide-encoding genes,Neuropeptides
+nlp-30,WBGene00003768,Neuropeptide-encoding genes,Neuropeptides
+nlp-31,WBGene00003769,Neuropeptide-encoding genes,Neuropeptides
+nlp-32,WBGene00003770,Neuropeptide-encoding genes,Neuropeptides
+nlp-33,WBGene00003771,Neuropeptide-encoding genes,Neuropeptides
+nlp-34,WBGene00015046,Neuropeptide-encoding genes,Neuropeptides
+nlp-35,WBGene00007881,Neuropeptide-encoding genes,Neuropeptides
+nlp-36,WBGene00007185,Neuropeptide-encoding genes,Neuropeptides
+nlp-37,,Neuropeptide-encoding genes,Neuropeptides
+nlp-38,WBGene00007219,Neuropeptide-encoding genes,Neuropeptides
+nlp-39,WBGene00008295,Neuropeptide-encoding genes,Neuropeptides
+nlp-40,WBGene00022276,Neuropeptide-encoding genes,Neuropeptides
+nlp-41,WBGene00007316,Neuropeptide-encoding genes,Neuropeptides
+nlp-42,WBGene00013588,Neuropeptide-encoding genes,Neuropeptides
+nlp-43,WBGene00016684,Neuropeptide-encoding genes,Neuropeptides
+nlp-44,,Neuropeptide-encoding genes,Neuropeptides
+nlp-45,WBGene00020136,Neuropeptide-encoding genes,Neuropeptides
+nlp-46,WBGene00012145,Neuropeptide-encoding genes,Neuropeptides
+nlp-47,WBGene00018117,Neuropeptide-encoding genes,Neuropeptides
+nlp-48,WBGene00008002,Neuropeptide-encoding genes,Neuropeptides
+pdf-1,WBGene00020317,Neuropeptide-encoding genes,Neuropeptides
+snet-1,WBGene00015354,Neuropeptide-encoding genes,Neuropeptides
+ntc-1,WBGene00044568,Neuropeptide-encoding genes,Neuropeptides
+egl-3,WBGene00001172,Metabolism of neuropeptides,Neuropeptides
+kpc-1,WBGene00002232,Metabolism of neuropeptides,Neuropeptides
+bli-4,WBGene00000254,Metabolism of neuropeptides,Neuropeptides
+aex-5,WBGene00000088,Metabolism of neuropeptides,Neuropeptides
+egl-21,WBGene00001189,Metabolism of neuropeptides,Neuropeptides
+cpd-1,WBGene00019074,Metabolism of neuropeptides,Neuropeptides
+cpd-2,WBGene00012073,Metabolism of neuropeptides,Neuropeptides
+pghm-1,WBGene00022144,Metabolism of neuropeptides,Neuropeptides
+pgal-1,WBGene00017671,Metabolism of neuropeptides,Neuropeptides
+pamn-1,WBGene00020556,Metabolism of neuropeptides,Neuropeptides
+acn-1,WBGene00000039,Metabolism of neuropeptides,Neuropeptides
+nep-1,WBGene00013926,Metabolism of neuropeptides,Neuropeptides
+nep-2,WBGene00020230,Metabolism of neuropeptides,Neuropeptides
+nep-3,WBGene00016778,Metabolism of neuropeptides,Neuropeptides
+nep-4,WBGene00016896,Metabolism of neuropeptides,Neuropeptides
+nep-5,WBGene00017393,Metabolism of neuropeptides,Neuropeptides
+nep-6,WBGene00017550,Metabolism of neuropeptides,Neuropeptides
+nep-7,WBGene00017552,Metabolism of neuropeptides,Neuropeptides
+nep-8,WBGene00017553,Metabolism of neuropeptides,Neuropeptides
+nep-9,WBGene00017554,Metabolism of neuropeptides,Neuropeptides
+nep-10,WBGene00017555,Metabolism of neuropeptides,Neuropeptides
+nep-11,WBGene00017557,Metabolism of neuropeptides,Neuropeptides
+nep-12,WBGene00017842,Metabolism of neuropeptides,Neuropeptides
+nep-13,WBGene00018196,Metabolism of neuropeptides,Neuropeptides
+nep-14,WBGene00018225,Metabolism of neuropeptides,Neuropeptides
+nep-15,WBGene00018227,Metabolism of neuropeptides,Neuropeptides
+nep-16,WBGene00018472,Metabolism of neuropeptides,Neuropeptides
+nep-17,WBGene00010070,Metabolism of neuropeptides,Neuropeptides
+nep-18,WBGene00019343,Metabolism of neuropeptides,Neuropeptides
+nep-19,WBGene00020292,Metabolism of neuropeptides,Neuropeptides
+nep-20,WBGene00020293,Metabolism of neuropeptides,Neuropeptides
+nep-21,WBGene00011794,Metabolism of neuropeptides,Neuropeptides
+nep-22,WBGene00020788,Metabolism of neuropeptides,Neuropeptides
+nep-23,WBGene00013785,Metabolism of neuropeptides,Neuropeptides
+nep-24,WBGene00013786,Metabolism of neuropeptides,Neuropeptides
+nep-25,WBGene00022874,Metabolism of neuropeptides,Neuropeptides
+nep-26,WBGene00014171,Metabolism of neuropeptides,Neuropeptides
+nep-27,,Metabolism of neuropeptides,Neuropeptides
+dpf-1,WBGene00001054,Metabolism of neuropeptides,Neuropeptides
+dpf-2,WBGene00001055,Metabolism of neuropeptides,Neuropeptides
+dfp-3,,Metabolism of neuropeptides,Neuropeptides
+dpf-4,WBGene00001057,Metabolism of neuropeptides,Neuropeptides
+dpf-5,WBGene00001058,Metabolism of neuropeptides,Neuropeptides
+dpf-6,WBGene00001059,Metabolism of neuropeptides,Neuropeptides
+dpf-7,WBGene00001060,Metabolism of neuropeptides,Neuropeptides
+dpt-1,WBGene00008532,Metabolism of neuropeptides,Neuropeptides
+tpp-2,WBGene00017686,Metabolism of neuropeptides,Neuropeptides
+daf-2,WBGene00000898,Insulin/EGF receptor-like proteins,Neuropeptides
+hpa-1,WBGene00010414,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-1,WBGene00044529,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-2,WBGene00008518,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-3,WBGene00017175,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-4,WBGene00008772,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-5,WBGene00017454,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-6,WBGene00009239,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-7,WBGene00018168,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-8,WBGene00018360,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-9,WBGene00018447,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-10,WBGene00019107,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-11,WBGene00019391,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-12,WBGene00077758,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-13,WBGene00019845,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-14,WBGene00011322,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-15,WBGene00021232,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-16,WBGene00021234,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-17,WBGene00021609,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-18,WBGene00013299,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-19,WBGene00013912,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-20,WBGene00013915,Insulin/EGF receptor-like proteins,Neuropeptides
+hpa-2,WBGene00020432,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-21,WBGene00007310,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-22,WBGene00015904,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-23,WBGene00016271,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-24,WBGene00007844,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-25,WBGene00008057,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-26,WBGene00008675,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-27,WBGene00077751,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-28,WBGene00017491,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-29,WBGene00017492,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-30,WBGene00017493,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-31,WBGene00017494,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-32,WBGene00017497,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-33,WBGene00018432,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-34,WBGene00010074,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-35,WBGene00018917,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-36,WBGene00019036,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-37,WBGene00019038,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-38,WBGene00019106,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-39,WBGene00010415,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-40,WBGene00019389,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-41,WBGene00019385,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-42,WBGene00019386,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-43,WBGene00019390,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-44,WBGene00019392,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-45,WBGene00019393,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-46,WBGene00019676,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-47,WBGene00011458,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-48,WBGene00020428,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-49,WBGene00020430,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-50,WBGene00020431,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-51,WBGene00077759,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-52,WBGene00012043,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-53,WBGene00021222,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-54,,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-55,WBGene00012541,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-56,WBGene00012542,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-57,WBGene00012401,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-58,WBGene00013494,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-59,WBGene00013525,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-60,WBGene00013911,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-61,WBGene00013913,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-62,WBGene00014190,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-63,WBGene00022711,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-64,WBGene00022714,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-65,WBGene00022715,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-66,WBGene00022716,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-67,WBGene00044369,Insulin/EGF receptor-like proteins,Neuropeptides
+gar-1,WBGene00001517,The five classes of GPCRs,GPCRs
+seb-2,WBGene00014035,The five classes of GPCRs,GPCRs
+seb-3,WBGene00007664,The five classes of GPCRs,GPCRs
+lat-1,WBGene00002251,The five classes of GPCRs,GPCRs
+lat-2,WBGene00002252,The five classes of GPCRs,GPCRs
+fmi-1,WBGene00001475,The five classes of GPCRs,GPCRs
+mth-1,WBGene00017948,The five classes of GPCRs,GPCRs
+mth-2,WBGene00017947,The five classes of GPCRs,GPCRs
+mgl-1,WBGene00003232,The five classes of GPCRs,GPCRs
+gbb-1,WBGene00021528,The five classes of GPCRs,GPCRs
+mig-1,WBGene00003238,The five classes of GPCRs,GPCRs
+lin-17,WBGene00003006,The five classes of GPCRs,GPCRs
+mom-5,WBGene00003397,The five classes of GPCRs,GPCRs
+cfz-2,WBGene00000478,The five classes of GPCRs,GPCRs
+mgl-1,WBGene00003232,Metabotropic neurotransmitter receptors,GPCRs
+mgl-2,WBGene00003233,Metabotropic neurotransmitter receptors,GPCRs
+mgl-3,WBGene00021152,Metabotropic neurotransmitter receptors,GPCRs
+gar-1,WBGene00001517,Metabotropic neurotransmitter receptors,GPCRs
+gar-2,WBGene00001518,Metabotropic neurotransmitter receptors,GPCRs
+gar-3,WBGene00001519,Metabotropic neurotransmitter receptors,GPCRs
+gbb-1,WBGene00021528,Metabotropic neurotransmitter receptors,GPCRs
+gbb-2,WBGene00022675,Metabotropic neurotransmitter receptors,GPCRs
+dop-1,WBGene00001052,Metabotropic neurotransmitter receptors,GPCRs
+dop-2,WBGene00001053,Metabotropic neurotransmitter receptors,GPCRs
+dop-3,WBGene00020506,Metabotropic neurotransmitter receptors,GPCRs
+dop-4,WBGene00016872,Metabotropic neurotransmitter receptors,GPCRs
+dop-5,WBGene00011382,Metabotropic neurotransmitter receptors,GPCRs
+dop-6,WBGene00016037,Metabotropic neurotransmitter receptors,GPCRs
+octr-1,WBGene00006411,Metabotropic neurotransmitter receptors,GPCRs
+ser-3,WBGene00004778,Metabotropic neurotransmitter receptors,GPCRs
+ser-6,WBGene00021897,Metabotropic neurotransmitter receptors,GPCRs
+ser-1,WBGene00004776,Metabotropic neurotransmitter receptors,GPCRs
+ser-4,WBGene00004779,Metabotropic neurotransmitter receptors,GPCRs
+ser-5,WBGene00008890,Metabotropic neurotransmitter receptors,GPCRs
+ser-7,WBGene00004780,Metabotropic neurotransmitter receptors,GPCRs
+ser-2,WBGene00004777,Metabotropic neurotransmitter receptors,GPCRs
+tyra-2,WBGene00017157,Metabotropic neurotransmitter receptors,GPCRs
+tyra-3,WBGene00006475,Metabotropic neurotransmitter receptors,GPCRs
+ador-1,WBGene00011878,Metabotropic neurotransmitter receptors,GPCRs
+pdfr-1,WBGene00015735,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+seb-2,WBGene00014035,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+seb-3,WBGene00007664,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-1,WBGene00003807,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-2,WBGene00003808,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-3,WBGene00007006,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-4,WBGene00007635,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-5,WBGene00021983,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-6,WBGene00009619,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-7,WBGene00018067,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-8,WBGene00016984,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-10,WBGene00008278,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-11,WBGene00016110,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-12,WBGene00020689,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-13,WBGene00013883,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+nmur-1,WBGene00016747,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+nmur-2,WBGene00019616,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+nmur-3,WBGene00017176,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+nmur-4,WBGene00016265,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-20,WBGene00011578,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-21,WBGene00020727,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+tkr-1,WBGene00006576,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+tkr-2,WBGene00016761,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+tkr-3,WBGene00006428,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-14,WBGene00012275,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-22,WBGene00022004,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-35,WBGene00016842,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-16,WBGene00006864,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-17,WBGene00015559,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-18,WBGene00008065,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-24,WBGene00020086,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-25,WBGene00011381,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-26,WBGene00011372,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-27,WBGene00018344,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-28,WBGene00018886,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-29,WBGene00013848,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-30,WBGene00019183,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-31,WBGene00020319,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-32,WBGene00013782,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-9,WBGene00013974,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-15,WBGene00012084,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-33,WBGene00009278,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-34,WBGene00013187,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+gnrr-1,WBGene00018798,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+gnrr-2,WBGene00007614,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+gnrr-3,WBGene00013871,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+gnrr-4,WBGene00016570,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+gnrr-5,WBGene00019224,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+gnrr-6,WBGene00008736,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+gnrr-7,WBGene00008737,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+daf-38,WBGene00013642,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+ckr-1,WBGene00020712,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+ckr-2,WBGene00021439,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+ntr-1,WBGene00011582,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+ntr-2,WBGene00008808,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+sprr-1,WBGene00010986,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+sprr-2,WBGene00009629,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+sprr-3,WBGene00022086,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-1,WBGene00015323,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-2,WBGene00007346,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-3,WBGene00016149,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-4,WBGene00016909,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-5,WBGene00008342,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-6,WBGene00017661,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-7,WBGene00018191,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-8,WBGene00018728,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-9,WBGene00009965,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-10,WBGene00019019,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-11,WBGene00019444,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-12,WBGene00019445,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-13,WBGene00019448,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-14,WBGene00019496,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-15,WBGene00010735,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-16,WBGene00020023,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-17,WBGene00011765,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-18,WBGene00020586,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+frpr-19,WBGene00021510,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+daf-37,WBGene00016246,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+egl-6,WBGene00001175,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-1,WBGene00010191,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-2,WBGene00021275,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-3,WBGene00012993,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-4,WBGene00017038,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-5,WBGene00012962,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-6,WBGene00013222,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-7,WBGene00016428,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-8,WBGene00007951,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-9,WBGene00022606,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-10,WBGene00022604,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-11,WBGene00022605,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-12,WBGene00019262,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-13,WBGene00020524,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-14,WBGene00020523,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-15,WBGene00020525,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+dmsr-16,WBGene00194821,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+aex-2,WBGene00000085,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+aexr-1,WBGene00016089,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+aexr-2,WBGene00016090,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+aexr-3,WBGene00016748,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+fshr-1,WBGene00008239,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-19,WBGene00015364,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+npr-23,WBGene00021328,GPCR-type putative neuropeptide receptors and their grouping into families,GPCRs
+srw-51,WBGene00005798,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-94,WBGene00005841,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-33,WBGene00005780,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-67,WBGene00005814,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-29,WBGene00005776,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-53,WBGene00005800,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-57,WBGene00005804,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-113,WBGene00005860,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-103,WBGene00005850,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-44,WBGene00005791,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-42,WBGene00005789,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-87,WBGene00005834,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-122,WBGene00005869,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-102,WBGene00005849,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-115,WBGene00005862,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-118,WBGene00005865,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-123,WBGene00005870,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-73,WBGene00005820,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-127,WBGene00005874,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-139,WBGene00005886,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-8,WBGene00005755,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-1,WBGene00005748,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-13,WBGene00005760,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+srw-36,WBGene00005783,Representative analysis of srw genes reveals their relation to neuropeptide receptors,GPCRs
+fmi-1,WBGene00001475,Adhesion-type GPCRs,GPCRs
+lat-1,WBGene00002251,Adhesion-type GPCRs,GPCRs
+lat-2,WBGene00002252,Adhesion-type GPCRs,GPCRs
+mth-1,WBGene00017948,Adhesion-type GPCRs,GPCRs
+mth-2,WBGene00017947,Adhesion-type GPCRs,GPCRs
+gsa-1,WBGene00001745,Downstream of GPCRs,GPCRs
+egl-30,WBGene00001196,Downstream of GPCRs,GPCRs
+goa-1,WBGene00001648,Downstream of GPCRs,GPCRs
+gpa-1,WBGene00001663,Downstream of GPCRs,GPCRs
+gpa-2,WBGene00001664,Downstream of GPCRs,GPCRs
+gpa-3,WBGene00001665,Downstream of GPCRs,GPCRs
+gpa-4,WBGene00001666,Downstream of GPCRs,GPCRs
+gpa-5,WBGene00001667,Downstream of GPCRs,GPCRs
+gpa-6,WBGene00001668,Downstream of GPCRs,GPCRs
+gpa-7,WBGene00001669,Downstream of GPCRs,GPCRs
+gpa-8,WBGene00001670,Downstream of GPCRs,GPCRs
+gpa-9,WBGene00001671,Downstream of GPCRs,GPCRs
+gpa-10,WBGene00001672,Downstream of GPCRs,GPCRs
+gpa-11,WBGene00001673,Downstream of GPCRs,GPCRs
+gpa-12,WBGene00001674,Downstream of GPCRs,GPCRs
+gpa-13,WBGene00001675,Downstream of GPCRs,GPCRs
+gpa-14,WBGene00001676,Downstream of GPCRs,GPCRs
+gpa-15,WBGene00001677,Downstream of GPCRs,GPCRs
+gpa-16,WBGene00001678,Downstream of GPCRs,GPCRs
+gpa-17,WBGene00022196,Downstream of GPCRs,GPCRs
+odr-3,WBGene00003850,Downstream of GPCRs,GPCRs
+gpb-1,WBGene00001679,Downstream of GPCRs,GPCRs
+gpb-2,WBGene00001680,Downstream of GPCRs,GPCRs
+gpc-1,WBGene00001681,Downstream of GPCRs,GPCRs
+gpc-2,WBGene00001682,Downstream of GPCRs,GPCRs
+axl-1,WBGene00010497,Downstream of GPCRs,GPCRs
+eat-16,WBGene00001145,Downstream of GPCRs,GPCRs
+egl-10,WBGene00001179,Downstream of GPCRs,GPCRs
+grk-1,WBGene00001708,Downstream of GPCRs,GPCRs
+grk-2,WBGene00001709,Downstream of GPCRs,GPCRs
+pry-1,WBGene00004202,Downstream of GPCRs,GPCRs
+rgs-10,WBGene00004353,Downstream of GPCRs,GPCRs
+rgs-11,WBGene00004354,Downstream of GPCRs,GPCRs
+rgs-2,WBGene00004345,Downstream of GPCRs,GPCRs
+rgs-3,WBGene00004346,Downstream of GPCRs,GPCRs
+rgs-4,WBGene00004347,Downstream of GPCRs,GPCRs
+rgs-5,WBGene00004348,Downstream of GPCRs,GPCRs
+rgs-6,WBGene00004349,Downstream of GPCRs,GPCRs
+rhgf-1,WBGene00006468,Downstream of GPCRs,GPCRs
+snx-13,WBGene00013803,Downstream of GPCRs,GPCRs
+snx-14,WBGene00013011,Downstream of GPCRs,GPCRs
+gpr-1,WBGene00001688,Downstream of GPCRs,GPCRs
+gpr-2,WBGene00001689,Downstream of GPCRs,GPCRs
+ags-3,WBGene00000092,Downstream of GPCRs,GPCRs
+ric-8,WBGene00004367,Downstream of GPCRs,GPCRs
+arr-1,WBGene00000195,Downstream of GPCRs,GPCRs
+arrd-1,WBGene00020205,Downstream of GPCRs,GPCRs
+arrd-2,WBGene00013086,Downstream of GPCRs,GPCRs
+arrd-3,WBGene00006429,Downstream of GPCRs,GPCRs
+arrd-4,WBGene00014159,Downstream of GPCRs,GPCRs
+arrd-5,WBGene00014161,Downstream of GPCRs,GPCRs
+arrd-6,WBGene00009579,Downstream of GPCRs,GPCRs
+arrd-7,WBGene00012464,Downstream of GPCRs,GPCRs
+arrd-8,WBGene00012467,Downstream of GPCRs,GPCRs
+arrd-9,WBGene00008843,Downstream of GPCRs,GPCRs
+arrd-10,WBGene00010268,Downstream of GPCRs,GPCRs
+arrd-11,WBGene00011052,Downstream of GPCRs,GPCRs
+arrd-12,WBGene00011053,Downstream of GPCRs,GPCRs
+arrd-13,WBGene00011054,Downstream of GPCRs,GPCRs
+arrd-14,WBGene00011055,Downstream of GPCRs,GPCRs
+arrd-15,WBGene00014033,Downstream of GPCRs,GPCRs
+arrd-16,WBGene00013043,Downstream of GPCRs,GPCRs
+arrd-17,WBGene00011732,Downstream of GPCRs,GPCRs
+arrd-18,WBGene00018060,Downstream of GPCRs,GPCRs
+arrd-19,WBGene00018061,Downstream of GPCRs,GPCRs
+arrd-20,WBGene00015440,Downstream of GPCRs,GPCRs
+arrd-21,WBGene00015441,Downstream of GPCRs,GPCRs
+arrd-22,WBGene00020612,Downstream of GPCRs,GPCRs
+arrd-23,WBGene00020323,Downstream of GPCRs,GPCRs
+arrd-24,WBGene00009852,Downstream of GPCRs,GPCRs
+arrd-25,WBGene00007296,Downstream of GPCRs,GPCRs
+arrd-26,WBGene00019873,Downstream of GPCRs,GPCRs
+arrd-27,WBGene00009853,Downstream of GPCRs,GPCRs
+arrd-28,WBGene00009000,Downstream of GPCRs,GPCRs
+ttm-2,WBGene00017840,Downstream of GPCRs,GPCRs
+daf-11,WBGene00000907,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+odr-1,WBGene00003848,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-1,WBGene00001528,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-2,WBGene00001529,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-3,WBGene00001530,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-4,WBGene00001531,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-5,WBGene00001532,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-6,WBGene00001533,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-7,WBGene00001534,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-8,WBGene00001535,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-9,WBGene00001536,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-12,WBGene00001538,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-13,WBGene00001539,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-14,WBGene00001540,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-15,WBGene00001541,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-17,WBGene00001542,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-18,WBGene00001543,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-19,WBGene00001544,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-20,WBGene00001545,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-22,WBGene00001547,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-23,WBGene00001548,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-25,WBGene00001549,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-28,WBGene00020131,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-29,WBGene00007314,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-11,WBGene00001537,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-21,WBGene00001546,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-27,WBGene00001550,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-31,WBGene00001551,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-37,WBGene00001557,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-32,WBGene00001552,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-33,WBGene00001553,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-34,WBGene00001554,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-35,WBGene00001555,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+gcy-36,WBGene00001556,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+pde-1,WBGene00011433,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+pde-2,WBGene00011146,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+pde-3,WBGene00008443,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+pde-5,WBGene00016328,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+pde-4,WBGene00020114,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+pde-6,WBGene00022389,Making and breaking cGMP - Guanylyl cyclases and phosphodiesterases,cGMP
+cah-1,WBGene00000279,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+cah-2,WBGene00000280,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+cah-3,WBGene00000281,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+cah-4,WBGene00000282,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+cah-5,WBGene00000283,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+cah-6,WBGene00000284,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-1,WBGene00014030,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-2,WBGene00015536,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-3,WBGene00007389,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-4,WBGene00007502,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-5,WBGene00015964,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-6,WBGene00015969,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-7,WBGene00016024,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-8,WBGene00007741,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-9,WBGene00016184,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-10,WBGene00016215,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-11,WBGene00007981,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-12,WBGene00008256,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-13,WBGene00008957,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-14,WBGene00008996,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-15,WBGene00009387,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-16,WBGene00018486,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-17,WBGene00009887,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-18,WBGene00009917,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-19,WBGene00010146,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-20,WBGene00010970,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-21,WBGene00011296,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-22,WBGene00011251,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-23,WBGene00020045,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-24,WBGene00011287,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-25,WBGene00020279,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-26,WBGene00011913,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-27,WBGene00012178,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-28,WBGene00012441,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-29,WBGene00012461,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-30,WBGene00021259,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-31,WBGene00021972,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-32,WBGene00021980,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+glb-33,WBGene00022284,Receptors of CO2 and O2 (39 genes plus 7 soluble GCY genes),Receptors of CO2 and O2
+snt-1,WBGene00004921,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snt-2,WBGene00004922,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snt-3,WBGene00004923,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snt-4,WBGene00004924,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snt-5,WBGene00004925,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snt-6,WBGene00004926,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snt-7,WBGene00011682,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snb-1,WBGene00004897,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snb-2,WBGene00004898,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snb-5,WBGene00004899,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snb-6,WBGene00044062,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snb-7,WBGene00014084,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+vamp-7,WBGene00022077,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+vamp-8,WBGene00007200,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+sec-22,WBGene00018853,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+ykt-6,WBGene00015164,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+unc-64,WBGene00006798,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+syx-2,WBGene00006372,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+syx-3,WBGene00006371,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+syx-4,WBGene00006374,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+syx-5,WBGene00006373,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+syx-7,WBGene00009478,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+syx-16,WBGene00022534,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+syx-17,WBGene00012150,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+syx-18,WBGene00020425,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+gos-28,WBGene00017273,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+memb-1,WBGene00007128,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+memb-2,WBGene00019757,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+sec-20,WBGene00018239,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+vti-1,WBGene00013302,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+syx-6,WBGene00015789,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+nbet-1,WBGene00043064,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+use-1,WBGene00022460,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+ric-4,WBGene00004364,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snap-25,,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+aex-4,WBGene00006454,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snap-29,WBGene00019305,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+sng-1,WBGene00004912,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+sph-1,WBGene00004979,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+scm-1,WBGene00004743,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snn-1,WBGene00004913,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+svop-1,WBGene00014021,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+dnj-14,WBGene00001032,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+rab-3,WBGene00004267,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+rbf-1,WBGene00004316,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+unc-10,WBGene00006750,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+elks-1,WBGene00018330,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+unc-18,WBGene00006757,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+unc-13,WBGene00006752,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+unc-26,WBGene00006763,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+unc-57,WBGene00006791,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+erp-1,,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+cpx-1,WBGene00022271,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+cpx-2,WBGene00010520,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+tom-1,WBGene00006594,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+unc-31,WBGene00006767,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+ida-1,WBGene00002048,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+mpz-1,WBGene00003404,PDZ domain proteins,PDZ proteins
+par-3,WBGene00003918,PDZ domain proteins,PDZ proteins
+mpz-2,,PDZ domain proteins,PDZ proteins
+mpz-3,WBGene00017559,PDZ domain proteins,PDZ proteins
+mpz-4,WBGene00019165,PDZ domain proteins,PDZ proteins
+mpz-5,WBGene00011241,PDZ domain proteins,PDZ proteins
+mpz-6,WBGene00013085,PDZ domain proteins,PDZ proteins
+gipc-1,WBGene00016440,PDZ domain proteins,PDZ proteins
+gipc-2,WBGene00009681,PDZ domain proteins,PDZ proteins
+gopc-1,WBGene00014101,PDZ domain proteins,PDZ proteins
+gras-1,WBGene00009272,PDZ domain proteins,PDZ proteins
+mics-1,WBGene00011890,PDZ domain proteins,PDZ proteins
+psmd-9,WBGene00016623,PDZ domain proteins,PDZ proteins
+dlg-1,WBGene00001006,PDZ domain proteins,PDZ proteins
+lin-2,WBGene00002991,PDZ domain proteins,PDZ proteins
+magu-1,WBGene00021914,PDZ domain proteins,PDZ proteins
+magu-2,WBGene00006467,PDZ domain proteins,PDZ proteins
+magu-3,WBGene00016841,PDZ domain proteins,PDZ proteins
+magu-4,WBGene00009678,PDZ domain proteins,PDZ proteins
+zoo-1,WBGene00013683,PDZ domain proteins,PDZ proteins
+magi-1,WBGene00010444,PDZ domain proteins,PDZ proteins
+frm-5,,PDZ domain proteins,PDZ proteins
+frm-8,WBGene00001494,PDZ domain proteins,PDZ proteins
+ptp-1,WBGene00004213,PDZ domain proteins,PDZ proteins
+cnk-1,WBGene00000564,PDZ domain proteins,PDZ proteins
+kin-4,WBGene00002192,PDZ domain proteins,PDZ proteins
+sipa-1,WBGene00012100,PDZ domain proteins,PDZ proteins
+afd-1,WBGene00021009,PDZ domain proteins,PDZ proteins
+lin-10,WBGene00002999,PDZ domain proteins,PDZ proteins
+alp-1,WBGene00001132,PDZ domain proteins,PDZ proteins
+nab-1,WBGene00003516,PDZ domain proteins,PDZ proteins
+snx-27,WBGene00009116,PDZ domain proteins,PDZ proteins
+stn-2,WBGene00017866,PDZ domain proteins,PDZ proteins
+stn-1,WBGene00006062,PDZ domain proteins,PDZ proteins
+lim-8,WBGene00017904,PDZ domain proteins,PDZ proteins
+syd-1,WBGene00006363,PDZ domain proteins,PDZ proteins
+unc-10,WBGene00006750,PDZ domain proteins,PDZ proteins
+rhgf-1,WBGene00006468,PDZ domain proteins,PDZ proteins
+par-6,WBGene00003921,PDZ domain proteins,PDZ proteins
+let-413,WBGene00002632,PDZ domain proteins,PDZ proteins
+lap-1,WBGene00002249,PDZ domain proteins,PDZ proteins
+lin-7,WBGene00002996,PDZ domain proteins,PDZ proteins
+mig-5,WBGene00003241,PDZ domain proteins,PDZ proteins
+dsh-2,WBGene00001102,PDZ domain proteins,PDZ proteins
+dsh-1,WBGene00001101,PDZ domain proteins,PDZ proteins
+pxf-1,WBGene00004254,PDZ domain proteins,PDZ proteins
+shn-1,WBGene00006444,PDZ domain proteins,PDZ proteins
+inx-1,WBGene00002123,Gap junction proteins - the innexins,Gap junctions
+inx-2,WBGene00002124,Gap junction proteins - the innexins,Gap junctions
+inx-3,WBGene00002125,Gap junction proteins - the innexins,Gap junctions
+inx-4,,Gap junction proteins - the innexins,Gap junctions
+inx-5,WBGene00002127,Gap junction proteins - the innexins,Gap junctions
+inx-6,WBGene00002128,Gap junction proteins - the innexins,Gap junctions
+inx-7,WBGene00002129,Gap junction proteins - the innexins,Gap junctions
+inx-8,WBGene00002130,Gap junction proteins - the innexins,Gap junctions
+inx-9,WBGene00002131,Gap junction proteins - the innexins,Gap junctions
+inx-10,WBGene00002132,Gap junction proteins - the innexins,Gap junctions
+inx-11,WBGene00002133,Gap junction proteins - the innexins,Gap junctions
+inx-12,WBGene00002134,Gap junction proteins - the innexins,Gap junctions
+inx-13,WBGene00002135,Gap junction proteins - the innexins,Gap junctions
+inx-14,WBGene00002136,Gap junction proteins - the innexins,Gap junctions
+inx-17,WBGene00002139,Gap junction proteins - the innexins,Gap junctions
+inx-18,WBGene00002140,Gap junction proteins - the innexins,Gap junctions
+inx-19,WBGene00002141,Gap junction proteins - the innexins,Gap junctions
+unc-7,WBGene00006747,Gap junction proteins - the innexins,Gap junctions
+unc-9,WBGene00006749,Gap junction proteins - the innexins,Gap junctions
+inx-15,WBGene00002137,Gap junction proteins - the innexins,Gap junctions
+inx-16,WBGene00002138,Gap junction proteins - the innexins,Gap junctions
+inx-20,WBGene00002142,Gap junction proteins - the innexins,Gap junctions
+inx-21,WBGene00002143,Gap junction proteins - the innexins,Gap junctions
+inx-22,WBGene00002144,Gap junction proteins - the innexins,Gap junctions
+eat-5,WBGene00001136,Gap junction proteins - the innexins,Gap junctions
+unc-116,WBGene00006840,Kinesin-like Motor Proteins,Motor proteins
+osm-3,WBGene00003884,Kinesin-like Motor Proteins,Motor proteins
+klp-11,WBGene00002222,Kinesin-like Motor Proteins,Motor proteins
+klp-20,WBGene00002230,Kinesin-like Motor Proteins,Motor proteins
+unc-104,WBGene00006831,Kinesin-like Motor Proteins,Motor proteins
+klp-4,WBGene00002217,Kinesin-like Motor Proteins,Motor proteins
+klp-6,WBGene00002218,Kinesin-like Motor Proteins,Motor proteins
+klp-12,WBGene00002223,Kinesin-like Motor Proteins,Motor proteins
+klp-19,WBGene00002229,Kinesin-like Motor Proteins,Motor proteins
+bmk-1,WBGene00000257,Kinesin-like Motor Proteins,Motor proteins
+klp-14,,Kinesin-like Motor Proteins,Motor proteins
+zen-4,WBGene00006974,Kinesin-like Motor Proteins,Motor proteins
+klp-10,WBGene00002221,Kinesin-like Motor Proteins,Motor proteins
+klp-18,WBGene00002228,Kinesin-like Motor Proteins,Motor proteins
+klp-7,WBGene00002219,Kinesin-like Motor Proteins,Motor proteins
+klp-3,WBGene00002216,Kinesin-like Motor Proteins,Motor proteins
+klp-15,WBGene00002225,Kinesin-like Motor Proteins,Motor proteins
+klp-16,WBGene00002226,Kinesin-like Motor Proteins,Motor proteins
+klp-17,WBGene00002227,Kinesin-like Motor Proteins,Motor proteins
+vab-8,WBGene00006874,Kinesin-like Motor Proteins,Motor proteins
+klp-8,,Kinesin-like Motor Proteins,Motor proteins
+klp-13,WBGene00002224,Kinesin-like Motor Proteins,Motor proteins
+dhc-1,WBGene00000962,Dynein motors,Motor proteins
+che-3,WBGene00000485,Dynein motors,Motor proteins
+dhc-3,WBGene00007154,Dynein motors,Motor proteins
+dhc-4,WBGene00012272,Dynein motors,Motor proteins
+dyci-1,WBGene00015927,Dynein motors,Motor proteins
+xbx-1,WBGene00006960,Dynein motors,Motor proteins
+dli-1,WBGene00001007,Dynein motors,Motor proteins
+dlc-1,WBGene00001005,Dynein motors,Motor proteins
+dlc-2,WBGene00010888,Dynein motors,Motor proteins
+dlc-3,WBGene00012424,Dynein motors,Motor proteins
+dlc-4,WBGene00012425,Dynein motors,Motor proteins
+dlc-5,WBGene00043067,Dynein motors,Motor proteins
+dlc-6,WBGene00013712,Dynein motors,Motor proteins
+dylt-1,WBGene00008764,Dynein motors,Motor proteins
+dylt-2,WBGene00017014,Dynein motors,Motor proteins
+dylt-3,WBGene00011469,Dynein motors,Motor proteins
+dyrb-1,WBGene00012004,Dynein motors,Motor proteins
+hum-1,WBGene00002035,Myosin Motors,Motor proteins
+hum-2,WBGene00002036,Myosin Motors,Motor proteins
+spe-15,WBGene00004969,Myosin Motors,Motor proteins
+hum-4,WBGene00002037,Myosin Motors,Motor proteins
+hum-5,WBGene00002038,Myosin Motors,Motor proteins
+hum-6,WBGene00002039,Myosin Motors,Motor proteins
+hum-7,WBGene00002040,Myosin Motors,Motor proteins
+hum-8,WBGene00002041,Myosin Motors,Motor proteins
+hum-9,WBGene00012437,Myosin Motors,Motor proteins
+hum-10,WBGene00018377,Myosin Motors,Motor proteins
+nmy-1,WBGene00003776,Myosin Motors,Motor proteins
+nmy-2,WBGene00003777,Myosin Motors,Motor proteins
+myo-1,WBGene00002348,Myosin Motors,Motor proteins
+myo-2,WBGene00003514,Myosin Motors,Motor proteins
+myo-3,WBGene00003515,Myosin Motors,Motor proteins
+unc-54,WBGene00006789,Myosin Motors,Motor proteins
+myo-5,WBGene00019064,Myosin Motors,Motor proteins
+myo-6,WBGene00009730,Myosin Motors,Motor proteins
+klp-11,WBGene00002222,Sensory cilia transport,Motor proteins
+klp-20,WBGene00002230,Sensory cilia transport,Motor proteins
+kap-1,WBGene00002182,Sensory cilia transport,Motor proteins
+osm-3,WBGene00003884,Sensory cilia transport,Motor proteins
+che-3,WBGene00000485,Sensory cilia transport,Motor proteins
+xbx-1,WBGene00006960,Sensory cilia transport,Motor proteins
+dyci-1,WBGene00015927,Sensory cilia transport,Motor proteins
+xbx-2,WBGene00017014,Sensory cilia transport,Motor proteins
+dyf-2,WBGene00001118,Sensory cilia transport,Motor proteins
+che-11,WBGene00000490,Sensory cilia transport,Motor proteins
+daf-10,WBGene00000906,Sensory cilia transport,Motor proteins
+ifta-1,WBGene00016935,Sensory cilia transport,Motor proteins
+osm-1,WBGene00003883,Sensory cilia transport,Motor proteins
+osm-5,WBGene00003885,Sensory cilia transport,Motor proteins
+ift-81,WBGene00017973,Sensory cilia transport,Motor proteins
+che-2,WBGene00000484,Sensory cilia transport,Motor proteins
+ift-74,WBGene00016005,Sensory cilia transport,Motor proteins
+dyf-1,WBGene00001117,Sensory cilia transport,Motor proteins
+che-13,WBGene00000492,Sensory cilia transport,Motor proteins
+dyf-11,WBGene00001127,Sensory cilia transport,Motor proteins
+osm-6,WBGene00003886,Sensory cilia transport,Motor proteins
+dyf-6,WBGene00001122,Sensory cilia transport,Motor proteins
+ifta-2,WBGene00012132,Sensory cilia transport,Motor proteins
+dyf-3,WBGene00001119,Sensory cilia transport,Motor proteins
+dyf-13,WBGene00001129,Sensory cilia transport,Motor proteins
+bbs-1,WBGene00000241,Sensory cilia transport,Motor proteins
+bbs-2,WBGene00000242,Sensory cilia transport,Motor proteins
+arl-6,WBGene00000193,Sensory cilia transport,Motor proteins
+bbs-4,WBGene00043992,Sensory cilia transport,Motor proteins
+bbs-5,WBGene00010974,Sensory cilia transport,Motor proteins
+osm-12,WBGene00003892,Sensory cilia transport,Motor proteins
+bbs-8,WBGene00000244,Sensory cilia transport,Motor proteins
+bbs-9,WBGene00016744,Sensory cilia transport,Motor proteins
+cam-1,WBGene00000289,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+egl-15,WBGene00001184,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+ver-1,WBGene00006894,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+ver-3,WBGene00006896,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+ver-4,WBGene00006897,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+clr-1,WBGene00000548,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+ptp-3,WBGene00004215,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+ptp-4,WBGene00010558,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+dig-1,WBGene00000998,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+him-4,WBGene00001863,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+unc-52,WBGene00006787,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+igcm-1,WBGene00018215,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+igcm-2,WBGene00020130,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+igcm-3,WBGene00020160,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+igcm-4,WBGene00022418,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+mig-6,WBGene00003242,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+oig-1,WBGene00003859,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+oig-2,WBGene00003860,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+oig-3,WBGene00003861,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+oig-4,WBGene00043050,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+oig-5,WBGene00023520,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+oig-6,WBGene00021305,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+oig-7,WBGene00009217,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+oig-8,WBGene00020582,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+rig-1,WBGene00004369,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+rig-3,WBGene00004370,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+rig-4,WBGene00004371,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+rig-5,WBGene00004372,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+rig-6,WBGene00016354,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+ncam-1,WBGene00017184,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+sax-3,WBGene00004729,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+sax-7,WBGene00004732,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lad-2,WBGene00002243,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+syg-1,WBGene00006365,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+syg-2,WBGene00007750,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+unc-40,WBGene00006776,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+unc-5,WBGene00006745,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+wrk-1,WBGene00006942,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-1,WBGene00006978,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-2,WBGene00006979,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-3,WBGene00006980,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-4,WBGene00006981,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-5,WBGene00006982,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-6,WBGene00006983,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-7,WBGene00006984,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-8,WBGene00006985,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-9,WBGene00022474,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+zig-10,WBGene00020800,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+igeg-1,WBGene00017901,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+igeg-2,WBGene00009842,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+igdb-1,WBGene00011418,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+igdb-2,WBGene00007736,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+igdb-3,WBGene00020691,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+madd-4,WBGene00009958,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lev-9,WBGene00002976,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+pxn-1,WBGene00004256,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+pxn-2,WBGene00004257,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+sma-10,WBGene00020649,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+iglr-1,WBGene00008977,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+iglr-2,WBGene00022580,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+iglr-3,WBGene00021353,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+fshr-1,WBGene00008239,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+slt-1,WBGene00004854,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+tol-1,WBGene00006593,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+pan-1,WBGene00003915,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+let-4,WBGene00002282,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+sym-5,,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+egg-6,WBGene00010621,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+dma-1,WBGene00011345,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-1,WBGene00008093,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-2,WBGene00022789,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-3,WBGene00007261,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-4,WBGene00008051,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-5,WBGene00008656,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-6,WBGene00018157,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-7,WBGene00019351,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-8,WBGene00020693,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-9,WBGene00011971,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-10,WBGene00012646,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-11,WBGene00022129,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-12,WBGene00013542,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-13,WBGene00013574,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-14,WBGene00011454,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+lron-15,WBGene00016974,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+sym-1,WBGene00006366,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+ver-2,WBGene00006895,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+hmr-1,WBGene00001980,Cadherins,Neuronal recognition and adhesion
+cdh-3,WBGene00000395,Cadherins,Neuronal recognition and adhesion
+cdh-4,WBGene00000396,Cadherins,Neuronal recognition and adhesion
+fmi-1,WBGene00001475,Cadherins,Neuronal recognition and adhesion
+cdh-6,,Cadherins,Neuronal recognition and adhesion
+casy-1,WBGene00000403,Cadherins,Neuronal recognition and adhesion
+cdh-11,,Cadherins,Neuronal recognition and adhesion
+cdh-1,WBGene00019994,Cadherins,Neuronal recognition and adhesion
+cdh-5,WBGene00000397,Cadherins,Neuronal recognition and adhesion
+cdh-7,WBGene00000399,Cadherins,Neuronal recognition and adhesion
+cdh-8,WBGene00017576,Cadherins,Neuronal recognition and adhesion
+cdh-9,WBGene00000401,Cadherins,Neuronal recognition and adhesion
+cdh-10,WBGene00000402,Cadherins,Neuronal recognition and adhesion
+cdh-12,WBGene00022103,Cadherins,Neuronal recognition and adhesion
+nrx-1,WBGene00007799,Neurexin superfamily and neurexin ligands,Neuronal recognition and adhesion
+itx-1,WBGene00002174,Neurexin superfamily and neurexin ligands,Neuronal recognition and adhesion
+nlr-1,WBGene00003772,Neurexin superfamily and neurexin ligands,Neuronal recognition and adhesion
+bam-2,WBGene00000237,Neurexin superfamily and neurexin ligands,Neuronal recognition and adhesion
+lat-1,WBGene00002251,Neurexin superfamily and neurexin ligands,Neuronal recognition and adhesion
+lat-2,WBGene00002252,Neurexin superfamily and neurexin ligands,Neuronal recognition and adhesion
+nlg-1,WBGene00006412,Neurexin superfamily and neurexin ligands,Neuronal recognition and adhesion
+glit-1,WBGene00018878,Neurexin superfamily and neurexin ligands,Neuronal recognition and adhesion
