@@ -1244,7 +1244,29 @@ CREATE TABLE gene_kegg_pathway (
 CREATE INDEX idx_gkp_path ON gene_kegg_pathway(pathway_id);
 CREATE INDEX idx_gkp_wb ON gene_kegg_pathway(wormbase_gene);
 """)
+
+
+class _KeggDisabled(Exception):
+    pass
+
+
 try:
+    import os as _kegg_os
+    if _kegg_os.environ.get('DISABLE_KEGG', '').strip().lower() in ('1', 'true', 'yes', 'on'):
+        # KEGG disabled at build (license: do not redistribute the dump). Create
+        # the asset tables empty so the schema stays stable; downstream kegg_*
+        # SELECTs still work and simply return nothing.
+        cur.executescript("""
+        CREATE TABLE IF NOT EXISTS kegg_kgml (pathway_id TEXT PRIMARY KEY, xml TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS kegg_image (
+          pathway_id TEXT PRIMARY KEY,
+          mime TEXT NOT NULL,
+          width INTEGER, height INTEGER,
+          bytes BLOB NOT NULL
+        );
+        """)
+        print('KEGG ingest skipped: DISABLE_KEGG set. kegg_* tables left empty.', file=sys.stderr)
+        raise _KeggDisabled()
     import urllib.request
     def kegg_fetch(path):
         with urllib.request.urlopen(f'https://rest.kegg.jp{path}', timeout=60) as r:
@@ -1443,6 +1465,8 @@ try:
             file=sys.stderr,
         )
     print(f'kegg_kgml: {kgml_count} XML maps', file=sys.stderr)
+except _KeggDisabled:
+    pass
 except Exception as e:
     print(f'KEGG pathway ingest failed (network or REST change): {e}', file=sys.stderr)
 

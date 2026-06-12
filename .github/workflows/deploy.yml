@@ -15,6 +15,10 @@ on:
         description: "Ignore the data cache and re-fetch every source."
         type: boolean
         default: false
+      disable_kegg:
+        description: "Exclude KEGG pathway data from the build (license). Overrides the DISABLE_KEGG repo variable for this run."
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -22,6 +26,10 @@ concurrency:
 
 env:
   WB_RELEASE: ${{ github.event.inputs.wb_release }}
+  # Manual dispatch input wins; otherwise fall back to the persistent repo
+  # variable (set vars.DISABLE_KEGG=1 to exclude KEGG from every build).
+  # Read by build-db.sh (Python) and vite.config.ts (frontend flag).
+  DISABLE_KEGG: ${{ github.event.inputs.disable_kegg || vars.DISABLE_KEGG }}
 
 jobs:
   build:
@@ -72,10 +80,10 @@ jobs:
           path: |
             static/data/wormie.sqlite.gz
             static/data/version.json
-          key: db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-${{ hashFiles('scripts/build-db.sh', 'data/**') }}
+          key: db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-kegg${{ env.DISABLE_KEGG || 'on' }}-${{ hashFiles('scripts/build-db.sh', 'data/**') }}
           restore-keys: |
-            db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-
-            db-${{ steps.wb.outputs.release }}-
+            db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-kegg${{ env.DISABLE_KEGG || 'on' }}-
+            db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-kegg${{ env.DISABLE_KEGG || 'on' }}
 
       - name: Build DB
         if: ${{ steps.db-cache.outputs.cache-hit != 'true' }}

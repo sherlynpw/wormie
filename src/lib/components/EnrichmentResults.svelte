@@ -3,6 +3,7 @@
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import { runEnrichment, type EnrichmentKind, type EnrichmentResult } from '$lib/enrichment';
   import { getGeneNames } from '$lib/queries';
+  import { KEGG_ENABLED } from '$lib/config';
   import EnrichmentDotPlot from '$lib/components/EnrichmentDotPlot.svelte';
   import EnrichmentHeatmap from '$lib/components/EnrichmentHeatmap.svelte';
   import GenePill from '$lib/components/GenePill.svelte';
@@ -72,7 +73,7 @@
     onResults(out);
   });
 
-  const KINDS: { key: EnrichmentKind; label: string }[] = [
+  const ALL_KINDS: { key: EnrichmentKind; label: string }[] = [
     { key: 'go', label: 'GO terms' },
     { key: 'phenotype', label: 'Phenotypes' },
     { key: 'disease', label: 'Diseases' },
@@ -83,6 +84,8 @@
     { key: 'synaptogenesis', label: 'Synaptogenesis' },
     { key: 'pathway', label: 'KEGG pathway' },
   ];
+  // KEGG excluded from the build drops the pathway category (license).
+  const KINDS = ALL_KINDS.filter((k) => KEGG_ENABLED || k.key !== 'pathway');
 
   let active = $state<EnrichmentKind>('go');
   let viewMode = $state<'table' | 'plot' | 'cnet' | 'heatmap'>('table');

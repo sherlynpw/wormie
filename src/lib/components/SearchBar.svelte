@@ -9,7 +9,13 @@
   import Share2 from 'lucide-svelte/icons/share-2';
   import Check from 'lucide-svelte/icons/check';
   import { ALL_FTS_FIELDS, DEFAULT_FTS_FIELDS, type FtsField } from '$lib/search';
+  import { KEGG_ENABLED } from '$lib/config';
   import { suggestGenes, suggestTerms, type SuggestRow, type TermSuggestion } from '$lib/queries';
+
+  // KEGG excluded from the build hides the pathways field option (license).
+  const VISIBLE_FTS_FIELDS: readonly FtsField[] = KEGG_ENABLED
+    ? ALL_FTS_FIELDS
+    : ALL_FTS_FIELDS.filter((f) => f !== 'pathways');
   import { encodeIds } from '$lib/share';
   import { cn } from '$lib/utils';
   import { toast } from 'svelte-sonner';
@@ -71,7 +77,7 @@
     return ALL_FTS_FIELDS.filter((f) => set.has(f));
   });
 
-  const allActive = $derived(activeFields.length === ALL_FTS_FIELDS.length);
+  const allActive = $derived(activeFields.length === VISIBLE_FTS_FIELDS.length);
   // True when selection matches the default subset (no `fields` param or an exact reproduction),
   // used to suppress the "filter applied" badge for users who haven't customized anything.
   const isDefault = $derived.by(() => {
@@ -472,7 +478,7 @@
 
   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
     <span class="font-medium text-foreground/80">Search in:</span>
-    {#each ALL_FTS_FIELDS as f (f)}
+    {#each VISIBLE_FTS_FIELDS as f (f)}
       {@const checked = activeFields.includes(f)}
       <label
         class="inline-flex cursor-pointer select-none items-center gap-1 transition-colors hover:text-foreground"
@@ -486,7 +492,7 @@
         type="button"
         onclick={() => {
           const url = new URL(page.url);
-          url.searchParams.set('fields', ALL_FTS_FIELDS.join(','));
+          url.searchParams.set('fields', VISIBLE_FTS_FIELDS.join(','));
           url.searchParams.delete('page');
           goto(resolve((url.pathname + url.search) as '/'), {
             keepFocus: true,

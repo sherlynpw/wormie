@@ -80,7 +80,15 @@ function wasmCranStatic(): Plugin {
   };
 }
 
+// KEGG can be excluded at build (license: do not redistribute the dump). Set
+// DISABLE_KEGG=1 to drop KEGG data from the bundled DB and hide pathway UI.
+// Injected as __KEGG_ENABLED__ and read via src/lib/config.ts.
+const KEGG_ENABLED = !/^(1|true|yes|on)$/i.test((process.env.DISABLE_KEGG ?? '').trim());
+
 export default defineConfig({
+  define: {
+    __KEGG_ENABLED__: JSON.stringify(KEGG_ENABLED),
+  },
   plugins: [
     crossOriginIsolation(),
     wasmCranStatic(),

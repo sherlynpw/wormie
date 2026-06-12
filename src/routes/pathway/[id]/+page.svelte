@@ -5,6 +5,7 @@
   import { getPathwayImage } from '$lib/queries';
   import { parseKgml, entryKeggIds, type Kgml, type KgmlEntry } from '$lib/kgml';
   import PathwayMap from '$lib/components/PathwayMap.svelte';
+  import { KEGG_ENABLED } from '$lib/config';
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
@@ -210,79 +211,90 @@
 <svelte:head><title>{pathwayName || pathwayId} · wormie.rs.ht</title></svelte:head>
 
 <div class="container mx-auto max-w-7xl space-y-4 p-4">
-  <header class="flex flex-wrap items-baseline gap-3">
-    <h1 class="text-2xl font-semibold">{pathwayName || pathwayId}</h1>
-    <code class="text-sm text-muted-foreground">{pathwayId}</code>
-    <a
-      href={keggUrl}
-      target="_blank"
-      rel="noopener"
-      class="text-sm text-primary underline hover:no-underline"
-    >
-      open at KEGG ↗
-    </a>
-    {#if memberCount > 0}
-      <span class="text-sm text-muted-foreground">{memberCount} worm genes annotated</span>
-    {/if}
-  </header>
-
-  {#if loading}
-    <p class="text-muted-foreground">Loading…</p>
-  {:else if kgml}
+  {#if !KEGG_ENABLED}
     <Card>
-      <CardHeader><CardTitle class="text-base">Pathway map</CardTitle></CardHeader>
+      <CardHeader><CardTitle class="text-base">Pathway viewer unavailable</CardTitle></CardHeader>
       <CardContent>
-        {#key pathwayId}
-          <PathwayMap
-            {kgml}
-            {imageUrl}
-            {imageWidth}
-            {imageHeight}
-            {entryGenes}
-            onEntryClick={(e) => {
-              if (e.type === 'gene' || e.type === 'ortholog' || e.type === 'group') {
-                const genes = entryGenes.get(e.id) ?? [];
-                // Single gene: navigate; multiple: PathwayMap shows a pinned popover with chips.
-                if (genes.length === 1) goto(resolve(`/gene/${genes[0].wb}`));
-                else if (genes.length === 0) {
-                  // Ortholog with no worm mapping: open the KEGG KO page instead.
-                  if (e.type === 'ortholog') {
-                    const m = e.name.match(/ko:(K\d+)/);
-                    if (m) {
-                      window.open(`https://www.kegg.jp/entry/${m[1]}`, '_blank', 'noopener');
-                      return;
-                    }
-                  }
-                  toast.message(e.labels.join(', ') || e.label, {
-                    description: 'No mapped worm gene for this KEGG entry',
-                  });
-                }
-                return;
-              }
-              if (e.type === 'map') {
-                // Subpathways may use organism-neutral "path:mapNNNNN"; always route to cel-prefixed.
-                const m = e.name.match(/path:[a-z]+(\d+)/);
-                if (m) goto(resolve(`/pathway/cel${m[1]}`));
-                return;
-              }
-              if (e.type === 'compound') {
-                const m = e.name.match(/cpd:(C\d+)/);
-                if (m) window.open(`https://www.kegg.jp/entry/${m[1]}`, '_blank', 'noopener');
-              }
-            }}
-          />
-        {/key}
-        <p class="mt-2 text-xs text-muted-foreground">
-          {#if imageUrl}
-            Rendered using KEGG's pathway image (lossless WebP, served from the local DB) with
-            clickable KGML hotspots on top. Identical to the kegg.jp layout, but fully offline.
-          {:else}
-            Rendered from KEGG KGML coordinates only (image not available for this pathway).
-          {/if}
+        <p class="text-sm text-muted-foreground">
+          KEGG pathway data is not included in this build, so the pathway viewer is disabled.
         </p>
       </CardContent>
     </Card>
   {:else}
-    <p class="text-muted-foreground">No pathway map available.</p>
+    <header class="flex flex-wrap items-baseline gap-3">
+      <h1 class="text-2xl font-semibold">{pathwayName || pathwayId}</h1>
+      <code class="text-sm text-muted-foreground">{pathwayId}</code>
+      <a
+        href={keggUrl}
+        target="_blank"
+        rel="noopener"
+        class="text-sm text-primary underline hover:no-underline"
+      >
+        open at KEGG ↗
+      </a>
+      {#if memberCount > 0}
+        <span class="text-sm text-muted-foreground">{memberCount} worm genes annotated</span>
+      {/if}
+    </header>
+
+    {#if loading}
+      <p class="text-muted-foreground">Loading…</p>
+    {:else if kgml}
+      <Card>
+        <CardHeader><CardTitle class="text-base">Pathway map</CardTitle></CardHeader>
+        <CardContent>
+          {#key pathwayId}
+            <PathwayMap
+              {kgml}
+              {imageUrl}
+              {imageWidth}
+              {imageHeight}
+              {entryGenes}
+              onEntryClick={(e) => {
+                if (e.type === 'gene' || e.type === 'ortholog' || e.type === 'group') {
+                  const genes = entryGenes.get(e.id) ?? [];
+                  // Single gene: navigate; multiple: PathwayMap shows a pinned popover with chips.
+                  if (genes.length === 1) goto(resolve(`/gene/${genes[0].wb}`));
+                  else if (genes.length === 0) {
+                    // Ortholog with no worm mapping: open the KEGG KO page instead.
+                    if (e.type === 'ortholog') {
+                      const m = e.name.match(/ko:(K\d+)/);
+                      if (m) {
+                        window.open(`https://www.kegg.jp/entry/${m[1]}`, '_blank', 'noopener');
+                        return;
+                      }
+                    }
+                    toast.message(e.labels.join(', ') || e.label, {
+                      description: 'No mapped worm gene for this KEGG entry',
+                    });
+                  }
+                  return;
+                }
+                if (e.type === 'map') {
+                  // Subpathways may use organism-neutral "path:mapNNNNN"; always route to cel-prefixed.
+                  const m = e.name.match(/path:[a-z]+(\d+)/);
+                  if (m) goto(resolve(`/pathway/cel${m[1]}`));
+                  return;
+                }
+                if (e.type === 'compound') {
+                  const m = e.name.match(/cpd:(C\d+)/);
+                  if (m) window.open(`https://www.kegg.jp/entry/${m[1]}`, '_blank', 'noopener');
+                }
+              }}
+            />
+          {/key}
+          <p class="mt-2 text-xs text-muted-foreground">
+            {#if imageUrl}
+              Rendered using KEGG's pathway image (lossless WebP, served from the local DB) with
+              clickable KGML hotspots on top. Identical to the kegg.jp layout, but fully offline.
+            {:else}
+              Rendered from KEGG KGML coordinates only (image not available for this pathway).
+            {/if}
+          </p>
+        </CardContent>
+      </Card>
+    {:else}
+      <p class="text-muted-foreground">No pathway map available.</p>
+    {/if}
   {/if}
 </div>

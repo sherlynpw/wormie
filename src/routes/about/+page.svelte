@@ -7,6 +7,7 @@
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import ExternalLink from 'lucide-svelte/icons/external-link';
   import pkg from '../../../package.json';
+  import { KEGG_ENABLED } from '$lib/config';
 
   type Source = {
     name: string;
@@ -473,7 +474,7 @@
       </div>
     </CardHeader>
     <CardContent class="divide-y pt-0">
-      {#each DATA_SOURCES as s (s.name)}
+      {#each DATA_SOURCES.filter((s) => KEGG_ENABLED || !s.name.startsWith('KEGG')) as s (s.name)}
         <div class="py-3 first:pt-0 last:pb-0">
           <div class="flex flex-wrap items-baseline gap-2">
             <!-- eslint-disable svelte/no-navigation-without-resolve -->

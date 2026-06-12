@@ -6,6 +6,7 @@
   import { termHref } from '$lib/term-link';
   import { downloadTsv, downloadBlob } from '$lib/download';
   import { getGeneNames } from '$lib/queries';
+  import { KEGG_ENABLED } from '$lib/config';
   import {
     rankedHash,
     keyFor,
@@ -51,7 +52,7 @@
     imported?: Partial<Record<GseaKind, GseaResult[]>>;
   } = $props();
 
-  const KINDS: { key: GseaKind; label: string }[] = [
+  const ALL_KINDS: { key: GseaKind; label: string }[] = [
     { key: 'go', label: 'GO terms' },
     { key: 'phenotype', label: 'Phenotypes' },
     { key: 'disease', label: 'Diseases' },
@@ -62,6 +63,8 @@
     { key: 'synaptogenesis', label: 'Synaptogenesis' },
     { key: 'pathway', label: 'KEGG pathway' },
   ];
+  // KEGG excluded from the build drops the pathway category (license).
+  const KINDS = ALL_KINDS.filter((k) => KEGG_ENABLED || k.key !== 'pathway');
 
   let active = $state<GseaKind>('go');
   let nperm = $state<number>(1000);
