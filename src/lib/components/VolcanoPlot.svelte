@@ -2,7 +2,7 @@
   // Volcano/MA plot for DESeq2. log2FC on x (-log10(padj) on y for volcano; log10(baseMean+1)
   // on x / log2FC on y for MA). Sig: q < qThreshold AND |LFC| >= lfcThreshold, colored red/blue.
   // Optional highlight set (amber, drawn on top) spotlights a term's leading edge.
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { getGeneNames } from '$lib/queries';
   import { resolve } from '$app/paths';
   import PlotExportMenu from './PlotExportMenu.svelte';
@@ -153,7 +153,8 @@
     nameMapVersion++;
   }
   $effect(() => {
-    if (externalNameMap) applyMeta(externalNameMap);
+    const m = externalNameMap;
+    if (m) untrack(() => applyMeta(m));
   });
   onMount(async () => {
     if (externalNameMap) return; // caller already resolved.
@@ -166,7 +167,7 @@
     return nameMap.get(g) ?? g;
   }
 
-  // Index lfc/padj by gene for hover lookup, avoiding per-circle data-attribute writes (saves ~40k writes at 20k rows).
+  // Index lfc/padj by gene for hover lookup, avoiding per-circle data-attribute writes.
   const pointIndex = $derived.by(() => {
     // eslint-disable-next-line svelte/prefer-svelte-reactivity
     const m = new Map<string, { lfc: number; padj: number }>();
