@@ -58,6 +58,7 @@ jobs:
     timeout-minutes: 120
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.R2_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_S3_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: auto
       AWS_REQUEST_CHECKSUM_CALCULATION: when_required
       AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
@@ -182,23 +183,18 @@ jobs:
           echo "Failed to create R2 bucket $BUCKET" >&2
           exit 1
 
-      - name: Derive R2 S3 secret
+      - name: Verify R2 credentials
         if: ${{ github.event.inputs.deploy != 'false' }}
-        env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
           set -euo pipefail
-          if [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
-            echo "::error::R2_S3_ACCESS_KEY_ID is not set. Add it as a repo secret (the Access Key ID of the CF_API_TOKEN R2 token)." >&2
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+            echo "::error::R2_S3_ACCESS_KEY_ID / R2_S3_SECRET_ACCESS_KEY not set. Create an R2 Account API token (Object Read & Write on wormie-data); its creation screen shows both values." >&2
             exit 1
           fi
           command -v aws >/dev/null || { echo "::error::aws CLI not found on the runner (expected pre-installed on ubuntu-latest)."; exit 1; }
-          sk="$(printf '%s' "$CF_API_TOKEN" | sha256sum | cut -d' ' -f1)"
-          echo "::add-mask::$sk"
-          echo "AWS_SECRET_ACCESS_KEY=$sk" >> "$GITHUB_ENV"
-          if ! AWS_SECRET_ACCESS_KEY="$sk" aws s3api head-bucket --bucket wormie-data --endpoint-url "$R2_ENDPOINT" 2>head.err; then
+          if ! aws s3api head-bucket --bucket wormie-data --endpoint-url "$R2_ENDPOINT" 2>head.err; then
             cat head.err >&2
-            echo "::error::R2 S3 auth failed. Check R2_S3_ACCESS_KEY_ID matches the CF_API_TOKEN R2 token (Object Read & Write on wormie-data)." >&2
+            echo "::error::R2 S3 auth failed. Check the R2_S3_* secrets match an R2 token with Object Read & Write on wormie-data." >&2
             exit 1
           fi
           echo "R2 S3 credentials verified"
@@ -271,6 +267,7 @@ jobs:
     env:
       SUBREAD_VER: ${{ github.event.inputs.subread_ver || '2.0.6' }}
       AWS_ACCESS_KEY_ID: ${{ secrets.R2_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_S3_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: auto
       AWS_REQUEST_CHECKSUM_CALCULATION: when_required
       AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
@@ -346,23 +343,18 @@ jobs:
           echo "Failed to create R2 bucket $BUCKET" >&2
           exit 1
 
-      - name: Derive R2 S3 secret
+      - name: Verify R2 credentials
         if: ${{ github.event.inputs.deploy != 'false' }}
-        env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
           set -euo pipefail
-          if [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
-            echo "::error::R2_S3_ACCESS_KEY_ID is not set. Add it as a repo secret (the Access Key ID of the CF_API_TOKEN R2 token)." >&2
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+            echo "::error::R2_S3_ACCESS_KEY_ID / R2_S3_SECRET_ACCESS_KEY not set. Create an R2 Account API token (Object Read & Write on wormie-data); its creation screen shows both values." >&2
             exit 1
           fi
           command -v aws >/dev/null || { echo "::error::aws CLI not found on the runner (expected pre-installed on ubuntu-latest)."; exit 1; }
-          sk="$(printf '%s' "$CF_API_TOKEN" | sha256sum | cut -d' ' -f1)"
-          echo "::add-mask::$sk"
-          echo "AWS_SECRET_ACCESS_KEY=$sk" >> "$GITHUB_ENV"
-          if ! AWS_SECRET_ACCESS_KEY="$sk" aws s3api head-bucket --bucket wormie-data --endpoint-url "$R2_ENDPOINT" 2>head.err; then
+          if ! aws s3api head-bucket --bucket wormie-data --endpoint-url "$R2_ENDPOINT" 2>head.err; then
             cat head.err >&2
-            echo "::error::R2 S3 auth failed. Check R2_S3_ACCESS_KEY_ID matches the CF_API_TOKEN R2 token (Object Read & Write on wormie-data)." >&2
+            echo "::error::R2 S3 auth failed. Check the R2_S3_* secrets match an R2 token with Object Read & Write on wormie-data." >&2
             exit 1
           fi
           echo "R2 S3 credentials verified"
