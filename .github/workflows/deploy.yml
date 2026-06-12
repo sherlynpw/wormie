@@ -26,9 +26,6 @@ concurrency:
 
 env:
   WB_RELEASE: ${{ github.event.inputs.wb_release }}
-  # Manual dispatch input wins; otherwise fall back to the persistent repo
-  # variable (set vars.DISABLE_KEGG=1 to exclude KEGG from every build).
-  # Read by build-db.sh (Python) and vite.config.ts (frontend flag).
   DISABLE_KEGG: ${{ github.event.inputs.disable_kegg || vars.DISABLE_KEGG }}
 
 jobs:
@@ -157,8 +154,6 @@ jobs:
         run: |
           set -uo pipefail
           BUCKET=wormie-data
-          # Idempotent provision: first run creates the bucket; on re-runs CF
-          # returns "already exists and you own it" (code 10004), treated as success.
           out="$(bunx wrangler@4 r2 bucket create "$BUCKET" 2>&1)" && { echo "$out"; exit 0; }
           echo "$out"
           echo "$out" | grep -qiE 'already (exists|owned)|10004' \
@@ -166,26 +161,35 @@ jobs:
           echo "Failed to create R2 bucket $BUCKET" >&2
           exit 1
 
-      - name: Upload DB to R2
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          packageManager: bun
-          wranglerVersion: "4"
-          command: r2 object put wormie-data/wormie.sqlite.gz --file deploy-data/wormie.sqlite.gz --content-type application/gzip --remote
+      - name: Upload DB + version.json to R2 (S3 multipart)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_S3_ACCESS_KEY_ID }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          R2_ENDPOINT: https://${{ secrets.CF_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
+            echo "::error::R2_S3_ACCESS_KEY_ID is not set. Add it as a repo secret (the Access Key ID of the CF_API_TOKEN R2 token)." >&2
+            exit 1
+          fi
+          command -v aws >/dev/null || { echo "::error::aws CLI not found on the runner (expected pre-installed on ubuntu-latest)."; exit 1; }
+          aws --version
+          AWS_SECRET_ACCESS_KEY="$(printf '%s' "$CF_API_TOKEN" | sha256sum | cut -d' ' -f1)"
+          echo "::add-mask::$AWS_SECRET_ACCESS_KEY"
+          export AWS_SECRET_ACCESS_KEY
+          if ! aws s3api head-bucket --bucket wormie-data --endpoint-url "$R2_ENDPOINT" 2>head.err; then
+            cat head.err >&2
+            echo "::error::R2 S3 auth failed. Check R2_S3_ACCESS_KEY_ID matches the CF_API_TOKEN R2 token (Object Read & Write on wormie-data)." >&2
+            exit 1
+          fi
+          aws s3 cp deploy-data/wormie.sqlite.gz "s3://wormie-data/wormie.sqlite.gz" \
+            --endpoint-url "$R2_ENDPOINT" --content-type application/gzip
+          aws s3 cp deploy-data/version.json "s3://wormie-data/version.json" \
+            --endpoint-url "$R2_ENDPOINT" --content-type application/json
 
-      - name: Upload version.json to R2
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          packageManager: bun
-          wranglerVersion: "4"
-          command: r2 object put wormie-data/version.json --file deploy-data/version.json --content-type application/json --remote
-
-      # `wrangler deploy` is create-or-update: it provisions the `wormie` worker
-      # on first run and updates it thereafter, so an existing worker never fails.
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:

@@ -42,7 +42,6 @@ jobs:
               - 'scripts/wasm-build/featurecounts-wasm/**'
               - '.github/workflows/build-wasm.yml'
       - id: decide
-        # workflow_dispatch has no diff context, so run everything on manual runs.
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "deseq2=true" >> "$GITHUB_OUTPUT"
@@ -57,6 +56,12 @@ jobs:
     if: needs.changes.outputs.deseq2 == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_S3_ACCESS_KEY_ID }}
+      AWS_DEFAULT_REGION: auto
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+      R2_ENDPOINT: https://${{ secrets.CF_ACCOUNT_ID }}.r2.cloudflarestorage.com
     steps:
       - uses: actions/checkout@v4
 
@@ -170,8 +175,6 @@ jobs:
         run: |
           set -uo pipefail
           BUCKET=wormie-data
-          # Idempotent: create first time; on re-runs CF returns code 10004
-          # ("already exists and you own it"), treated as success.
           out="$(bunx wrangler@4 r2 bucket create "$BUCKET" 2>&1)" && { echo "$out"; exit 0; }
           echo "$out"
           echo "$out" | grep -qiE 'already (exists|owned)|10004' \
@@ -179,25 +182,38 @@ jobs:
           echo "Failed to create R2 bucket $BUCKET" >&2
           exit 1
 
-      - name: Upload deseq2-bundle.data to R2
+      - name: Derive R2 S3 secret
         if: ${{ github.event.inputs.deploy != 'false' }}
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          packageManager: bun
-          wranglerVersion: "4"
-          command: r2 object put wormie-data/wasm-cran/deseq2-bundle.data --file scripts/wasm-cran/deseq2-bundle.data --content-type application/octet-stream --remote
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
+            echo "::error::R2_S3_ACCESS_KEY_ID is not set. Add it as a repo secret (the Access Key ID of the CF_API_TOKEN R2 token)." >&2
+            exit 1
+          fi
+          command -v aws >/dev/null || { echo "::error::aws CLI not found on the runner (expected pre-installed on ubuntu-latest)."; exit 1; }
+          sk="$(printf '%s' "$CF_API_TOKEN" | sha256sum | cut -d' ' -f1)"
+          echo "::add-mask::$sk"
+          echo "AWS_SECRET_ACCESS_KEY=$sk" >> "$GITHUB_ENV"
+          if ! AWS_SECRET_ACCESS_KEY="$sk" aws s3api head-bucket --bucket wormie-data --endpoint-url "$R2_ENDPOINT" 2>head.err; then
+            cat head.err >&2
+            echo "::error::R2 S3 auth failed. Check R2_S3_ACCESS_KEY_ID matches the CF_API_TOKEN R2 token (Object Read & Write on wormie-data)." >&2
+            exit 1
+          fi
+          echo "R2 S3 credentials verified"
 
-      - name: Upload deseq2-bundle.js.metadata to R2
+      - name: Upload deseq2 bundle to R2 (S3 multipart)
         if: ${{ github.event.inputs.deploy != 'false' }}
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          packageManager: bun
-          wranglerVersion: "4"
-          command: r2 object put wormie-data/wasm-cran/deseq2-bundle.js.metadata --file scripts/wasm-cran/deseq2-bundle.js.metadata --content-type application/json --remote
+        run: |
+          set -euo pipefail
+          aws --version
+          aws s3 cp scripts/wasm-cran/deseq2-bundle.data \
+            "s3://wormie-data/wasm-cran/deseq2-bundle.data" \
+            --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
+          aws s3 cp scripts/wasm-cran/deseq2-bundle.js.metadata \
+            "s3://wormie-data/wasm-cran/deseq2-bundle.js.metadata" \
+            --endpoint-url "$R2_ENDPOINT" --content-type application/json
 
       - name: Upload local CRAN .tgz packages to R2
         if: ${{ github.event.inputs.deploy != 'false' }}
@@ -214,11 +230,8 @@ jobs:
               *)          ctype=text/plain ;;
             esac
             echo "Uploading ${key} (${ctype})"
-            bunx wrangler@4 r2 object put "wormie-data/${key}" --file "$f" --content-type "$ctype" --remote
+            aws s3 cp "$f" "s3://wormie-data/${key}" --endpoint-url "$R2_ENDPOINT" --content-type "$ctype"
           done
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
 
       - name: Upload WebR runtime + SIMD libs to R2
         if: ${{ github.event.inputs.deploy != 'false' }}
@@ -235,7 +248,7 @@ jobs:
               *)     ctype=application/octet-stream ;;
             esac
             echo "Uploading ${key} (${ctype})"
-            bunx wrangler@4 r2 object put "wormie-data/${key}" --file "$src" --content-type "$ctype" --remote
+            aws s3 cp "$src" "s3://wormie-data/${key}" --endpoint-url "$R2_ENDPOINT" --content-type "$ctype"
           done
           for sub in vfs; do
             [ -d "$base/$sub" ] || continue
@@ -246,12 +259,9 @@ jobs:
                 *)                 ctype=application/octet-stream ;;
               esac
               echo "Uploading ${key} (${ctype})"
-              bunx wrangler@4 r2 object put "wormie-data/${key}" --file "$f" --content-type "$ctype" --remote
+              aws s3 cp "$f" "s3://wormie-data/${key}" --endpoint-url "$R2_ENDPOINT" --content-type "$ctype"
             done
           done
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
 
   featurecounts:
     needs: changes
@@ -260,6 +270,11 @@ jobs:
     timeout-minutes: 30
     env:
       SUBREAD_VER: ${{ github.event.inputs.subread_ver || '2.0.6' }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_S3_ACCESS_KEY_ID }}
+      AWS_DEFAULT_REGION: auto
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+      R2_ENDPOINT: https://${{ secrets.CF_ACCOUNT_ID }}.r2.cloudflarestorage.com
     steps:
       - uses: actions/checkout@v4
 
@@ -324,8 +339,6 @@ jobs:
         run: |
           set -uo pipefail
           BUCKET=wormie-data
-          # Idempotent: create first time; on re-runs CF returns code 10004
-          # ("already exists and you own it"), treated as success.
           out="$(bunx wrangler@4 r2 bucket create "$BUCKET" 2>&1)" && { echo "$out"; exit 0; }
           echo "$out"
           echo "$out" | grep -qiE 'already (exists|owned)|10004' \
@@ -333,22 +346,34 @@ jobs:
           echo "Failed to create R2 bucket $BUCKET" >&2
           exit 1
 
-      - name: Upload featureCounts.js to R2
+      - name: Derive R2 S3 secret
         if: ${{ github.event.inputs.deploy != 'false' }}
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          packageManager: bun
-          wranglerVersion: "4"
-          command: r2 object put wormie-data/wasm-cran/featurecounts/featureCounts.js --file scripts/wasm-cran/featurecounts/featureCounts.js --content-type application/javascript --remote
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
+            echo "::error::R2_S3_ACCESS_KEY_ID is not set. Add it as a repo secret (the Access Key ID of the CF_API_TOKEN R2 token)." >&2
+            exit 1
+          fi
+          command -v aws >/dev/null || { echo "::error::aws CLI not found on the runner (expected pre-installed on ubuntu-latest)."; exit 1; }
+          sk="$(printf '%s' "$CF_API_TOKEN" | sha256sum | cut -d' ' -f1)"
+          echo "::add-mask::$sk"
+          echo "AWS_SECRET_ACCESS_KEY=$sk" >> "$GITHUB_ENV"
+          if ! AWS_SECRET_ACCESS_KEY="$sk" aws s3api head-bucket --bucket wormie-data --endpoint-url "$R2_ENDPOINT" 2>head.err; then
+            cat head.err >&2
+            echo "::error::R2 S3 auth failed. Check R2_S3_ACCESS_KEY_ID matches the CF_API_TOKEN R2 token (Object Read & Write on wormie-data)." >&2
+            exit 1
+          fi
+          echo "R2 S3 credentials verified"
 
-      - name: Upload featureCounts.wasm to R2
+      - name: Upload featureCounts WASM to R2 (S3 multipart)
         if: ${{ github.event.inputs.deploy != 'false' }}
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          packageManager: bun
-          wranglerVersion: "4"
-          command: r2 object put wormie-data/wasm-cran/featurecounts/featureCounts.wasm --file scripts/wasm-cran/featurecounts/featureCounts.wasm --content-type application/wasm --remote
+        run: |
+          set -euo pipefail
+          aws s3 cp scripts/wasm-cran/featurecounts/featureCounts.js \
+            "s3://wormie-data/wasm-cran/featurecounts/featureCounts.js" \
+            --endpoint-url "$R2_ENDPOINT" --content-type application/javascript
+          aws s3 cp scripts/wasm-cran/featurecounts/featureCounts.wasm \
+            "s3://wormie-data/wasm-cran/featurecounts/featureCounts.wasm" \
+            --endpoint-url "$R2_ENDPOINT" --content-type application/wasm
