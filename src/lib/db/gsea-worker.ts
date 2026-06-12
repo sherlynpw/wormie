@@ -377,6 +377,40 @@ function dispatchOne(
   });
 }
 
+function runPermInline(
+  weights: Float64Array,
+  N: number,
+  bucketSizes: Int32Array,
+  nperm: number,
+  seed: number,
+): PermResp {
+  const numBuckets = bucketSizes.length;
+  const rng = _makeRng(seed);
+  const pool = new Int32Array(N);
+  for (let i = 0; i < N; i++) pool[i] = i;
+  let maxK = 0;
+  for (let i = 0; i < numBuckets; i++) if (bucketSizes[i] > maxK) maxK = bucketSizes[i];
+  const sampleBuf = new Int32Array(maxK);
+  const posArrays: Float64Array[] = new Array(numBuckets);
+  const negArrays: Float64Array[] = new Array(numBuckets);
+  for (let b = 0; b < numBuckets; b++) {
+    const k = bucketSizes[b];
+    const pos = new Float64Array(nperm);
+    const neg = new Float64Array(nperm);
+    let np = 0;
+    let nn = 0;
+    for (let i = 0; i < nperm; i++) {
+      _sampleIndicesInto(pool, N, k, rng, sampleBuf);
+      const { es } = computeES(sampleBuf, weights, N, k);
+      if (es >= 0) pos[np++] = es;
+      else neg[nn++] = es;
+    }
+    posArrays[b] = pos.slice(0, np);
+    negArrays[b] = neg.slice(0, nn);
+  }
+  return { type: 'perm', posArrays, negArrays };
+}
+
 export interface CustomGseaSet {
   term_id: string;
   name: string;
@@ -477,28 +511,46 @@ export async function runGseaSync(
   const bucketSizes = new Int32Array(bucketKeys.length);
   for (let i = 0; i < bucketKeys.length; i++) bucketSizes[i] = bucketRepSize.get(bucketKeys[i])!;
 
-  const workers = getPermPool();
-  const share = Math.ceil(nperm / workers.length);
-  report?.(
-    `Permutations (${nperm.toLocaleString()} × ${bucketSizes.length} buckets, ${workers.length} workers)`,
-    0,
-    workers.length,
-  );
+  let partials: PermResp[];
+  try {
+    const workers = getPermPool();
+    const share = Math.ceil(nperm / workers.length);
+    report?.(
+      `Permutations (${nperm.toLocaleString()} × ${bucketSizes.length} buckets, ${workers.length} workers)`,
+      0,
+      workers.length,
+    );
 
-  let completed = 0;
-  const jobs = workers.map((w, i) => {
-    const p = dispatchOne(w, weights, N, bucketSizes, share, seed + i * 0x9e37);
-    p.then(() => {
-      completed++;
-      report?.(
-        `Permutations (${nperm.toLocaleString()} × ${bucketSizes.length} buckets)`,
-        completed,
-        workers.length,
-      );
+    let completed = 0;
+    const jobs = workers.map((w, i) => {
+      const p = dispatchOne(w, weights, N, bucketSizes, share, seed + i * 0x9e37);
+      p.then(() => {
+        completed++;
+        report?.(
+          `Permutations (${nperm.toLocaleString()} × ${bucketSizes.length} buckets)`,
+          completed,
+          workers.length,
+        );
+      });
+      return p;
     });
-    return p;
-  });
-  const partials = await Promise.all(jobs);
+    partials = await Promise.all(jobs);
+  } catch {
+    if (permPool) {
+      for (const w of permPool) {
+        try {
+          w.terminate();
+        } catch {
+          /* ignore */
+        }
+      }
+      permPool = null;
+    }
+    report?.(
+      `Permutations (${nperm.toLocaleString()} × ${bucketSizes.length} buckets, single-threaded)`,
+    );
+    partials = [runPermInline(weights, N, bucketSizes, nperm, seed)];
+  }
 
   const nullByBucket = new Map<number, { pos: Float64Array; neg: Float64Array }>();
   for (let b = 0; b < bucketKeys.length; b++) {
