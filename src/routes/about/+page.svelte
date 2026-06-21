@@ -129,6 +129,24 @@
         'Variant-level phenotype annotations from Alliance PHENOTYPE_WB.json.gz. ~27k records are gene-level (used directly), ~26k are variant-level (remapped to genes via the variant→gene index built from the WormBase GAF with/from column). Adds ~20k phenotype rows on top of the WormBase GAF baseline.',
     },
     {
+      name: 'Alliance bibliography (references)',
+      version: 'REFERENCE_WB',
+      url: 'https://www.alliancegenome.org/downloads',
+      license: 'CC0 / CC BY 4.0 (mixed)',
+      licenseUrl: 'https://www.alliancegenome.org/terms-of-use',
+      description:
+        'Bulk bibliography dump (REFERENCE_WB.json.gz) used to resolve the WBPaper / PMID references cited on each gene page to real paper titles, journals, years, and DOIs. We store only papers actually cited by our GO + phenotype annotations. Papers newer than the dump cutoff fall back to the WBPaper/PMID link.',
+    },
+    {
+      name: 'NCBI gene2pubmed',
+      version: 'NCBI Gene',
+      url: 'https://ftp.ncbi.nlm.nih.gov/gene/DATA/',
+      license: 'Public Domain (US Government work)',
+      licenseUrl: 'https://www.ncbi.nlm.nih.gov/home/about/policies/',
+      description:
+        'Gene-to-publication links for C. elegans (tax 6239), joined to genes via the entrez_to_wb map. Drives the comprehensive "All literature" list on each gene page (titles/DOIs resolved from the Alliance bibliography, with a WormBase REST / NCBI esummary fallback for papers the dump lacks).',
+    },
+    {
       name: 'CeNGEN single-cell expression',
       version: '021821',
       url: 'https://www.cengen.org/',

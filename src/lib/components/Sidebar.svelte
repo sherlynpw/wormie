@@ -368,6 +368,17 @@
       >
         Data sources &amp; credits →
       </a>
+      <a
+        href={resolve('/changelog')}
+        class={cn(
+          'block rounded px-2 py-1 text-xs transition-colors',
+          page.url.pathname === '/changelog'
+            ? 'bg-accent font-medium text-accent-foreground'
+            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+        )}
+      >
+        Changelog →
+      </a>
     </div>
   {/if}
 </aside>

@@ -17,6 +17,8 @@
     getAnatomyFor,
     getXrefsFor,
     getPapersFor,
+    getGenePapers,
+    type GenePaper,
     getCengenExpressionFor,
     getCengenCoexpressionFor,
     getDiseasesFor,
@@ -93,6 +95,7 @@
   let anatomy = $state<AnatomyRow[]>([]);
   let xrefs = $state<XrefRow[]>([]);
   let papers = $state<PaperRef[]>([]);
+  let literaturePapers = $state<GenePaper[]>([]);
   let cengen = $state<CengenExpressionRow[]>([]);
   let cengenCoexpr = $state<CengenCoexprNeighbor[]>([]);
   let pathways = $state<PathwayMembership[]>([]);
@@ -114,6 +117,7 @@
   let orthologsExpanded = $state<Record<string, boolean>>({});
   let similarExpanded = $state(false);
   let papersExpanded = $state(false);
+  let literatureExpanded = $state(false);
   const coexprFiltered = $derived(cengenCoexpr);
   const coexprNeuronOptions = $derived(
     // Only neurons where the gene is called expressed (max_threshold >= 1) so the picker shows useful filters.
@@ -166,28 +170,49 @@
     }
     recents.push('gene', gene.wormbase_gene, gene.gene_name ?? gene.wormbase_gene);
     const wb = gene.wormbase_gene;
-    const [wc, neu, syn, goAnn, ortho, ix, sim, ph, phCat, al, an, xr, pp, ce, cx, dz, rn, pw, si] =
-      await Promise.all([
-        getWormcatFor(wb),
-        getNeuronalFor(wb),
-        getSynaptogenesisFor(wb),
-        getGoFor(wb),
-        getOrthologs(wb),
-        getInteractionsFor(wb),
-        getSimilarGenes(wb, 16),
-        getPhenotypesFor(wb),
-        getPhenotypeCategoriesFor(wb),
-        getAllelesFor(wb),
-        getAnatomyFor(wb),
-        getXrefsFor(wb),
-        getPapersFor(wb, 20),
-        getCengenExpressionFor(wb),
-        getCengenCoexpressionFor(wb, 20),
-        getDiseasesFor(wb),
-        getRnaiForGene(wb),
-        getPathwaysFor(wb),
-        getStringInteractionsFor(wb),
-      ]);
+    const [
+      wc,
+      neu,
+      syn,
+      goAnn,
+      ortho,
+      ix,
+      sim,
+      ph,
+      phCat,
+      al,
+      an,
+      xr,
+      pp,
+      lit,
+      ce,
+      cx,
+      dz,
+      rn,
+      pw,
+      si,
+    ] = await Promise.all([
+      getWormcatFor(wb),
+      getNeuronalFor(wb),
+      getSynaptogenesisFor(wb),
+      getGoFor(wb),
+      getOrthologs(wb),
+      getInteractionsFor(wb),
+      getSimilarGenes(wb, 16),
+      getPhenotypesFor(wb),
+      getPhenotypeCategoriesFor(wb),
+      getAllelesFor(wb),
+      getAnatomyFor(wb),
+      getXrefsFor(wb),
+      getPapersFor(wb, 20),
+      getGenePapers(wb),
+      getCengenExpressionFor(wb),
+      getCengenCoexpressionFor(wb, 20),
+      getDiseasesFor(wb),
+      getRnaiForGene(wb),
+      getPathwaysFor(wb),
+      getStringInteractionsFor(wb),
+    ]);
     if (my !== loadToken) return;
     wormcat = wc;
     neuronal = neu;
@@ -202,6 +227,7 @@
     anatomy = an;
     xrefs = xr;
     papers = pp;
+    literaturePapers = lit;
     cengen = ce;
     cengenCoexpr = cx;
     diseases = dz;
@@ -336,6 +362,7 @@
 
     const literature: TocLeaf[] = [];
     if (papers.length > 0) literature.push({ id: 'papers', label: 'References' });
+    if (literaturePapers.length > 0) literature.push({ id: 'literature', label: 'All literature' });
 
     const out: TocEntry[] = [...overview];
     if (identity.length) out.push({ label: 'Identity', children: identity });
@@ -1742,19 +1769,32 @@
             <div class="mb-2 text-[0.65rem] text-muted-foreground">
               Top papers cited across GO annotations and allele-mediated phenotypes for this gene.
             </div>
-            <div class="flex flex-wrap gap-1.5">
+            <div class="flex flex-col divide-y">
               {#each papersExpanded ? papers : papers.slice(0, CHIP_LIMIT) as p (p.reference)}
                 <!-- eslint-disable svelte/no-navigation-without-resolve -->
                 <a
                   href={p.url}
                   target="_blank"
                   rel="noopener"
-                  class="inline-flex items-baseline gap-1.5 rounded-md border bg-card px-2 py-1 transition-colors hover:bg-accent"
-                  title={`${p.n_go} GO · ${p.n_pheno} phenotype evidence`}
+                  class="group flex items-baseline gap-2 py-1.5 transition-colors hover:bg-accent"
+                  title={`${p.title ? `${p.journal ?? ''}${p.journal && p.year ? ' · ' : ''}${p.year ?? ''} · ` : ''}${p.n_go} GO · ${p.n_pheno} phenotype evidence`}
                 >
-                  <span class="font-mono text-[0.6rem] text-muted-foreground">{p.prefix}</span>
-                  <span class="font-mono text-xs">{p.id}</span>
-                  <span class="font-mono text-[0.6rem] text-muted-foreground">×{p.total}</span>
+                  {#if p.title}
+                    <span class="min-w-0 flex-1 truncate text-xs group-hover:underline">
+                      {p.title}
+                    </span>
+                    <span class="shrink-0 font-mono text-[0.6rem] text-muted-foreground">
+                      {p.authors ?? ''}{p.authors && p.year ? ' ' : ''}{p.year ? `(${p.year})` : ''}
+                    </span>
+                  {:else}
+                    <span class="min-w-0 flex-1 truncate font-mono text-xs group-hover:underline">
+                      <span class="text-[0.6rem] text-muted-foreground">{p.prefix}</span>
+                      {p.id}
+                    </span>
+                  {/if}
+                  <span class="shrink-0 font-mono text-[0.6rem] text-muted-foreground"
+                    >×{p.total}</span
+                  >
                 </a>
                 <!-- eslint-enable svelte/no-navigation-without-resolve -->
               {/each}
@@ -1763,6 +1803,61 @@
                 shown={CHIP_LIMIT}
                 expanded={papersExpanded}
                 onToggle={(v) => (papersExpanded = v)}
+                label="papers"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      {/if}
+
+      {#if literaturePapers.length > 0}
+        <Card id="literature">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              All literature
+              <ControlHint id="gene-literature" title="All literature">
+                Comprehensive list of publications linked to this gene by NCBI (gene2pubmed),
+                resolved to titles and DOIs where available.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">
+              {literaturePapers.length} paper{literaturePapers.length === 1 ? '' : 's'}
+            </span>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <div class="flex flex-col divide-y">
+              {#each literatureExpanded ? literaturePapers : literaturePapers.slice(0, CHIP_LIMIT) as p (p.pmid)}
+                <!-- eslint-disable svelte/no-navigation-without-resolve -->
+                <a
+                  href={p.url}
+                  target="_blank"
+                  rel="noopener"
+                  class="group flex items-baseline gap-2 py-1.5 transition-colors hover:bg-accent"
+                  title={p.title
+                    ? `${p.journal ?? ''}${p.journal && p.year ? ' · ' : ''}${p.year ?? ''}`
+                    : `PMID:${p.pmid}`}
+                >
+                  {#if p.title}
+                    <span class="min-w-0 flex-1 truncate text-xs group-hover:underline">
+                      {p.title}
+                    </span>
+                    <span class="shrink-0 font-mono text-[0.6rem] text-muted-foreground">
+                      {p.authors ?? ''}{p.authors && p.year ? ' ' : ''}{p.year ? `(${p.year})` : ''}
+                    </span>
+                  {:else}
+                    <span class="min-w-0 flex-1 truncate font-mono text-xs group-hover:underline">
+                      <span class="text-[0.6rem] text-muted-foreground">PMID</span>
+                      {p.pmid}
+                    </span>
+                  {/if}
+                </a>
+                <!-- eslint-enable svelte/no-navigation-without-resolve -->
+              {/each}
+              <ExpandMore
+                total={literaturePapers.length}
+                shown={CHIP_LIMIT}
+                expanded={literatureExpanded}
+                onToggle={(v) => (literatureExpanded = v)}
                 label="papers"
               />
             </div>

@@ -1574,6 +1574,22 @@ export interface PaperRef {
   n_go: number;
   n_pheno: number;
   total: number;
+  // Resolved bibliography metadata (Alliance dump), when available.
+  title?: string;
+  doi?: string;
+  journal?: string;
+  year?: string;
+  authors?: string;
+}
+
+interface PaperMetaRow {
+  paper_id: string;
+  pmid: string | null;
+  doi: string | null;
+  title: string | null;
+  journal: string | null;
+  year: string | null;
+  authors: string | null;
 }
 
 // Distinct papers cited across gene_go + allele_phenotype. Skips GO_REF:* and non-publication identifiers.
@@ -1618,7 +1634,109 @@ export async function getPapersFor(wormbase_gene: string, limit = 20): Promise<P
     // drop GO_REF:* and others (curation references, not papers)
   }
   out.sort((a, b) => b.total - a.total);
-  return out.slice(0, limit);
+  const top = out.slice(0, limit);
+  await enrichPaperMeta(top);
+  return top;
+}
+
+// Resolve titles/DOIs for a list of papers from the paper_meta table (built from
+// the Alliance bibliography) and rewrite each link to prefer the DOI. Papers not
+// in the dump (e.g. published after the dump cutoff) keep their WBPaper/PMID link.
+async function enrichPaperMeta(papers: PaperRef[]): Promise<void> {
+  if (papers.length === 0) return;
+  const paperIds = papers.filter((p) => p.prefix === 'WBPaper').map((p) => p.id);
+  const pmids = papers.filter((p) => p.prefix === 'PMID').map((p) => p.id);
+  if (paperIds.length === 0 && pmids.length === 0) return;
+
+  const clauses: string[] = [];
+  const params: string[] = [];
+  if (paperIds.length) {
+    clauses.push(`paper_id IN (${paperIds.map(() => '?').join(',')})`);
+    params.push(...paperIds);
+  }
+  if (pmids.length) {
+    clauses.push(`pmid IN (${pmids.map(() => '?').join(',')})`);
+    params.push(...pmids);
+  }
+
+  let rows: PaperMetaRow[];
+  try {
+    rows = await query<PaperMetaRow>(
+      `SELECT paper_id, pmid, doi, title, journal, year, authors
+		   FROM paper_meta WHERE ${clauses.join(' OR ')}`,
+      params,
+    );
+  } catch {
+    return; // table absent (older DB build) — leave the bare links in place
+  }
+
+  const byPaperId = new Map<string, PaperMetaRow>();
+  const byPmid = new Map<string, PaperMetaRow>();
+  for (const r of rows) {
+    byPaperId.set(r.paper_id, r);
+    if (r.pmid) byPmid.set(r.pmid, r);
+  }
+
+  for (const p of papers) {
+    const meta = p.prefix === 'WBPaper' ? byPaperId.get(p.id) : byPmid.get(p.id);
+    if (!meta) continue;
+    p.title = meta.title ?? undefined;
+    p.doi = meta.doi ?? undefined;
+    p.journal = meta.journal ?? undefined;
+    p.year = meta.year ?? undefined;
+    p.authors = meta.authors ?? undefined;
+    if (meta.doi) p.url = `https://doi.org/${meta.doi}`;
+  }
+}
+
+export interface GenePaper {
+  pmid: string;
+  url: string;
+  title?: string;
+  doi?: string;
+  journal?: string;
+  year?: string;
+  authors?: string;
+}
+
+// Comprehensive per-gene literature (NCBI gene2pubmed), enriched with titles/DOIs
+// from paper_meta. Newest first; unresolved PMIDs keep a plain PubMed link.
+export async function getGenePapers(wormbase_gene: string): Promise<GenePaper[]> {
+  let rows: Array<{
+    pmid: string;
+    doi: string | null;
+    title: string | null;
+    journal: string | null;
+    year: string | null;
+    authors: string | null;
+  }>;
+  try {
+    // A PMID can map to more than one paper_meta row (e.g. two WBPaper records
+    // cross-referencing the same PMID), so collapse to one row per PMID. MAX()
+    // ignores NULLs, preferring a resolved value when any duplicate has one.
+    rows = await query(
+      `SELECT gp.pmid,
+			   MAX(pm.doi) AS doi, MAX(pm.title) AS title, MAX(pm.journal) AS journal,
+			   MAX(pm.year) AS year, MAX(pm.authors) AS authors
+		   FROM gene_paper gp
+		   LEFT JOIN paper_meta pm ON pm.pmid = gp.pmid
+		   WHERE gp.wormbase_gene = ?
+		   GROUP BY gp.pmid
+		   ORDER BY year DESC, gp.pmid DESC`,
+      [wormbase_gene],
+    );
+  } catch {
+    return []; // table absent (older DB build)
+  }
+  return rows.map((r) => ({
+    pmid: r.pmid,
+    title: r.title ?? undefined,
+    doi: r.doi ?? undefined,
+    journal: r.journal ?? undefined,
+    year: r.year ?? undefined,
+    authors: r.authors ?? undefined,
+    url: r.doi ? `https://doi.org/${r.doi}` : `https://pubmed.ncbi.nlm.nih.gov/${r.pmid}/`,
+  }));
 }
 
 // ---- Anatomy (tissue expression) ----

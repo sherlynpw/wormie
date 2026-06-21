@@ -15,10 +15,6 @@ export CACHE="${CACHE:-.cache}"
 DEST_DIR="${DEST_DIR:-static/data}"
 WORMCAT_CSV="${WORMCAT_CSV:-$ROOT/data/wormcat_whole_genome_v2.csv}"
 NEURONAL_CSV="${NEURONAL_CSV:-$ROOT/data/neuronal_genes.csv}"
-# Curated synaptogenesis gene panel (Andrew lab; mirrored from
-# celegans-pipeline at refs/gene_sets/synaptogenesis_genes.tsv). Tab-separated
-# with columns `symbol class subclass notes`. Symbols are resolved to
-# wormbase_gene at ingest time via the annotations table.
 SYNAPTO_TSV="${SYNAPTO_TSV:-$ROOT/data/synaptogenesis_genes.tsv}"
 
 mkdir -p "$CACHE" "$DEST_DIR"
@@ -34,17 +30,10 @@ EBI_WB="https://ftp.ebi.ac.uk/pub/databases/wormbase/releases/${WB_RELEASE}/spec
 GENE_IDS="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.geneIDs.txt.gz"
 FUNC_DESC="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.functional_descriptions.txt.gz"
 XREFS="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.xrefs.txt.gz"
-# Allele-level phenotype associations (GAF 2.0). Each row links a gene to a
-# phenotype with the originating allele/variant ID in the with/from column,
-# so we get gene_phenotype + allele_phenotype tables out of a single file.
+# Allele-level phenotype associations
 WB_PHENO="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.phenotype_association.wb.gz"
-# RNAi reagent → gene → phenotype mapping (5-column TSV). Lists every
-# WBRNAi reagent that knocked down each gene and the phenotypes observed.
-# Does NOT carry library tags or clone names; users follow the WBRNAi link
-# to wormbase.org for sjj_*/mv_* clone-name + library details.
+# RNAi reagent → gene → phenotype mapping
 RNAI_PHENO="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.rnai_phenotypes.wb.gz"
-
-# --- Always-latest URLs for every other source ---
 GAF_URL="https://current.geneontology.org/annotations/wb.gaf.gz"
 OBO_URL="https://current.geneontology.org/ontology/go.obo"
 ALLIANCE_ORTHO_URL="https://fms.alliancegenome.org/download/ORTHOLOGY-ALLIANCE_COMBINED.tsv.gz"
@@ -54,24 +43,17 @@ ALLIANCE_DISEASE_URL="https://fms.alliancegenome.org/download/DISEASE-ALLIANCE_W
 ALLIANCE_BGI_URL="https://fms.alliancegenome.org/download/BGI_WB.json.gz"
 WBPHENO_OBO_URL="https://raw.githubusercontent.com/obophenotype/c-elegans-phenotype-ontology/master/wbphenotype.obo"
 WBBT_OBO_URL="https://raw.githubusercontent.com/obophenotype/c-elegans-gross-anatomy-ontology/master/wbbt.obo"
-# BioGRID Latest-Release symlink → always newest. The extracted tab3 contains
-# the version in its filename; we resolve it after unzip.
 BIOGRID_ZIP_URL="https://downloads.thebiogrid.org/Download/BioGRID/Latest-Release/BIOGRID-ORGANISM-LATEST.tab3.zip"
-# CeNGEN L4 integrated single-cell + bulk normalized counts (Barrett et al. 2022,
-# the canonical "is gene X expressed in neuron Y" matrix all recent papers cite).
-# Per-replicate TMM counts (143 cols × ~22k genes); we aggregate to neuron type
-# at ingest time.
+# CeNGEN L4 integrated single-cell + bulk normalized counts (Barrett et al. 2022).
 CENGEN_URL="https://cengen.org/storage/Average_integrated_TMM_counts_lengthNormalized_111521.tsv"
 CENGEN_VERSION="2021-11-15-L4-integrated"
-# CeNGEN per-neuron binary expression calls at four thresholds. These are the
-# FACS-calibrated "is gene X expressed in neuron Y" calls that the CeNGEN paper
-# and web app use. Cover all 128 neuron types (the integrated TMM file only
-# has 41). Convention: a (gene, neuron) pair "passes threshold N" if the value
-# at index N is > 0; we store the max passed level per pair.
+# CeNGEN per-neuron binary expression calls at four thresholds
 CENGEN_T1_URL="https://cengen.org/storage/021821_liberal_threshold1.csv"
 CENGEN_T2_URL="https://cengen.org/storage/021821_medium_threshold2.csv"
 CENGEN_T3_URL="https://cengen.org/storage/021821_conservative_threshold3.csv"
 CENGEN_T4_URL="https://cengen.org/storage/021821_stringent_threshold4.csv"
+# Alliance bibliography
+ALLIANCE_REF_URL="https://fms.alliancegenome.org/download/REFERENCE_WB.json.gz"
 
 GAF="$CACHE/wb.gaf.gz"
 OBO="$CACHE/go.obo"
@@ -89,6 +71,11 @@ CENGEN_T1="$CACHE/cengen_threshold1_liberal.csv"
 CENGEN_T2="$CACHE/cengen_threshold2_medium.csv"
 CENGEN_T3="$CACHE/cengen_threshold3_conservative.csv"
 CENGEN_T4="$CACHE/cengen_threshold4_stringent.csv"
+REF_JSON="$CACHE/REFERENCE_WB.json.gz"
+# NCBI gene-to-publication links (comprehensive per-gene literature). Full file
+# is ~255 MB all-species; stream-filtered to C. elegans (tax 6239) on download.
+GENE2PUBMED_URL="https://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2pubmed.gz"
+GENE2PUBMED_CE="$CACHE/gene2pubmed_ce.tsv"
 
 fetch() {
   local url="$1" dest="$2"
@@ -118,6 +105,15 @@ fetch "$CENGEN_T1_URL" "$CENGEN_T1"
 fetch "$CENGEN_T2_URL" "$CENGEN_T2"
 fetch "$CENGEN_T3_URL" "$CENGEN_T3"
 fetch "$CENGEN_T4_URL" "$CENGEN_T4"
+fetch "$ALLIANCE_REF_URL" "$REF_JSON"
+
+# Stream-filter gene2pubmed to C. elegans -> gene_id<TAB>pmid. awk consumes the
+# whole stream, so curl's pipe is never closed early (safe under pipefail).
+if [[ ! -f "$GENE2PUBMED_CE" ]]; then
+  echo "Downloading + filtering gene2pubmed (C. elegans)..."
+  curl -fsSL --max-time 900 "$GENE2PUBMED_URL" | gunzip -c \
+    | awk -F'\t' '$1=="6239"{print $2"\t"$3}' >"$GENE2PUBMED_CE"
+fi
 
 # Unzip BioGRID and resolve the C. elegans tab3 filename (contains the version)
 (cd "$CACHE" && unzip -o BIOGRID-ORGANISM-LATEST.tab3.zip 'BIOGRID-ORGANISM-Caenorhabditis_elegans-*.tab3.txt' >/dev/null)
@@ -128,18 +124,13 @@ echo "BioGRID version: $BIOGRID_VERSION"
 TMP_DB="$(mktemp)"
 trap 'rm -f "$TMP_DB" "$TMP_DB-wal" "$TMP_DB-shm"' EXIT
 
-# Pick a Python interpreter that has numpy available. We use uv (if installed)
-# to spin up an ephemeral env with numpy for the CeNGEN co-expression step;
-# everything else only needs stdlib. Falls back to plain `python3` if uv isn't
-# present; the co-expression block is wrapped in a try/except that logs a
-# warning when numpy is missing rather than aborting the whole build.
 if command -v uv >/dev/null 2>&1; then
   PY=(uv run --quiet --with numpy --with Pillow python3)
 else
   PY=(python3)
 fi
 
-"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" <<'PY'
+"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" <<'PY'
 import csv, gzip, json, math, re, sqlite3, sys
 from pathlib import Path
 
@@ -147,7 +138,8 @@ from pathlib import Path
  biogrid_tab, pheno_json_gz, wbpheno_obo, anatomy_obo, anatomy_assoc,
  bgi_json_gz, gene_ids_path, func_desc_path, xrefs_path, wb_pheno_gz,
  cengen_tsv, cengen_t1, cengen_t2, cengen_t3, cengen_t4, disease_tsv,
- rnai_pheno_gz, synapto_tsv) = sys.argv[1:25]
+ rnai_pheno_gz, synapto_tsv, reference_json_gz, gene2pubmed_ce,
+ paper_cache_dir) = sys.argv[1:28]
 
 conn = sqlite3.connect(db_path)
 conn.executescript('PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL;')
@@ -329,12 +321,6 @@ if Path(neuronal_csv).is_file():
     print(f'neuronal: {len(n_rows)} rows', file=sys.stderr)
 
 # ---------- Synaptogenesis panel ----------
-# Curated 215-gene C. elegans synaptogenesis panel grouped into 13 functional
-# classes (proneural fate, terminal selectors, active zone, SV release,
-# innexins, postsynaptic, Wnt/PHR signaling, ...). Source TSV has the symbol
-# only; we resolve to wormbase_gene by joining against the annotations table
-# (gene_name → wormbase_gene). Unresolved symbols are reported but not fatal
-# so a stale panel doesn't break the build.
 cur.executescript("""
 CREATE TABLE synaptogenesis (
   wormbase_gene TEXT NOT NULL,
@@ -622,8 +608,6 @@ try:
         if not _os.path.exists(path):
             print(f'  downloading {url}', file=sys.stderr)
             _ureq.urlretrieve(url, path)
-    # Build STRING-protein → WBGene alias map. Each protein has multiple
-    # aliases; keep the WormBase-source ones that match WBGene-style IDs.
     string_to_wb = {}
     with _gz.open(aliases_path, 'rt', encoding='utf-8') as f:
         next(f, None)  # header
@@ -755,11 +739,7 @@ CREATE INDEX idx_pheno_syn_term ON phenotype_synonyms(term_id);
 cur.executemany('INSERT INTO phenotype_synonyms VALUES (?,?)', pheno_syns)
 print(f'phenotype_synonyms: {len(pheno_syns)}', file=sys.stderr)
 
-# Allele-level phenotype associations from WormBase's GAF. Each row already
-# links a gene to a phenotype with the originating allele in the with/from
-# column, so we populate both gene_phenotype and allele_phenotype in one pass.
-# Coverage jumps from ~20k Alliance-curated gene rows to 440k+ allele-mediated
-# rows, capturing the way phenotypes are actually published (per allele).
+# Allele-level phenotype associations from WormBase's GAF.
 cur.executescript("""
 CREATE TABLE allele_phenotype (
   allele_id     TEXT NOT NULL,
@@ -775,10 +755,6 @@ CREATE INDEX idx_allele_pheno_term   ON allele_phenotype(term_id);
 """)
 gp_rows = []; ap_rows = []
 seen_gp = set(); seen_ap = set()
-# Variant → gene index built while scanning the WB GAF. Every with/from
-# WBVar entry pairs a variant with the gene the GAF row is about, so this
-# is a complete (and authoritative) mapping for downstream Alliance JSON
-# rows whose objectId is a variant.
 variant_to_gene = {}
 with gzip.open(wb_pheno_gz, 'rt', encoding='utf-8', errors='replace') as f:
     for line in f:
@@ -810,8 +786,8 @@ with gzip.open(wb_pheno_gz, 'rt', encoding='utf-8', errors='replace') as f:
             seen_ap.add(key_a)
             ap_rows.append((allele, wb, term_raw, ref, evidence))
 
-# Alliance Phenotype JSON: 55k rows we were previously dropping. Records
-# keyed by objectId of three flavors:
+# Alliance Phenotype JSON
+# Records keyed by objectId of three flavors:
 #   WBGene -> direct gene-level annotation (free; just dedup against WB GAF)
 #   WBVar  -> variant; remap via variant_to_gene built above
 #   WBTrans -> transgene; skip (no clean gene mapping in this data source)
@@ -1078,9 +1054,7 @@ n_reagents = len({r[1] for r in rnai_rows})
 print(f'gene_rnai: {len(rnai_rows)} rows ({n_genes} genes, {n_reagents} unique WBRNAi reagents)', file=sys.stderr)
 
 # ---------- Disease associations (Alliance) ----------
-# C. elegans gene → human disease ontology terms. Many rows per (gene, disease)
-# representing distinct evidence codes; we collapse to one row per pair with
-# evidence count + first reference and the strongest association_type.
+# C. elegans gene -> human disease ontology terms
 cur.executescript("""
 CREATE TABLE gene_disease (
   wormbase_gene TEXT NOT NULL,
@@ -1133,11 +1107,7 @@ cur.executemany(
 print(f'gene_disease: {len(dz_acc)} (gene, disease) pairs', file=sys.stderr)
 
 # ---------- CeNGEN co-expression neighbors ----------
-# Pearson similarity across the 41-neuron-type bulk TMM vector. For each gene
-# keep the top 20 neighbors. Sparse "expressed in only a few neuron types"
-# genes get the strongest signal; ubiquitously-expressed genes naturally have
-# more neighbors at lower correlation. Used by the gene page to surface
-# "co-expressed in neurons" candidates that are independent of GO/curation.
+# Pearson similarity across the 41-neuron-type bulk TMM vector
 cur.executescript("""
 CREATE TABLE cengen_coexpression (
   wormbase_gene TEXT NOT NULL,
@@ -1194,11 +1164,6 @@ try:
     std[std < 1e-8] = 1.0
     Z = (M - mu) / std
     D = Z.shape[1]
-    # n × n matrix; with ~22k genes and D=41 this is ~2GB float32, too big.
-    # Process in row chunks instead.
-    # Store top 50 neighbors per gene so the per-neuron-type filter in the
-    # UI has enough candidates to surface real co-expressed sets even after
-    # restricting to one neuron's binary calls.
     K = 50
     coexpr_rows = []
     CHUNK = 1024
@@ -1227,10 +1192,6 @@ except Exception as e:
     print(f'cengen_coexpression failed: {e}', file=sys.stderr)
 
 # ---------- KEGG cel pathways (worm-native: insulin/IGF, TGF-beta, longevity, etc.) ----------
-# KEGG REST is free for academic use (no auth) but redistribution of the dump
-# is license-restricted, so we fetch at build time only and never bundle the
-# upstream data alongside the app. Joins to WBGene IDs via the existing
-# entrez_to_wb table since KEGG cel uses Entrez gene IDs ("cel:<entrez>").
 cur.executescript("""
 CREATE TABLE kegg_pathway (
   pathway_id TEXT PRIMARY KEY,
@@ -1253,9 +1214,6 @@ class _KeggDisabled(Exception):
 try:
     import os as _kegg_os
     if _kegg_os.environ.get('DISABLE_KEGG', '').strip().lower() in ('1', 'true', 'yes', 'on'):
-        # KEGG disabled at build (license: do not redistribute the dump). Create
-        # the asset tables empty so the schema stays stable; downstream kegg_*
-        # SELECTs still work and simply return nothing.
         cur.executescript("""
         CREATE TABLE IF NOT EXISTS kegg_kgml (pathway_id TEXT PRIMARY KEY, xml TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS kegg_image (
@@ -1561,9 +1519,7 @@ for wb, sym in cur.execute(
 ):
     ortho_per_gene.setdefault(wb, set()).add(sym)
 
-# Per-gene KEGG pathway membership (pathway names, for FTS) — only present if
-# the kegg ingest above succeeded; SELECT works regardless because we created
-# the tables unconditionally before the try block.
+# Per-gene KEGG pathway membership (pathway names, for FTS)
 pathway_per_gene = {}
 for wb, pname in cur.execute(
     "SELECT gkp.wormbase_gene, COALESCE(p.name, gkp.pathway_id) "
@@ -1635,6 +1591,198 @@ SELECT pathway_id, name FROM kegg_pathway;
 """)
 print('fts5 built', file=sys.stderr)
 
+# ---------- gene_paper (NCBI gene2pubmed) ----------
+# Comprehensive per-gene literature list, joined to genes via entrez_to_wb.
+cur.executescript("""
+CREATE TABLE gene_paper (
+  wormbase_gene TEXT NOT NULL,
+  pmid          TEXT NOT NULL,
+  PRIMARY KEY (wormbase_gene, pmid)
+);
+CREATE INDEX idx_gene_paper_gene ON gene_paper(wormbase_gene);
+""")
+gp_rows = []
+with open(gene2pubmed_ce) as fh:
+    for line in fh:
+        entrez, pmid = line.rstrip('\n').split('\t')
+        wb = cur.execute('SELECT wormbase_gene FROM entrez_to_wb WHERE entrez_id = ?', (entrez,)).fetchone()
+        if wb:
+            gp_rows.append((wb[0], pmid))
+cur.executemany('INSERT OR IGNORE INTO gene_paper VALUES (?,?)', gp_rows)
+print(f'gene_paper: {len(gp_rows)} gene-paper links (NCBI gene2pubmed)', file=sys.stderr)
+
+# ---------- paper_meta (titles + DOIs) ----------
+cur.executescript("""
+CREATE TABLE paper_meta (
+  paper_id TEXT PRIMARY KEY,
+  pmid     TEXT,
+  doi      TEXT,
+  title    TEXT,
+  journal  TEXT,
+  year     TEXT,
+  authors  TEXT
+);
+CREATE INDEX idx_paper_meta_pmid ON paper_meta(pmid);
+""")
+
+# Every paper id a gene page can surface: GO/phenotype evidence refs (by WBPaper
+# or PMID) plus the comprehensive gene2pubmed PMIDs.
+ref_wbpapers, ref_pmids = set(), set()
+for (ref,) in cur.execute(
+    "SELECT DISTINCT reference FROM gene_go WHERE reference IS NOT NULL "
+    "UNION SELECT DISTINCT reference FROM allele_phenotype WHERE reference IS NOT NULL"):
+    if ref.startswith('WB_REF:WBPaper'):
+        ref_wbpapers.add(ref[len('WB_REF:'):])
+    elif ref.startswith('PMID:'):
+        ref_pmids.add(ref[len('PMID:'):])
+ref_pmids.update(p for (p,) in cur.execute('SELECT DISTINCT pmid FROM gene_paper'))
+
+with gzip.open(reference_json_gz, 'rt') as fh:
+    _refdoc = json.load(fh)
+_records = _refdoc.get('data', _refdoc) if isinstance(_refdoc, dict) else _refdoc
+
+paper_rows = []
+for r in _records:
+    # A record's WBPaper id, DOI and PMID may each be in primaryId or in
+    # crossReferences (about half the dump is keyed by PMID). Scan both.
+    pid = doi = pmid = None
+    ids = [r.get('primaryId') or ''] + [x.get('id', '') for x in (r.get('crossReferences') or [])]
+    for xid in ids:
+        if xid.startswith('WB:WBPaper') and not pid:
+            pid = xid[len('WB:'):]
+        elif xid.startswith('DOI:') and not doi:
+            doi = xid[len('DOI:'):]
+        elif xid.startswith('PMID:') and not pmid:
+            pmid = xid[len('PMID:'):]
+    if not pid:
+        continue
+    if pid not in ref_wbpapers and (pmid or '') not in ref_pmids:
+        continue
+    year = (r.get('datePublished') or '')[:4]
+    if not year.isdigit():
+        year = None
+    authors = r.get('authors') or []
+    if authors:
+        short = (authors[0].get('name') or '') + (' et al.' if len(authors) > 1 else '')
+    else:
+        short = None
+    paper_rows.append((pid, pmid, doi, r.get('title'), r.get('resourceAbbreviation'), year, short or None))
+
+cur.executemany('INSERT OR IGNORE INTO paper_meta VALUES (?,?,?,?,?,?,?)', paper_rows)
+print(f'paper_meta: {len(paper_rows)} papers resolved (Alliance bibliography)', file=sys.stderr)
+
+# Resolve papers the dump lacks (mostly post-2022) from live, unauthenticated
+# APIs: WBPaper ids via WormBase REST (per-paper), PMIDs via NCBI esummary
+# (batched). Best-effort; failures leave a plain WBPaper/PMID link. Cached on
+# disk so later builds only fetch new papers. SKIP_PAPER_FALLBACK=1 for offline.
+import os, time, subprocess
+
+if os.environ.get('SKIP_PAPER_FALLBACK') == '1':
+    print('paper_meta: freshness fallback skipped (SKIP_PAPER_FALLBACK=1)', file=sys.stderr)
+else:
+    resolved_wb = {pid for (pid,) in cur.execute('SELECT paper_id FROM paper_meta')}
+    resolved_pmid = {p for (p,) in cur.execute('SELECT pmid FROM paper_meta WHERE pmid IS NOT NULL')}
+    missing_wb = sorted(ref_wbpapers - resolved_wb)
+    missing_pmid = sorted(p for p in (ref_pmids - resolved_pmid) if p)
+
+    # Runaway guard: if the dump failed to load almost everything is "missing".
+    MAX_FALLBACK = 6000
+    n_missing = len(missing_wb) + len(missing_pmid)
+    if n_missing > MAX_FALLBACK:
+        print(f'paper_meta: {n_missing} missing exceeds cap {MAX_FALLBACK} '
+              f'(dump likely incomplete) - resolving first {MAX_FALLBACK}', file=sys.stderr)
+        missing_wb = missing_wb[:MAX_FALLBACK]
+        missing_pmid = missing_pmid[:max(0, MAX_FALLBACK - len(missing_wb))]
+
+    cache_dir = Path(paper_cache_dir)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    def _read_cache(name):
+        cf = cache_dir / name
+        if cf.exists():
+            txt = cf.read_text()
+            return ('', None) if txt == '' else ('hit', json.loads(txt))
+        return ('miss', None)
+
+    def _get(url, timeout=30):
+        # Use curl (system trust store) rather than urllib: robust behind a
+        # TLS-intercepting proxy and consistent with the rest of the script.
+        r = subprocess.run(
+            ['curl', '-fsSL', '--max-time', str(timeout),
+             '-H', 'Accept: application/json', '-H', 'User-Agent: wormie-build/1.0', url],
+            capture_output=True, text=True)
+        if r.returncode != 0:
+            raise RuntimeError(f'curl exit {r.returncode}: {r.stderr.strip()[:200]}')
+        return r.stdout
+
+    extra = []
+    for pid in missing_wb:
+        state, d = _read_cache(f'wb_{pid}.json')
+        if state == 'miss':
+            try:
+                raw = _get(f'https://rest.wormbase.org/rest/widget/paper/{pid}/overview')
+                (cache_dir / f'wb_{pid}.json').write_text(raw)
+                d = json.loads(raw)
+                time.sleep(0.2)
+            except Exception as e:
+                (cache_dir / f'wb_{pid}.json').write_text('')
+                print(f'  WB fetch failed {pid}: {e}', file=sys.stderr)
+                d = None
+        if not d:
+            continue
+        f = d.get('fields', {}) or {}
+        def g(k):
+            v = f.get(k, {})
+            return v.get('data') if isinstance(v, dict) else None
+        title = g('title')
+        if not title:
+            continue
+        au = g('authors') or []
+        short = ((au[0].get('label') or '') + (' et al.' if len(au) > 1 else '')) if isinstance(au, list) and au else None
+        year = g('year')
+        extra.append((pid, g('pmid'), g('doi'), title, g('journal'),
+                      str(year) if year else None, short or None))
+
+    def _row_from_esummary(pmid, u):
+        if not u or not u.get('title'):
+            return None
+        doi = next((a['value'] for a in u.get('articleids', []) if a.get('idtype') == 'doi'), None)
+        year = (u.get('pubdate') or '')[:4]
+        au = u.get('authors') or []
+        short = ((au[0].get('name') or '') + (' et al.' if len(au) > 1 else '')) if au else None
+        # No WBPaper id for a PMID-only ref: synthetic key, resolved via pmid index.
+        return (f'PMID:{pmid}', pmid, doi, u.get('title'), u.get('source'),
+                year if year.isdigit() else None, short or None)
+
+    need_fetch = []
+    for pmid in missing_pmid:
+        state, d = _read_cache(f'pmid_{pmid}.json')
+        if state == 'miss':
+            need_fetch.append(pmid)
+        elif state == 'hit':
+            row = _row_from_esummary(pmid, d)
+            if row:
+                extra.append(row)
+    for i in range(0, len(need_fetch), 200):
+        batch = need_fetch[i:i + 200]
+        try:
+            raw = _get('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi'
+                       f'?db=pubmed&id={",".join(batch)}&retmode=json')
+            res = (json.loads(raw).get('result') or {})
+            for pmid in batch:
+                u = res.get(pmid)
+                (cache_dir / f'pmid_{pmid}.json').write_text(json.dumps(u) if u else '')
+                row = _row_from_esummary(pmid, u)
+                if row:
+                    extra.append(row)
+            time.sleep(0.34)
+        except Exception as e:
+            print(f'  NCBI batch fetch failed ({len(batch)} pmids): {e}', file=sys.stderr)
+
+    cur.executemany('INSERT OR IGNORE INTO paper_meta VALUES (?,?,?,?,?,?,?)', extra)
+    print(f'paper_meta: +{len(extra)} resolved live '
+          f'({len(missing_wb)} WBPaper + {len(missing_pmid)} PMID)', file=sys.stderr)
+
 conn.commit()
 conn.executescript('VACUUM; ANALYZE;')
 conn.close()
@@ -1646,9 +1794,7 @@ RAW_SIZE=$(stat -c%s "$TMP_DB" 2>/dev/null || stat -f%z "$TMP_DB")
 gzip -9c "$TMP_DB" >"$DEST_DIR/wormie.sqlite.gz"
 GZ_SIZE=$(stat -c%s "$DEST_DIR/wormie.sqlite.gz" 2>/dev/null || stat -f%z "$DEST_DIR/wormie.sqlite.gz")
 
-# Pull a few real version stamps out of cached files where the source embeds them.
-# Run with pipefail disabled because `head -c N` closes its pipe early, which
-# would otherwise propagate SIGPIPE up through the pipeline and abort the script.
+# Pull a few real version stamps out of cached files
 set +o pipefail
 ALLIANCE_VER="$(gunzip -c "$BGI_JSON" 2>/dev/null | head -c 8000 | grep -oE 'Alliance Database Version[^"]*: [^"]+' | head -1 | sed 's/.*: //' | tr -d ' ' || true)"
 EXPR_VER="$(head -c 4000 "$EXPR_TSV" 2>/dev/null | grep -oE 'Alliance Database Version: [^ ]+' | head -1 | awk '{print $NF}' || true)"
@@ -1674,7 +1820,9 @@ cat >"$DEST_DIR/version.json" <<EOF
     "wormbase_phenotype": { "release": "$WB_RELEASE", "date": "$WB_DATE" },
     "alliance_expression": { "version": "$EXPR_VER" },
     "wbbt": { "date": "$WBBT_DATE" },
-    "cengen": { "release": "$CENGEN_VERSION", "citation": "Barrett et al. 2022 (eLife reviewed preprint 106183)" }
+    "cengen": { "release": "$CENGEN_VERSION", "citation": "Barrett et al. 2022 (eLife reviewed preprint 106183)" },
+    "alliance_bibliography": { "source": "REFERENCE_WB", "note": "Alliance of Genome Resources bulk bibliography (WBPaper -> title/DOI/PMID)" },
+    "gene2pubmed": { "source": "NCBI gene2pubmed", "note": "Gene-to-publication links (comprehensive per-gene literature)" }
   }
 }
 EOF
