@@ -44,14 +44,18 @@
   const BAR_H = 14;
 
   const plot = $derived.by(() => {
-    const N = ranked.length;
-    if (N < 2 || geneSet.length === 0) return null;
+    if (ranked.length < 2 || geneSet.length === 0) return null;
+
+    // Input `ranked` order is arbitrary; sort to match the worker or the curve will not
+    // match the reported ES/NES.
+    const sorted = [...ranked].sort((a, b) => b.score - a.score);
+    const N = sorted.length;
 
     // Plain Map (not SvelteMap): throwaway index inside derived; 20k SvelteMap.set calls
     // add reactive-scheduling overhead that was a real GSEA expand bottleneck.
     // eslint-disable-next-line svelte/prefer-svelte-reactivity
     const pos = new Map<string, number>();
-    for (let i = 0; i < N; i++) pos.set(ranked[i].gene, i);
+    for (let i = 0; i < N; i++) pos.set(sorted[i].gene, i);
     const hits: number[] = [];
     for (const g of geneSet) {
       const i = pos.get(g);
@@ -62,7 +66,7 @@
     if (k === 0) return null;
 
     // Weighted ES walk (weight exponent p=1) mirroring the worker, so the curve peaks at the reported ES.
-    const weights = ranked.map((r) => Math.abs(r.score));
+    const weights = sorted.map((r) => Math.abs(r.score));
     let totalPos = 0;
     for (const i of hits) totalPos += weights[i];
     if (totalPos === 0) return null;
@@ -100,7 +104,7 @@
     // Pre-compute score range for colorbar normalisation.
     let scoreMin = Infinity;
     let scoreMax = -Infinity;
-    for (const r of ranked) {
+    for (const r of sorted) {
       if (r.score < scoreMin) scoreMin = r.score;
       if (r.score > scoreMax) scoreMax = r.score;
     }
@@ -124,13 +128,13 @@
     const leadingSet = new Set(leadingEdge);
     const hitLines = hits.map((i) => ({
       x: xScale(i + 0.5),
-      leading: leadingSet.has(ranked[i].gene),
+      leading: leadingSet.has(sorted[i].gene),
     }));
 
     // Rank index where stat crosses zero (for the vertical guide on the colorbar).
     let crossingIdx = -1;
     for (let i = 1; i < N; i++) {
-      if (ranked[i - 1].score >= 0 && ranked[i].score < 0) {
+      if (sorted[i - 1].score >= 0 && sorted[i].score < 0) {
         crossingIdx = i;
         break;
       }
