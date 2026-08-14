@@ -203,6 +203,18 @@
     });
   });
 
+  let customBackground = $state<string[]>([]);
+  let backgroundLabel = $state<string>('');
+  let appliedBackground = $state<string>('');
+
+  $effect(() => {
+    const bg = initialBackground;
+    const key = bg ? `${bg.label}:${bg.genes.length}` : '';
+    if (key === appliedBackground) return;
+    appliedBackground = key;
+    untrack(() => (bg ? setBackground(bg.genes, bg.label) : setBackground([], '')));
+  });
+
   $effect(() => {
     if (isImported) return;
     const k = active;
@@ -235,16 +247,6 @@
   }
 
   // Custom background for the hypergeometric universe; empty = full annotated genome (ORA default).
-  let customBackground = $state<string[]>([]);
-  let backgroundLabel = $state<string>('');
-  let appliedBackground = $state<string>('');
-  $effect(() => {
-    const bg = initialBackground;
-    const key = bg ? `${bg.label}:${bg.genes.length}` : '';
-    if (key === appliedBackground) return;
-    appliedBackground = key;
-    untrack(() => (bg ? setBackground(bg.genes, bg.label) : setBackground([], '')));
-  });
   function setBackground(genes: string[], label: string) {
     customBackground = genes;
     backgroundLabel = label;
@@ -273,7 +275,7 @@
       return;
     }
     const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
-    const qTag = qCutoff >= 1 ? 'all' : `q${qCutoff}`;
+    const qTag = effQ >= 1 ? 'all' : `q${effQ}`;
     downloadTsv(
       `enrichment_${active}_${qTag}_${ts}.tsv`,
       [
@@ -297,10 +299,10 @@
   // Filtered here, not in the worker, so loosening the cutoff needs no recompute.
   // BH correction runs over all candidates either way.
   let qCutoff = $state(SIG_THRESHOLD);
+  // Clearing the input yields undefined, which would filter everything out.
+  const effQ = $derived(Number.isFinite(qCutoff) ? qCutoff : 1);
   const allResults = $derived(results[active] ?? []);
-  const activeResults = $derived(
-    qCutoff >= 1 ? allResults : allResults.filter((r) => r.q <= qCutoff),
-  );
+  const activeResults = $derived(effQ >= 1 ? allResults : allResults.filter((r) => r.q <= effQ));
   const significantCount = $derived(allResults.filter((r) => r.q <= SIG_THRESHOLD).length);
 
   // ORA sanity: when n/N > 0.5 (input is most of the annotated universe), fold collapses to ~1x
@@ -461,7 +463,7 @@
             bind:value={qCutoff}
             class="h-6 w-16 rounded border border-input bg-background px-1 font-mono text-xs"
           />
-          {#if qCutoff < 1}
+          {#if effQ < 1}
             <button
               type="button"
               onclick={() => (qCutoff = 1)}
@@ -614,7 +616,7 @@
       <CardContent class="pt-6 text-sm text-muted-foreground">
         {#if allResults.length > 0}
           None of the {allResults.length.toLocaleString()}
-          tested {active} terms reach q ≤ {qCutoff}.
+          tested {active} terms reach q ≤ {effQ}.
           <button
             type="button"
             onclick={() => (qCutoff = 1)}

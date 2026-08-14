@@ -112,6 +112,9 @@
   let showBatch = $state(false);
   let minCount = $state(10);
   let alpha = $state(0.05);
+  // padj depends on alpha through independent filtering, so a cached contrast
+  // computed at another alpha has to be re-extracted rather than reused.
+  const contrastAlpha = new SvelteMap<string, number>();
   let bundleSizeLabel = $state('');
   let pairwiseMode = $state<'vs-reference' | 'all-pairwise'>('vs-reference');
   $effect(() => {
@@ -318,7 +321,7 @@
         : contrastShrinkage === 'apeglm'
           ? 'ashr'
           : contrastShrinkage;
-    if (existing && existing.shrinkage === effective) return;
+    if (existing && existing.shrinkage === effective && contrastAlpha.get(name) === alpha) return;
     extracting = true;
     try {
       const c = await runOneContrast(
@@ -328,6 +331,7 @@
         appendContrastLog,
         alpha,
       );
+      contrastAlpha.set(name, alpha);
       contrasts.set(name, c);
     } catch (e) {
       toast.error('Contrast failed', { description: (e as Error)?.message ?? String(e) });
@@ -338,7 +342,10 @@
 
   async function computeAll() {
     if (!fit || runningAll || extracting) return;
-    const pending = allPairs.filter((p) => !contrasts.has(`${p.treatment}_vs_${p.reference}`));
+    const pending = allPairs.filter((p) => {
+      const name = `${p.treatment}_vs_${p.reference}`;
+      return !contrasts.has(name) || contrastAlpha.get(name) !== alpha;
+    });
     if (pending.length === 0) {
       toast.message('All contrasts already computed');
       return;
@@ -353,6 +360,7 @@
         appendContrastLog,
         (_i, c) => {
           contrasts.set(c.name, c);
+          contrastAlpha.set(c.name, alpha);
         },
         poolSize,
         alpha,

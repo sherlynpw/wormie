@@ -292,7 +292,7 @@
       return;
     }
     const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
-    const qTag = qCutoff >= 1 ? 'all' : `q${qCutoff}`;
+    const qTag = effQ >= 1 ? 'all' : `q${effQ}`;
     downloadTsv(
       `gsea_${active}_${qTag}_${ts}.tsv`,
       [
@@ -339,7 +339,7 @@
       results: r,
     });
     const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
-    downloadMarkdown(md, `gsea_${active}_${qCutoff >= 1 ? 'all' : `q${qCutoff}`}_${ts}.md`);
+    downloadMarkdown(md, `gsea_${active}_${effQ >= 1 ? 'all' : `q${effQ}`}_${ts}.md`);
     toast.success('Report exported', { description: `${r.length} ${active} terms` });
   }
 
@@ -378,10 +378,10 @@
   const SIG_THRESHOLD = 0.25;
   // Filtered here so loosening the cutoff needs no recompute.
   let qCutoff = $state(SIG_THRESHOLD);
+  // Clearing the input yields undefined, which would filter everything out.
+  const effQ = $derived(Number.isFinite(qCutoff) ? qCutoff : 1);
   const allResults = $derived(results[active] ?? []);
-  const activeResults = $derived(
-    qCutoff >= 1 ? allResults : allResults.filter((r) => r.q <= qCutoff),
-  );
+  const activeResults = $derived(effQ >= 1 ? allResults : allResults.filter((r) => r.q <= effQ));
   const significantCount = $derived(allResults.filter((r) => r.q <= SIG_THRESHOLD).length);
 
   // REVIGO-style collapse by leading-edge Jaccard similarity. GOALL-propagated parent/child terms
@@ -530,7 +530,7 @@
             bind:value={qCutoff}
             class="h-6 w-16 rounded border border-input bg-background px-1 font-mono text-xs"
           />
-          {#if qCutoff < 1}
+          {#if effQ < 1}
             <button
               type="button"
               onclick={() => (qCutoff = 1)}
@@ -669,7 +669,19 @@
   {:else if activeResults.length === 0}
     <Card>
       <CardContent class="pt-6 text-sm text-muted-foreground">
-        No enriched {active} terms found for this ranking.
+        {#if allResults.length > 0}
+          None of the {allResults.length.toLocaleString()}
+          tested {active} terms reach q ≤ {effQ}.
+          <button
+            type="button"
+            onclick={() => (qCutoff = 1)}
+            class="ml-1 underline underline-offset-2 hover:text-foreground"
+          >
+            Show all tested terms
+          </button>
+        {:else}
+          No enriched {active} terms found for this ranking.
+        {/if}
       </CardContent>
     </Card>
   {:else if viewMode === 'plot'}

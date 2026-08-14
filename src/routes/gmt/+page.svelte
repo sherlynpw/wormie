@@ -46,6 +46,8 @@
   let enrichResults = $state<EnrichmentResult[] | null>(null);
   // Filtered here so loosening the cutoff needs no recompute.
   let qCutoff = $state(0.05);
+  // Clearing the input yields undefined, which would filter everything out.
+  const effQ = $derived(Number.isFinite(qCutoff) ? qCutoff : 1);
   let qCutoffTouched = $state(false);
   $effect(() => {
     const m = mode;
@@ -56,17 +58,13 @@
   const shownEnrich = $derived(
     enrichResults === null
       ? null
-      : qCutoff >= 1
+      : effQ >= 1
         ? enrichResults
-        : enrichResults.filter((r) => r.q <= qCutoff),
+        : enrichResults.filter((r) => r.q <= effQ),
   );
   let gseaResults = $state<GseaResult[] | null>(null);
   const shownGsea = $derived(
-    gseaResults === null
-      ? null
-      : qCutoff >= 1
-        ? gseaResults
-        : gseaResults.filter((r) => r.q <= qCutoff),
+    gseaResults === null ? null : effQ >= 1 ? gseaResults : gseaResults.filter((r) => r.q <= effQ),
   );
 
   let elapsedMs = $state(0);
@@ -588,7 +586,7 @@
         {#if enrichResults}
           <EnrichmentDotPlot results={shownEnrich ?? []} bind:svgEl={plotSvg} />
         {:else if gseaResults}
-          <GseaDotPlot results={gseaResults} bind:svgEl={plotSvg} />
+          <GseaDotPlot results={shownGsea ?? []} bind:svgEl={plotSvg} />
         {/if}
       </div>
     {:else}

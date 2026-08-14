@@ -33,6 +33,8 @@ export interface NtaResult {
   nullModel: NullModel;
   /** Which BioGRID evidence the graph, the null and the edge list were built from. */
   edgeKind: EdgeKind;
+  /** Permutations actually run, so exported methods can't quote a stale count. */
+  permutations: number;
   /** Row counts behind the full BioGRID table, so the split is visible. */
   edgeCounts: { physical: number; genetic: number };
   /** Query genes that appear in the interaction graph at all; the null matches these. */
@@ -236,6 +238,7 @@ export async function runNta(
     universeSize: universe.length,
     nullModel,
     edgeKind,
+    permutations: present.length >= 2 && universe.length >= present.length ? perms : 0,
     edgeCounts: { physical: physicalEdges, genetic: geneticEdges },
     testedNodes: present.length,
     degreeMatch,

@@ -45,7 +45,7 @@ class DbStore {
   version = $state<string>('');
   /** Newest published build, when it differs from the one loaded. */
   updateAvailable = $state<string>('');
-  /** Set when a pinned build was no longer cached and the newest had to be loaded. */
+  /** Set when a pinned build could not be confirmed and the newest was loaded. */
   pinExpired = $state<string>('');
 
   /** Adopt the newest published build and reload; the worker holds the old one open. */
@@ -89,8 +89,10 @@ class DbStore {
         version = pinned;
         this.updateAvailable = latest;
       } else {
+        // The probe only sees the service worker cache; the durable copy lives in
+        // OPFS keyed by version. A cache eviction is therefore not proof the build
+        // is gone, so the pin is left in place to recover on a later load.
         this.pinExpired = pinned;
-        writePin(latest);
       }
     } else if (!pinned) {
       writePin(latest);
