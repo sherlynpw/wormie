@@ -6,10 +6,16 @@
   import { cn } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { DESeq2Row } from '$lib/deseq2/types';
+  import { normalizeBiotype } from '$lib/queries';
 
   type GeneNameMap = Map<
     string,
-    { wormbase_gene: string; gene_name: string | null; sequence_name: string | null }
+    {
+      wormbase_gene: string;
+      gene_name: string | null;
+      sequence_name: string | null;
+      gene_type: string | null;
+    }
   >;
   function displayName(id: string, m: GeneNameMap | null): string {
     if (!m) return id;
@@ -56,6 +62,19 @@
       if (filterTimer) clearTimeout(filterTimer);
     };
   });
+  let baseMeanMin = $state(0);
+  let baseMeanMinDebounced = $state(0);
+  let baseMeanTimer: ReturnType<typeof setTimeout> | null = null;
+  $effect(() => {
+    const v = baseMeanMin;
+    if (baseMeanTimer) clearTimeout(baseMeanTimer);
+    baseMeanTimer = setTimeout(() => (baseMeanMinDebounced = v), 120);
+    return () => {
+      if (baseMeanTimer) clearTimeout(baseMeanTimer);
+    };
+  });
+  let proteinCodingOnly = $state(false);
+
   let sortCol = $state<SortKey>('stat');
   let sortAsc = $state(false);
 
@@ -70,10 +89,19 @@
   const display = $derived((id: string) => displayName(id, geneMeta));
   const filtered = $derived.by(() => {
     const q = filterDebounced.trim().toLowerCase();
-    if (!q) return rows;
+    const minBase = Number.isFinite(baseMeanMinDebounced) ? baseMeanMinDebounced : 0;
+    if (!q && minBase <= 0 && !proteinCodingOnly) return rows;
     return rows.filter((r) => {
-      if (r.gene.toLowerCase().includes(q)) return true;
+      if (minBase > 0 && !(r.baseMean >= minBase)) return false;
       const meta = geneMeta?.get(r.gene);
+      if (
+        proteinCodingOnly &&
+        geneMeta &&
+        normalizeBiotype(meta?.gene_type ?? '') !== 'protein coding'
+      )
+        return false;
+      if (!q) return true;
+      if (r.gene.toLowerCase().includes(q)) return true;
       if (meta?.gene_name?.toLowerCase().includes(q)) return true;
       if (meta?.sequence_name?.toLowerCase().includes(q)) return true;
       return false;
@@ -157,13 +185,32 @@
 </script>
 
 <div class="space-y-2">
-  <div class="flex items-center gap-2">
+  <div class="flex flex-wrap items-center gap-2">
     <input
       type="search"
       bind:value={filter}
       placeholder="filter by gene name, sequence name, or WBGene id..."
       class="h-8 w-full max-w-md rounded-md border border-input bg-background px-2 text-sm"
     />
+    <label class="flex items-center gap-1 text-xs text-muted-foreground">
+      baseMean &ge;
+      <input
+        type="number"
+        min="0"
+        step="1"
+        bind:value={baseMeanMin}
+        class="h-8 w-20 rounded-md border border-input bg-background px-2 text-right font-mono text-xs"
+      />
+    </label>
+    <label class="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <input
+        type="checkbox"
+        bind:checked={proteinCodingOnly}
+        disabled={!geneMeta}
+        class="h-3 w-3"
+      />
+      protein-coding only
+    </label>
     <span class="text-xs text-muted-foreground">
       {sorted.length.toLocaleString()} / {rows.length.toLocaleString()} genes
     </span>

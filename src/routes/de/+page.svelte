@@ -28,6 +28,7 @@
     clearBundleCache,
     prewarmWebR,
   } from '$lib/deseq2/client';
+  import { getBundleManifest } from '$lib/deseq2/webr-instance';
   import type {
     DESeq2FitResult,
     DESeq2Contrast,
@@ -61,7 +62,12 @@
 
   type GeneNameMap = Map<
     string,
-    { wormbase_gene: string; gene_name: string | null; sequence_name: string | null }
+    {
+      wormbase_gene: string;
+      gene_name: string | null;
+      sequence_name: string | null;
+      gene_type: string | null;
+    }
   >;
   function displayName(id: string, m: GeneNameMap | null): string {
     if (!m) return id;
@@ -105,6 +111,8 @@
   let contrastShrinkage = $state<'apeglm' | 'ashr' | 'none'>('apeglm');
   let showBatch = $state(false);
   let minCount = $state(10);
+  let alpha = $state(0.05);
+  let bundleSizeLabel = $state('');
   let pairwiseMode = $state<'vs-reference' | 'all-pairwise'>('vs-reference');
   $effect(() => {
     const cs = conditions;
@@ -199,6 +207,9 @@
         toast.success('Loaded counts from /counts');
       }
     }
+    void getBundleManifest().then((m) => {
+      if (m?.dataBytes) bundleSizeLabel = `${(m.dataBytes / 1024 / 1024).toFixed(0)} MB`;
+    });
     void prewarmWebR(appendFitLog);
   });
 
@@ -310,7 +321,13 @@
     if (existing && existing.shrinkage === effective) return;
     extracting = true;
     try {
-      const c = await runOneContrast(pair, contrastShrinkage, fit.levels[0], appendContrastLog);
+      const c = await runOneContrast(
+        pair,
+        contrastShrinkage,
+        fit.levels[0],
+        appendContrastLog,
+        alpha,
+      );
       contrasts.set(name, c);
     } catch (e) {
       toast.error('Contrast failed', { description: (e as Error)?.message ?? String(e) });
@@ -338,6 +355,7 @@
           contrasts.set(c.name, c);
         },
         poolSize,
+        alpha,
       );
       appendContrastLog(`[pool] all ${out.length} contrast(s) done`);
       if (!activeContrast && out[0]) activeContrast = out[0].name;
@@ -431,7 +449,7 @@
 
   const nSig = $derived.by(() => {
     if (!activeContrastObj) return 0;
-    return activeContrastObj.rows.filter((r) => Number.isFinite(r.padj) && r.padj < 0.05).length;
+    return activeContrastObj.rows.filter((r) => Number.isFinite(r.padj) && r.padj < alpha).length;
   });
 
   $effect(() => {
@@ -733,6 +751,22 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             <span class="text-xs text-muted-foreground">drop low-count genes; 0 = off</span>
           </div>
           <div class="grid gap-1.5">
+            <label for="alpha" class="text-sm font-medium">FDR (alpha)</label>
+            <Input
+              id="alpha"
+              type="number"
+              min="0.001"
+              max="0.5"
+              step="0.01"
+              bind:value={alpha}
+              disabled={running}
+              class="h-9 max-w-24"
+            />
+            <span class="text-xs text-muted-foreground">
+              tunes independent filtering and the significance cutoff
+            </span>
+          </div>
+          <div class="grid gap-1.5">
             <label for="shrink" class="text-sm font-medium">LFC shrinkage</label>
             <select
               id="shrink"
@@ -767,7 +801,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             }}
             disabled={running}
             class="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
-            title="Free OPFS storage. Next run re-downloads ~200 MB."
+            title={`Free OPFS storage. The next fit re-downloads the DESeq2 WASM bundle${bundleSizeLabel ? ` (${bundleSizeLabel})` : ''}, not the gene database.`}
           >
             Clear bundle cache
           </button>
@@ -977,7 +1011,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
           <div class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span
               ><span class="font-mono">{activeContrastObj.name}</span> · shrink: {activeContrastObj.shrinkage}
-              · {activeContrastObj.rows.length} genes · {nSig} sig (padj &lt; 0.05)</span
+              · {activeContrastObj.rows.length} genes · {nSig} sig (padj &lt; {alpha})</span
             >
             {#if selectedGene}
               <span>
@@ -1012,6 +1046,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
               mode="volcano"
               title="Volcano"
               nameMap={geneMeta}
+              qThreshold={alpha}
               exportName={`volcano-${activeContrastObj?.name ?? 'contrast'}`}
             />
           {:else if vizTab === 'ma'}
@@ -1021,6 +1056,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
               baseMean={baseMeanMap}
               title="MA plot"
               nameMap={geneMeta}
+              qThreshold={alpha}
               exportName={`ma-${activeContrastObj?.name ?? 'contrast'}`}
             />
           {:else if vizTab === 'phist'}

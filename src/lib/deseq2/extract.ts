@@ -39,6 +39,7 @@ export async function runContrast(
   pair: ContrastSpec,
   shrinkage: Shrinkage,
   reference: string,
+  alpha = 0.05,
 ): Promise<DESeq2Contrast> {
   const shrinkable = pair.reference === reference;
   // apeglm only works for coefficients against the factor reference; other pairs
@@ -55,7 +56,7 @@ export async function runContrast(
 
   const script = `
     fmt <- function(x) ifelse(is.na(x), "NA", formatC(x, format = "g", digits = 6))
-    res <- results(dds, contrast = c("condition", ${rStr(pair.treatment)}, ${rStr(pair.reference)}))
+    res <- results(dds, contrast = c("condition", ${rStr(pair.treatment)}, ${rStr(pair.reference)}), alpha = ${Number.isFinite(alpha) && alpha > 0 && alpha < 1 ? alpha : 0.05})
     stat_values <- res$stat
     res <- ${shrinkR}
     df <- as.data.frame(res)

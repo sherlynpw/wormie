@@ -19,6 +19,8 @@ export interface PoolOptions {
   size?: number;
   /** Forwarded to each worker for stdout/stderr surfacing. */
   onLine?: (s: string) => void;
+  /** FDR target for results() independent filtering. Defaults to 0.05. */
+  alpha?: number;
 }
 
 export class ContrastPool {
@@ -27,11 +29,13 @@ export class ContrastPool {
   private reference: string;
   private size: number;
   private onLine?: (s: string) => void;
+  private alpha: number;
 
   constructor(ddsBlob: Uint8Array, reference: string, opts: PoolOptions = {}) {
     this.ddsBlob = ddsBlob;
     this.reference = reference;
     this.onLine = opts.onLine;
+    this.alpha = opts.alpha ?? 0.05;
     const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4;
     const requested = opts.size ?? 4;
     this.size = Math.max(1, Math.min(requested, cores));
@@ -78,7 +82,7 @@ export class ContrastPool {
         const pair = pairs[i];
         const name = `${pair.treatment}_vs_${pair.reference}`;
         this.onLine?.(`[w${idx + 1}] start ${name} (${i + 1}/${total})`);
-        const c = await runContrast(member.webR, pair, shrinkage, this.reference);
+        const c = await runContrast(member.webR, pair, shrinkage, this.reference, this.alpha);
         results[i] = c;
         member.busy = null;
         done++;
