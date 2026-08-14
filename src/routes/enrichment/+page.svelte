@@ -45,6 +45,7 @@
     zebrafish: 'Danio rerio',
   };
   let resolvedIds = $state<string[]>([]);
+  let deBackground = $state<{ genes: string[]; label: string } | null>(null);
   let resolving = $state(false);
   let importText = $state('');
   let importDragOver = $state(false);
@@ -112,12 +113,17 @@
   let deseqHasLog2fc = $state(false);
   let padjMax = $state(0.05);
   let lfcMin = $state(0); // |log2FC| threshold
+  let deDirection = $state<'all' | 'up' | 'down'>('all');
   const dePassing = $derived.by(() => {
     if (!deseqRows) return [] as DeseqRow[];
     return deseqRows.filter((r) => {
       if (deseqHasPadj && (r.padj === null || r.padj > padjMax)) return false;
-      if (deseqHasLog2fc && lfcMin > 0) {
-        if (r.log2fc === null || Math.abs(r.log2fc) < lfcMin) return false;
+      if (deseqHasLog2fc) {
+        if (lfcMin > 0 && (r.log2fc === null || Math.abs(r.log2fc) < lfcMin)) return false;
+        if (deDirection !== 'all') {
+          if (r.log2fc === null) return false;
+          if (deDirection === 'up' ? r.log2fc <= 0 : r.log2fc >= 0) return false;
+        }
       }
       return true;
     });
@@ -168,6 +174,7 @@
         mode?: Mode;
         padjMax?: number;
         lfcMin?: number;
+        deDirection?: 'all' | 'up' | 'down';
         rankedTopN?: number;
       };
       const restoredMode = p.mode ?? 'paste';
@@ -181,6 +188,8 @@
       }
       if (typeof p.padjMax === 'number') padjMax = p.padjMax;
       if (typeof p.lfcMin === 'number') lfcMin = p.lfcMin;
+      if (p.deDirection === 'all' || p.deDirection === 'up' || p.deDirection === 'down')
+        deDirection = p.deDirection;
       if (typeof p.rankedTopN === 'number') rankedTopN = p.rankedTopN;
       // Session results: restore directly to avoid re-running enrichment.
       if (session.results) {
@@ -402,13 +411,24 @@
     }
     resolving = true;
     try {
-      const r = await bulkLookup(subset.map((row) => row.gene));
+      // Universe is every tested row, so terms whose members were never expressed
+      // don't inflate N or per-term K. Resolved before the handoff drops deseqRows.
+      const universeRows = deseqRows ?? [];
+      const [r, bg] = await Promise.all([
+        bulkLookup(subset.map((row) => row.gene)),
+        bulkLookup(universeRows.map((row) => row.gene)),
+      ]);
       const unique = [...new Set(r.hits.map((h) => h.wormbase_gene))];
+      const universe = [...new Set(bg.hits.map((h) => h.wormbase_gene))];
+      deBackground =
+        universe.length > 0
+          ? { genes: universe, label: `DESeq2 rows (${universe.length.toLocaleString()})` }
+          : null;
       resolvedIds = unique;
       deseqRows = null;
       mode = 'paste';
       toast.success('Running enrichment', {
-        description: `${unique.length.toLocaleString()} DE genes (padj ≤ ${padjMax}${lfcMin > 0 ? `, |log2FC| ≥ ${lfcMin}` : ''})`,
+        description: `${unique.length.toLocaleString()} DE genes (padj ≤ ${padjMax}${lfcMin > 0 ? `, |log2FC| ≥ ${lfcMin}` : ''}${deDirection !== 'all' ? `, ${deDirection}-regulated` : ''})`,
       });
     } finally {
       resolving = false;
@@ -714,7 +734,7 @@
                   v: 1,
                   tool: 'enrichment',
                   inputs: { primary: importText },
-                  params: { mode, padjMax, lfcMin },
+                  params: { mode, padjMax, lfcMin, deDirection },
                 }) satisfies Session}
               getResults={() => {
                 // importedResults is canonical in deseq2/results modes; fall back to latestResults
@@ -803,6 +823,21 @@
                       class="h-8 w-24 text-sm"
                     />
                   </label>
+                  <label class="block">
+                    <span
+                      class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
+                      direction
+                    </span>
+                    <select
+                      bind:value={deDirection}
+                      class="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                    >
+                      <option value="all">all</option>
+                      <option value="up">up only</option>
+                      <option value="down">down only</option>
+                    </select>
+                  </label>
                 {/if}
                 <div class="text-xs text-muted-foreground">
                   <span class="font-semibold tabular-nums text-foreground">
@@ -815,8 +850,12 @@
                 </Button>
                 <ControlHint id="enrich-de-subset" title="DE-subset ORA">
                   Runs hypergeometric over-representation on the filtered subset against GO /
-                  Phenotype / WormCat / Tissue. The universe is your DESeq2 row set (not the whole
-                  genome) so results aren't biased by what's tested.
+                  Phenotype / WormCat / Tissue. The universe is set to your DESeq2 row set ({deseqRows
+                    ? deseqRows.length.toLocaleString()
+                    : 0} genes), not the whole genome, so terms whose members were never expressed in
+                  this experiment don't inflate the background. A directional run keeps that same universe,
+                  so up- and down-regulated genes are each tested against every tested row. The universe
+                  in force is shown on the results card and can be cleared there.
                 </ControlHint>
               </div>
               <div class="text-[0.7rem] text-muted-foreground">
@@ -865,6 +904,7 @@
       imported={importedResults ?? undefined}
       onHighlight={highlightTerm}
       onResults={(r) => (latestResults = r)}
+      initialBackground={deBackground}
     />
   {/if}
 </div>
