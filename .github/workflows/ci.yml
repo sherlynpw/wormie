@@ -1,0 +1,59 @@
+name: CI
+
+# Checks only: no database build, no R2 upload, no deploy.
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run check
+
+      - name: Lint
+        run: bun run lint
+
+      # The DB is fetched at runtime and is not a build input, so this runs
+      # without static/data present.
+      - name: Build
+        run: bun run build
+
+      # build-db.sh is not covered by check or lint, and a syntax error there
+      # only surfaces during a deploy.
+      - name: Parse shell scripts
+        run: |
+          set -euo pipefail
+          for f in scripts/*.sh scripts/wasm-build/*.sh; do
+            [ -f "$f" ] || continue
+            bash -n "$f"
+          done
+
+      - name: Parse build-db python block
+        run: |
+          python3 - <<'EOF'
+          s = open('scripts/build-db.sh').read()
+          start = s.index("<<'PY'\n") + len("<<'PY'\n")
+          end = s.index("\nPY\n", start)
+          compile(s[start:end], 'build-db.py', 'exec')
+          print('build-db.sh python block parses')
+          EOF
