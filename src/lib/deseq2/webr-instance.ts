@@ -4,6 +4,7 @@ const BUNDLE_BASE = '/wasm-cran/';
 // manifest's bundleVersion, so a rebake invalidates OPFS on its own.
 const BUNDLE_VERSION_FALLBACK = 'v2-simd';
 const OPFS_DIR = 'wasm-cran-cache';
+const MANIFEST_KEY = 'deseq2-bundle.manifest.json';
 
 export interface BundlePackage {
   name: string;
@@ -26,13 +27,27 @@ let manifestCache: Promise<BundleManifest | null> | null = null;
 export function getBundleManifest(): Promise<BundleManifest | null> {
   if (!manifestCache) {
     manifestCache = (async () => {
+      const dir = await opfsHandle();
       try {
         const r = await fetch(`${BUNDLE_BASE}deseq2-bundle.manifest.json`);
-        if (!r.ok) return null;
-        const m = (await r.json()) as BundleManifest;
-        return m?.bundleVersion && Array.isArray(m.packages) ? m : null;
+        if (!r.ok) throw new Error(String(r.status));
+        const text = await r.text();
+        const m = JSON.parse(text) as BundleManifest;
+        if (!m?.bundleVersion || !Array.isArray(m.packages)) return null;
+        if (dir) void opfsWriteAll(dir, MANIFEST_KEY, text);
+        return m;
       } catch {
-        return null;
+        // Offline: the cached bundle is keyed by this hash, so without the
+        // stored copy the entry would be missed and a download attempted.
+        if (!dir) return null;
+        try {
+          const blob = await opfsReadAll(dir, MANIFEST_KEY);
+          if (!blob) return null;
+          const m = JSON.parse(await blob.text()) as BundleManifest;
+          return m?.bundleVersion && Array.isArray(m.packages) ? m : null;
+        } catch {
+          return null;
+        }
       }
     })();
   }

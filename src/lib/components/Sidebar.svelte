@@ -364,7 +364,7 @@
       {:else if db.pinExpired}
         <div class="mb-2 rounded border border-dashed px-2 py-1.5 text-[0.65rem] leading-snug">
           <div class="text-muted-foreground">
-            Build {db.pinExpired} is no longer available offline, so {db.version} was loaded.
+            Build {db.pinExpired} could not be confirmed on this device, so {db.version} was loaded.
           </div>
           <button
             type="button"

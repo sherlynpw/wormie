@@ -111,7 +111,11 @@
         <MethodsButton
           ctx={{
             tool: 'nta',
-            params: { perms, nullModel: result.nullModel, edgeKind: result.edgeKind },
+            params: {
+              perms: result.permutations,
+              nullModel: result.nullModel,
+              edgeKind: result.edgeKind,
+            },
             inputSummary: `${result.nodes.length} query genes`,
           }}
         />
