@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { runNta, type NtaResult } from '$lib/nta';
+  import { runNta, type NtaResult, type NullModel, type EdgeKind } from '$lib/nta';
   import { bulkLookup } from '$lib/queries';
   import { parseGeneList } from '$lib/gene-parse';
   import MethodsButton from '$lib/components/MethodsButton.svelte';
@@ -9,6 +9,8 @@
 
   let pasteText = $state('');
   let perms = $state(1000);
+  let nullModel = $state<NullModel>('degree');
+  let edgeKind = $state<EdgeKind>('all');
   let running = $state(false);
   let result = $state<NtaResult | null>(null);
 
@@ -26,7 +28,7 @@
         toast.error('Could not resolve enough gene IDs');
         return;
       }
-      result = await runNta(ids, { permutations: perms });
+      result = await runNta(ids, { permutations: perms, nullModel, edgeKind });
       toast.success(
         `${result.observedEdges} edges among ${ids.length} input genes (z = ${result.edgeZ.toFixed(2)})`,
       );
@@ -42,10 +44,14 @@
 
 <div class="container mx-auto max-w-5xl space-y-6 p-4">
   <header class="space-y-1">
-    <h1 class="text-2xl font-semibold">Network topology analysis</h1>
+    <h1 class="text-2xl font-semibold">Network connectivity</h1>
     <p class="text-sm text-muted-foreground">
       Tests whether a query gene list is more interconnected in the BioGRID interaction graph than a
-      random gene set of the same size. Reports observed within-set edges and a permutation z-score.
+      random gene set. BioGRID carries both physical and genetic interactions, which support
+      different claims; pick which are in play and the test, the null and the edge list all follow
+      that choice. The default null draws each random gene from the same degree bin as the query
+      gene it replaces, so a list of well-studied genes does not score high merely because such
+      genes are better connected. Reports observed within-set edges and a permutation z-score.
       Local-first; no data leaves the browser.
     </p>
   </header>
@@ -70,6 +76,27 @@
             step="100"
           />
         </label>
+        <label class="inline-flex items-center gap-1.5 text-sm">
+          <span class="text-muted-foreground">Evidence:</span>
+          <select
+            bind:value={edgeKind}
+            class="h-8 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="all">physical + genetic</option>
+            <option value="physical">physical only</option>
+            <option value="genetic">genetic only</option>
+          </select>
+        </label>
+        <label class="inline-flex items-center gap-1.5 text-sm">
+          <span class="text-muted-foreground">Null model:</span>
+          <select
+            bind:value={nullModel}
+            class="h-8 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="degree">degree-preserving</option>
+            <option value="uniform">uniform</option>
+          </select>
+        </label>
         <Button onclick={run} disabled={running || !pasteText.trim()}>
           {running ? 'Running…' : 'Run NTA'}
         </Button>
@@ -83,13 +110,35 @@
         <CardTitle>Result</CardTitle>
         <MethodsButton
           ctx={{
-            tool: 'enrichment',
-            params: { kind: 'nta', perms },
+            tool: 'nta',
+            params: { perms, nullModel: result.nullModel, edgeKind: result.edgeKind },
             inputSummary: `${result.nodes.length} query genes`,
           }}
         />
       </CardHeader>
       <CardContent>
+        {#if result.testedNodes < result.nodes.length}
+          <div
+            class="mb-4 rounded-md border border-amber-500/60 bg-amber-50 p-3 text-sm dark:bg-amber-950/30"
+          >
+            <span class="font-semibold">
+              {result.nodes.length - result.testedNodes} of {result.nodes.length} query genes have no
+              interactions in BioGRID
+            </span>
+            and cannot contribute edges, so this result describes the
+            <span class="font-semibold">{result.testedNodes}</span> that do. BioGRID covers about 45%
+            of protein-coding genes, and less for membrane proteins such as ion channels.
+          </div>
+        {/if}
+        {#if result.degreeMatch && result.degreeMatch.sampled < result.degreeMatch.query * 0.8}
+          <div class="mb-4 rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+            Degree matching is approximate for this query: the tested genes have a median degree of
+            {result.degreeMatch.query} but the null could only draw genes at a median of {result
+              .degreeMatch.sampled}. There are too few genes of comparable degree to match the top
+            of the distribution, which understates the expected count and makes the z-score
+            conservative rather than inflated.
+          </div>
+        {/if}
         <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm md:grid-cols-3">
           <div>
             <dt class="text-muted-foreground">Query genes</dt>
@@ -104,7 +153,9 @@
             <dd class="font-mono">{result.observedEdges}</dd>
           </div>
           <div>
-            <dt class="text-muted-foreground">Expected (random)</dt>
+            <dt class="text-muted-foreground">
+              Expected ({result.nullModel === 'degree' ? 'degree-matched' : 'uniform'})
+            </dt>
             <dd class="font-mono">{result.expectedEdges.toFixed(2)}</dd>
           </div>
           <div>
@@ -116,9 +167,27 @@
             <dd class="font-mono">{result.density.toFixed(4)}</dd>
           </div>
           <div>
+            <dt class="text-muted-foreground">BioGRID evidence</dt>
+            <dd class="font-mono">
+              {result.edgeKind === 'all' ? 'physical + genetic' : result.edgeKind}
+            </dd>
+          </div>
+          <div>
             <dt class="text-muted-foreground">BioGRID universe</dt>
             <dd class="font-mono">{result.universeSize.toLocaleString()}</dd>
           </div>
+          <div>
+            <dt class="text-muted-foreground">In interaction graph</dt>
+            <dd class="font-mono">{result.testedNodes} / {result.nodes.length}</dd>
+          </div>
+          {#if result.degreeMatch}
+            <div>
+              <dt class="text-muted-foreground">Median degree (query / null)</dt>
+              <dd class="font-mono">
+                {result.degreeMatch.query} / {result.degreeMatch.sampled}
+              </dd>
+            </div>
+          {/if}
         </dl>
 
         {#if result.edges.length > 0}
