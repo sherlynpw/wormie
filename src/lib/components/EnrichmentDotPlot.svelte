@@ -43,7 +43,6 @@
 
   const innerW = $derived(WIDTH - MARGIN_LEFT - MARGIN_RIGHT);
   const innerH = $derived(top.length * ROW);
-  const height = $derived(MARGIN_TOP + innerH + MARGIN_BOTTOM);
 
   // Scales
   const foldMax = $derived(Math.max(2, ...top.map((r) => r.fold)));
@@ -115,6 +114,12 @@
     Math.max(2, Math.round(kMax / 2)),
     kMax,
   ]);
+
+  // The legend column can outrun a short plot.
+  const legendBottom = $derived(sizeLegendY + 14 + sizeLegendKs.length * 24 + 4);
+  const height = $derived(
+    Math.max(MARGIN_TOP + innerH + MARGIN_BOTTOM, legendBottom + MARGIN_BOTTOM),
+  );
 </script>
 
 {#if top.length === 0}

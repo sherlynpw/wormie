@@ -286,14 +286,15 @@
   }
 
   function exportTsv() {
-    const r = results[active] ?? [];
+    const r = activeResults;
     if (r.length === 0) {
       toast.error('Nothing to export');
       return;
     }
     const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
+    const qTag = qCutoff >= 1 ? 'all' : `q${qCutoff}`;
     downloadTsv(
-      `gsea_${active}_${ts}.tsv`,
+      `gsea_${active}_${qTag}_${ts}.tsv`,
       [
         { header: 'term_id', get: (row) => row.term_id },
         { header: 'name', get: (row) => row.name },
@@ -326,7 +327,7 @@
   }
 
   async function exportReport() {
-    const r = results[active] ?? [];
+    const r = activeResults;
     if (r.length === 0) {
       toast.error('Nothing to export');
       return;
@@ -338,7 +339,7 @@
       results: r,
     });
     const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
-    downloadMarkdown(md, `gsea_${active}_${ts}.md`);
+    downloadMarkdown(md, `gsea_${active}_${qCutoff >= 1 ? 'all' : `q${qCutoff}`}_${ts}.md`);
     toast.success('Report exported', { description: `${r.length} ${active} terms` });
   }
 
@@ -375,8 +376,13 @@
   }
 
   const SIG_THRESHOLD = 0.25;
-  const activeResults = $derived(results[active] ?? []);
-  const significantCount = $derived(activeResults.filter((r) => r.q <= SIG_THRESHOLD).length);
+  // Filtered here so loosening the cutoff needs no recompute.
+  let qCutoff = $state(SIG_THRESHOLD);
+  const allResults = $derived(results[active] ?? []);
+  const activeResults = $derived(
+    qCutoff >= 1 ? allResults : allResults.filter((r) => r.q <= qCutoff),
+  );
+  const significantCount = $derived(allResults.filter((r) => r.q <= SIG_THRESHOLD).length);
 
   // REVIGO-style collapse by leading-edge Jaccard similarity. GOALL-propagated parent/child terms
   // often share most leading-edge genes; collapse de-duplicates them. Proxy for Resnik IC, but
@@ -512,13 +518,41 @@
       {:else if results[active]}
         <span>
           <span class="font-semibold tabular-nums text-foreground">{significantCount}</span>
-          significant (q ≤ 0.25) of {activeResults.length} tested
-          {#if collapseRedundant && collapsedCount > 0}
-            <span class="text-muted-foreground"
-              >(showing {displayCount}; {collapsedCount} folded)</span
-            >
-          {/if}
+          significant (q ≤ 0.25) of {allResults.length} tested
         </span>
+        <label class="inline-flex items-center gap-1" title="Hide terms above this q-value">
+          <span>show q ≤</span>
+          <input
+            type="number"
+            min="0"
+            max="1"
+            step="0.05"
+            bind:value={qCutoff}
+            class="h-6 w-16 rounded border border-input bg-background px-1 font-mono text-xs"
+          />
+          {#if qCutoff < 1}
+            <button
+              type="button"
+              onclick={() => (qCutoff = 1)}
+              class="rounded border px-1.5 py-0.5 text-[0.7rem] transition-colors hover:bg-accent"
+            >
+              show all
+            </button>
+          {:else}
+            <button
+              type="button"
+              onclick={() => (qCutoff = SIG_THRESHOLD)}
+              class="rounded border px-1.5 py-0.5 text-[0.7rem] transition-colors hover:bg-accent"
+            >
+              significant only
+            </button>
+          {/if}
+        </label>
+        {#if collapseRedundant && collapsedCount > 0}
+          <span class="text-muted-foreground"
+            >(showing {displayCount}; {collapsedCount} folded)</span
+          >
+        {/if}
         <span class="font-mono">· {elapsed[active].toFixed(0)} ms</span>
         <div class="inline-flex overflow-hidden rounded-md border">
           <button

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { bulkLookup } from '$lib/queries';
   import { parseGmt, summarize, type GmtSet } from '$lib/gmt';
   import {
@@ -43,7 +44,31 @@
   let nperm = $state(1000);
   let running = $state(false);
   let enrichResults = $state<EnrichmentResult[] | null>(null);
+  // Filtered here so loosening the cutoff needs no recompute.
+  let qCutoff = $state(0.05);
+  let qCutoffTouched = $state(false);
+  $effect(() => {
+    const m = mode;
+    untrack(() => {
+      if (!qCutoffTouched) qCutoff = m === 'gsea' ? 0.25 : 0.05;
+    });
+  });
+  const shownEnrich = $derived(
+    enrichResults === null
+      ? null
+      : qCutoff >= 1
+        ? enrichResults
+        : enrichResults.filter((r) => r.q <= qCutoff),
+  );
   let gseaResults = $state<GseaResult[] | null>(null);
+  const shownGsea = $derived(
+    gseaResults === null
+      ? null
+      : qCutoff >= 1
+        ? gseaResults
+        : gseaResults.filter((r) => r.q <= qCutoff),
+  );
+
   let elapsedMs = $state(0);
   let viewMode = $state<'table' | 'plot'>('table');
   let plotSvg = $state<SVGSVGElement | null>(null);
@@ -497,6 +522,26 @@
       <span class="text-sm text-muted-foreground">
         {resultCount} terms tested · {elapsedMs.toFixed(0)} ms
       </span>
+      {#if enrichResults || gseaResults}
+        <label
+          class="inline-flex items-center gap-1 text-xs text-muted-foreground"
+          title="Hide terms above this q-value"
+        >
+          <span>show q ≤</span>
+          <input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={qCutoff}
+            oninput={() => (qCutoffTouched = true)}
+            class="h-6 w-16 rounded border border-input bg-background px-1 font-mono text-xs"
+          />
+          <span class="tabular-nums">
+            ({((mode === 'gsea' ? shownGsea : shownEnrich) ?? []).length.toLocaleString()} shown)
+          </span>
+        </label>
+      {/if}
       <div class="ml-auto inline-flex overflow-hidden rounded-md border">
         <button
           type="button"
@@ -541,7 +586,7 @@
     {:else if viewMode === 'plot'}
       <div class="rounded-lg border bg-card p-3">
         {#if enrichResults}
-          <EnrichmentDotPlot results={enrichResults} bind:svgEl={plotSvg} />
+          <EnrichmentDotPlot results={shownEnrich ?? []} bind:svgEl={plotSvg} />
         {:else if gseaResults}
           <GseaDotPlot results={gseaResults} bind:svgEl={plotSvg} />
         {/if}
@@ -590,8 +635,8 @@
             </tr>
           </thead>
           <tbody>
-            {#if enrichResults}
-              {#each enrichResults as r, i (r.term_id + ':' + i)}
+            {#if shownEnrich}
+              {#each shownEnrich as r, i (r.term_id + ':' + i)}
                 <tr class="border-b last:border-b-0 hover:bg-muted/30">
                   <td class="px-3 py-1.5 align-top">
                     <span class="text-sm">{r.name}</span>
@@ -628,7 +673,7 @@
                 </tr>
               {/each}
             {:else if gseaResults}
-              {#each gseaResults as r, i (r.term_id + ':' + i)}
+              {#each shownGsea ?? [] as r, i (r.term_id + ':' + i)}
                 <tr class="border-b last:border-b-0 hover:bg-muted/30">
                   <td class="px-3 py-1.5 align-top">
                     <span class="text-sm">{r.name}</span>
