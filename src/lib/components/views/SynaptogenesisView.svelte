@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fmtTitle } from '$lib/format';
   import { untrack } from 'svelte';
   import {
     getSynaptogenesisTree,
@@ -163,7 +164,7 @@
                       href={doiHref(r.doi)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={`${r.authors} (${r.year}) — ${r.title}. ${r.journal}`}
+                      title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
                       class="inline-block rounded border bg-background px-1.5 py-0.5 font-mono text-[0.6rem] text-muted-foreground hover:bg-accent"
                     >
                       {rid}
@@ -219,7 +220,7 @@
                                       href={doiHref(r.doi)}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      title={`${r.authors} (${r.year}) — ${r.title}. ${r.journal}`}
+                                      title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
                                       class="inline-block rounded border bg-card px-1 py-0 font-mono text-[0.55rem] text-muted-foreground hover:bg-accent"
                                     >
                                       {rid}
@@ -254,7 +255,7 @@
           <li class="leading-snug">
             <span class="font-mono text-muted-foreground">[{r.id}]</span>
             <span class="ml-1">{r.authors} ({r.year}).</span>
-            <span class="font-semibold">{r.title}.</span>
+            <span class="font-semibold">{fmtTitle(r.title)}.</span>
             <span class="italic">{r.journal}.</span>
             <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
             <a
