@@ -22,7 +22,7 @@
     max?: number;
   } = $props();
 
-  let layoutKind = $state<LayoutKind>('radial');
+  let layoutKind = $state<LayoutKind>('concentric');
 
   type PartnerAgg = {
     id: string;
@@ -131,7 +131,8 @@
           bind:value={layoutKind}
           class="rounded border bg-card px-1.5 py-0.5 font-mono text-xs"
         >
-          <option value="radial">radial</option>
+          <option value="concentric">concentric</option>
+          <option value="radial">radial arcs</option>
           <option value="dagre-TB">tree (top→bottom)</option>
           <option value="dagre-LR">tree (left→right)</option>
         </select>
