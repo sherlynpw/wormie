@@ -36,6 +36,7 @@
     imported,
     onHighlight,
     onResults,
+    initialBackground = null,
   }: {
     ids: string[];
     imported?: Partial<Record<EnrichmentKind, EnrichmentResult[]>>;
@@ -45,6 +46,8 @@
     // Called whenever live results change so the parent can stash them in a saved Session
     // for restore without recomputing.
     onResults?: (results: Partial<Record<EnrichmentKind, EnrichmentResult[]>>) => void;
+    // Null leaves the ORA default, the full annotated genome.
+    initialBackground?: { genes: string[]; label: string } | null;
   } = $props();
 
   let highlightedRow = $state<string | null>(null);
@@ -234,6 +237,14 @@
   // Custom background for the hypergeometric universe; empty = full annotated genome (ORA default).
   let customBackground = $state<string[]>([]);
   let backgroundLabel = $state<string>('');
+  let appliedBackground = $state<string>('');
+  $effect(() => {
+    const bg = initialBackground;
+    const key = bg ? `${bg.label}:${bg.genes.length}` : '';
+    if (key === appliedBackground) return;
+    appliedBackground = key;
+    untrack(() => (bg ? setBackground(bg.genes, bg.label) : setBackground([], '')));
+  });
   function setBackground(genes: string[], label: string) {
     customBackground = genes;
     backgroundLabel = label;
@@ -256,14 +267,15 @@
   }
 
   function exportTsv() {
-    const r = results[active] ?? [];
+    const r = activeResults;
     if (r.length === 0) {
       toast.error('Nothing to export');
       return;
     }
     const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
+    const qTag = qCutoff >= 1 ? 'all' : `q${qCutoff}`;
     downloadTsv(
-      `enrichment_${active}_${ts}.tsv`,
+      `enrichment_${active}_${qTag}_${ts}.tsv`,
       [
         { header: 'term_id', get: (row) => row.term_id },
         { header: 'name', get: (row) => row.name },
@@ -282,13 +294,19 @@
   }
 
   const SIG_THRESHOLD = 0.05;
-  const activeResults = $derived(results[active] ?? []);
-  const significantCount = $derived(activeResults.filter((r) => r.q <= SIG_THRESHOLD).length);
+  // Filtered here, not in the worker, so loosening the cutoff needs no recompute.
+  // BH correction runs over all candidates either way.
+  let qCutoff = $state(SIG_THRESHOLD);
+  const allResults = $derived(results[active] ?? []);
+  const activeResults = $derived(
+    qCutoff >= 1 ? allResults : allResults.filter((r) => r.q <= qCutoff),
+  );
+  const significantCount = $derived(allResults.filter((r) => r.q <= SIG_THRESHOLD).length);
 
   // ORA sanity: when n/N > 0.5 (input is most of the annotated universe), fold collapses to ~1x
   // and q-values become meaningless. Usually hit when a full DESeq2 table is pasted unfiltered.
   const universeWarning = $derived.by(() => {
-    const first = activeResults[0];
+    const first = allResults[0];
     if (!first || first.N === 0) return null;
     const ratio = first.n / first.N;
     if (ratio <= 0.5) return null;
@@ -431,8 +449,36 @@
       {:else if results[active]}
         <span>
           <span class="font-semibold tabular-nums text-foreground">{significantCount}</span>
-          significant (q ≤ 0.05) of {activeResults.length} tested
+          significant (q ≤ 0.05) of {allResults.length} tested
         </span>
+        <label class="inline-flex items-center gap-1" title="Hide terms above this q-value">
+          <span>show q ≤</span>
+          <input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={qCutoff}
+            class="h-6 w-16 rounded border border-input bg-background px-1 font-mono text-xs"
+          />
+          {#if qCutoff < 1}
+            <button
+              type="button"
+              onclick={() => (qCutoff = 1)}
+              class="rounded border px-1.5 py-0.5 text-[0.7rem] transition-colors hover:bg-accent"
+            >
+              show all
+            </button>
+          {:else}
+            <button
+              type="button"
+              onclick={() => (qCutoff = SIG_THRESHOLD)}
+              class="rounded border px-1.5 py-0.5 text-[0.7rem] transition-colors hover:bg-accent"
+            >
+              significant only
+            </button>
+          {/if}
+        </label>
         {#if !isImported}
           <span class="font-mono">· {elapsed[active].toFixed(0)} ms</span>
         {:else}
@@ -566,7 +612,19 @@
   {:else if activeResults.length === 0}
     <Card>
       <CardContent class="pt-6 text-sm text-muted-foreground">
-        No enriched {active} terms found for this gene set.
+        {#if allResults.length > 0}
+          None of the {allResults.length.toLocaleString()}
+          tested {active} terms reach q ≤ {qCutoff}.
+          <button
+            type="button"
+            onclick={() => (qCutoff = 1)}
+            class="ml-1 underline underline-offset-2 hover:text-foreground"
+          >
+            Show all tested terms
+          </button>
+        {:else}
+          No enriched {active} terms found for this gene set.
+        {/if}
       </CardContent>
     </Card>
   {:else}
