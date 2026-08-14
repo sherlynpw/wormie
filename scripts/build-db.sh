@@ -19,10 +19,12 @@ SYNAPTO_TSV="${SYNAPTO_TSV:-$ROOT/data/synaptogenesis_genes.tsv}"
 
 mkdir -p "$CACHE" "$DEST_DIR"
 
-# --- WormBase WS release: auto-detect latest on EBI mirror if not pinned ---
-if [[ -z "${WB_RELEASE:-}" ]]; then
-  WB_RELEASE="$(curl -fsS --max-time 10 'https://ftp.ebi.ac.uk/pub/databases/wormbase/releases/' 2>/dev/null | grep -oE 'WS[0-9]+' | sort -u -t S -k 2 -n | tail -1)"
-  WB_RELEASE="${WB_RELEASE:-WS298}"
+# WS298 is WormBase's final major release, so pin rather than auto-detect.
+# WB_RELEASE overrides; WB_AUTODETECT=1 probes the EBI mirror again.
+WB_RELEASE="${WB_RELEASE:-WS298}"
+if [[ "${WB_AUTODETECT:-}" == "1" ]]; then
+  DETECTED="$(curl -fsS --max-time 10 'https://ftp.ebi.ac.uk/pub/databases/wormbase/releases/' 2>/dev/null | grep -oE 'WS[0-9]+' | sort -u -t S -k 2 -n | tail -1)"
+  WB_RELEASE="${DETECTED:-$WB_RELEASE}"
 fi
 echo "WormBase release: $WB_RELEASE"
 
@@ -77,9 +79,11 @@ REF_JSON="$CACHE/REFERENCE_WB.json.gz"
 GENE2PUBMED_URL="https://ftp.ncbi.nlm.nih.gov/gene/DATA/gene2pubmed.gz"
 GENE2PUBMED_CE="$CACHE/gene2pubmed_ce.tsv"
 
+# FORCE_REFRESH=1 refetches even when cached; a warm .cache otherwise pins the
+# build to whatever was downloaded previously.
 fetch() {
   local url="$1" dest="$2"
-  if [[ ! -f "$dest" ]]; then
+  if [[ ! -f "$dest" || "${FORCE_REFRESH:-}" == "1" ]]; then
     echo "Downloading $(basename "$dest")..."
     curl -fsSL "$url" -o "$dest"
   fi
@@ -116,8 +120,11 @@ if [[ ! -f "$GENE2PUBMED_CE" ]]; then
 fi
 
 # Unzip BioGRID and resolve the C. elegans tab3 filename (contains the version)
+# Version order, not name order: `ls | head -1` sorts 5.0.258 ahead of 5.0.259,
+# so a cache holding both would build against the older release.
+rm -f "$CACHE"/BIOGRID-ORGANISM-Caenorhabditis_elegans-*.tab3.txt
 (cd "$CACHE" && unzip -o BIOGRID-ORGANISM-LATEST.tab3.zip 'BIOGRID-ORGANISM-Caenorhabditis_elegans-*.tab3.txt' >/dev/null)
-BIOGRID_TAB="$(ls "$CACHE"/BIOGRID-ORGANISM-Caenorhabditis_elegans-*.tab3.txt | head -1)"
+BIOGRID_TAB="$(ls "$CACHE"/BIOGRID-ORGANISM-Caenorhabditis_elegans-*.tab3.txt | sort -V | tail -1)"
 BIOGRID_VERSION="$(basename "$BIOGRID_TAB" | sed -E 's/.*-([0-9.]+)\.tab3\.txt/\1/')"
 echo "BioGRID version: $BIOGRID_VERSION"
 
@@ -128,6 +135,13 @@ if command -v uv >/dev/null 2>&1; then
   PY=(uv run --quiet --with numpy --with Pillow python3)
 else
   PY=(python3)
+fi
+
+# Fail here rather than 20 minutes in.
+if ! "${PY[@]}" -c 'import numpy' >/dev/null 2>&1; then
+  echo "error: numpy is required to build the CeNGEN co-expression table." >&2
+  echo "       install it (pip install numpy) or install uv." >&2
+  exit 1
 fi
 
 "${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" <<'PY'
@@ -1113,83 +1127,197 @@ CREATE TABLE cengen_coexpression (
   wormbase_gene TEXT NOT NULL,
   neighbor      TEXT NOT NULL,
   pearson       REAL NOT NULL,
+  mutual_rank   REAL NOT NULL,
+  -- Both ranks behind mutual_rank: rank_self is the neighbour's position in this
+  -- gene's list, rank_other this gene's position in the neighbour's. The pair
+  -- (3, 100) and the pair (30, 30) share a mutual rank and mean different things.
+  rank_self     INTEGER NOT NULL,
+  rank_other    INTEGER NOT NULL,
   PRIMARY KEY (wormbase_gene, neighbor)
 ) WITHOUT ROWID;
 CREATE INDEX idx_cengen_coexpr_gene ON cengen_coexpression(wormbase_gene);
 """)
-try:
-    import numpy as np  # numpy is standard in most build envs
-    # Re-read the integrated file to build a dense per-gene-per-neuron-type matrix.
-    # Aggregate replicates per type at read time (mean), zero-fill missing values.
-    print('Building CeNGEN co-expression neighbors...', file=sys.stderr)
-    gene_ids = []
-    rows = []
-    type_order = sorted(type_to_idx.keys())
-    with open(cengen_tsv, encoding='utf-8') as f:
-        next(f)  # header already parsed
-        for line in f:
-            toks = line.rstrip('\n').split()
-            if not toks: continue
-            wb = toks[0].strip('"')
-            if not wb.startswith('WBGene'): continue
-            vals = toks[1:]
-            row = []
-            for nt in type_order:
-                idxs = type_to_idx[nt]
-                tot = 0.0; n = 0
-                for i in idxs:
-                    if i >= len(vals): continue
-                    try:
-                        v = float(vals[i])
-                    except ValueError:
-                        continue
-                    tot += v; n += 1
-                row.append(tot / n if n else 0.0)
-            gene_ids.append(wb)
-            rows.append(row)
-    M = np.asarray(rows, dtype=np.float32)
-    # log1p so a few huge counts don't dominate the correlation.
-    M = np.log1p(M)
-    # Drop genes with no variance (Pearson undefined). They never become a
-    # useful neighbor anyway.
-    var = M.var(axis=1)
-    keep = var > 1e-8
-    if keep.sum() < 2:
-        raise RuntimeError(f'co-expression matrix has <2 informative genes')
-    M = M[keep]
-    keep_ids = [g for g, k in zip(gene_ids, keep.tolist()) if k]
-    # Row-standardize so X @ X.T / D ≈ Pearson.
-    mu = M.mean(axis=1, keepdims=True)
-    std = M.std(axis=1, keepdims=True)
-    std[std < 1e-8] = 1.0
-    Z = (M - mu) / std
-    D = Z.shape[1]
-    K = 50
-    coexpr_rows = []
-    CHUNK = 1024
-    for i0 in range(0, Z.shape[0], CHUNK):
-        i1 = min(i0 + CHUNK, Z.shape[0])
-        block = Z[i0:i1] @ Z.T / D    # (chunk × N) Pearson
-        # Mask self-similarity by setting diagonal to -inf.
-        for ii in range(i0, i1):
-            block[ii - i0, ii] = -np.inf
-        # argpartition for the top K then sort.
-        K_eff = min(K, block.shape[1] - 1)
-        top_idx_unsorted = np.argpartition(-block, K_eff, axis=1)[:, :K_eff]
-        for r_local, row_idx in enumerate(top_idx_unsorted):
-            row_idx_sorted = row_idx[np.argsort(-block[r_local, row_idx])]
-            wb_src = keep_ids[i0 + r_local]
-            for j in row_idx_sorted:
-                p = float(block[r_local, j])
-                if p < 0.1:  # not a meaningful co-expression
-                    break
-                coexpr_rows.append((wb_src, keep_ids[int(j)], round(p, 3)))
-    cur.executemany('INSERT OR IGNORE INTO cengen_coexpression VALUES (?,?,?)', coexpr_rows)
-    print(f'cengen_coexpression: {len(coexpr_rows)} edges ({Z.shape[0]} informative genes)', file=sys.stderr)
-except ImportError:
-    print('numpy not available; skipping cengen_coexpression', file=sys.stderr)
-except Exception as e:
-    print(f'cengen_coexpression failed: {e}', file=sys.stderr)
+def _betacf(a, b, x, itmax=300, eps=3e-16):
+    """Continued fraction for the incomplete beta function (Lentz's method)."""
+    tiny = 1e-300
+    qab, qap, qam = a + b, a + 1.0, a - 1.0
+    c = 1.0
+    d = 1.0 - qab * x / qap
+    if abs(d) < tiny: d = tiny
+    d = 1.0 / d
+    h = d
+    for m in range(1, itmax + 1):
+        m2 = 2 * m
+        aa = m * (b - m) * x / ((qam + m2) * (a + m2))
+        d = 1.0 + aa * d
+        if abs(d) < tiny: d = tiny
+        c = 1.0 + aa / c
+        if abs(c) < tiny: c = tiny
+        d = 1.0 / d
+        h *= d * c
+        aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2))
+        d = 1.0 + aa * d
+        if abs(d) < tiny: d = tiny
+        c = 1.0 + aa / c
+        if abs(c) < tiny: c = tiny
+        d = 1.0 / d
+        de = d * c
+        h *= de
+        if abs(de - 1.0) < eps: break
+    return h
+
+def _betainc(a, b, x):
+    """Regularized incomplete beta I_x(a, b)."""
+    if x <= 0.0: return 0.0
+    if x >= 1.0: return 1.0
+    lbeta = math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b)
+    front = math.exp(lbeta + a * math.log(x) + b * math.log1p(-x))
+    if x < (a + 1.0) / (a + b + 2.0):
+        return front * _betacf(a, b, x) / a
+    return 1.0 - front * _betacf(b, a, 1.0 - x) / b
+
+def pearson_two_sided_p(r, n):
+    """Two-sided p-value for a Pearson r over n paired observations."""
+    df = n - 2
+    if df <= 0: return 1.0
+    r = min(abs(r), 1.0 - 1e-15)
+    t2 = r * r * df / (1.0 - r * r)
+    return _betainc(df / 2.0, 0.5, df / (df + t2))
+
+def pearson_critical_r(n, alpha):
+    """Smallest r significant at alpha (two-sided) for n paired observations."""
+    lo, hi = 0.0, 1.0 - 1e-12
+    for _ in range(200):
+        mid = (lo + hi) / 2.0
+        if pearson_two_sided_p(mid, n) > alpha:
+            lo = mid
+        else:
+            hi = mid
+    return hi
+
+import numpy as np
+# Re-read the integrated file to build a dense per-gene-per-neuron-type matrix.
+# Aggregate replicates per type at read time (mean), zero-fill missing values.
+print('Building CeNGEN co-expression neighbors...', file=sys.stderr)
+gene_ids = []
+rows = []
+type_order = sorted(type_to_idx.keys())
+with open(cengen_tsv, encoding='utf-8') as f:
+    next(f)  # header already parsed
+    for line in f:
+        toks = line.rstrip('\n').split()
+        if not toks: continue
+        wb = toks[0].strip('"')
+        if not wb.startswith('WBGene'): continue
+        vals = toks[1:]
+        row = []
+        for nt in type_order:
+            idxs = type_to_idx[nt]
+            tot = 0.0; n = 0
+            for i in idxs:
+                if i >= len(vals): continue
+                try:
+                    v = float(vals[i])
+                except ValueError:
+                    continue
+                tot += v; n += 1
+            row.append(tot / n if n else 0.0)
+        gene_ids.append(wb)
+        rows.append(row)
+M = np.asarray(rows, dtype=np.float32)
+# log1p so a few huge counts don't dominate the correlation.
+M = np.log1p(M)
+# Drop genes with no variance (Pearson undefined). They never become a
+# useful neighbor anyway.
+var = M.var(axis=1)
+keep = var > 1e-8
+if keep.sum() < 2:
+    raise RuntimeError(f'co-expression matrix has <2 informative genes')
+M = M[keep]
+keep_ids = [g for g, k in zip(gene_ids, keep.tolist()) if k]
+# Row-standardize so X @ X.T / D ≈ Pearson.
+mu = M.mean(axis=1, keepdims=True)
+std = M.std(axis=1, keepdims=True)
+std[std < 1e-8] = 1.0
+Z = (M - mu) / std
+D = Z.shape[1]
+N = Z.shape[0]
+
+# Significance alone keeps 5.4M pairs (~217 MB) because the neighbour
+# distribution has a long hub tail; also requiring reciprocity collapses the
+# mean without gutting the median, and bounds the table at TOP_K per gene.
+COEXPR_P = 0.001
+TOP_K = 200
+r_min = pearson_critical_r(D, COEXPR_P)
+print(f'cengen co-expression: n={D} neuron types, p<{COEXPR_P} => r >= {r_min:.3f}, '
+      f'reciprocal within top {TOP_K}', file=sys.stderr)
+
+# Pass 1: significant neighbours per gene, sorted desc and capped at TOP_K.
+nbr_idx = [None] * N
+nbr_r = [None] * N
+CHUNK = 1024
+for i0 in range(0, N, CHUNK):
+    i1 = min(i0 + CHUNK, N)
+    block = Z[i0:i1] @ Z.T / D    # (chunk x N) Pearson
+    for ii in range(i0, i1):
+        block[ii - i0, ii] = -np.inf   # mask self-similarity
+    for r_local in range(i1 - i0):
+        row = block[r_local]
+        idx = np.flatnonzero(row >= r_min)
+        if idx.size == 0:
+            nbr_idx[i0 + r_local] = np.empty(0, dtype=np.int32)
+            nbr_r[i0 + r_local] = np.empty(0, dtype=np.float32)
+            continue
+        if idx.size > TOP_K:
+            keep_top = np.argpartition(-row[idx], TOP_K)[:TOP_K]
+            idx = idx[keep_top]
+        order = np.argsort(-row[idx], kind='stable')
+        idx = idx[order].astype(np.int32)
+        nbr_idx[i0 + r_local] = idx
+        nbr_r[i0 + r_local] = row[idx].astype(np.float32)
+
+# Pass 2: keep reciprocal pairs, scored by mutual rank so broadly expressed
+# genes don't head every list. Membership is tested by gene index rather than by
+# comparing correlations: r_ij and r_ji come from different chunks, and a tie at
+# the TOP_K boundary would keep a pair in one direction only.
+sorted_nb = [None] * N   # neighbour ids in index order, for binary search
+sorted_pos = [None] * N  # their positions in the rank-ordered list
+for i in range(N):
+    perm = np.argsort(nbr_idx[i], kind='stable')
+    sorted_nb[i] = nbr_idx[i][perm]
+    sorted_pos[i] = perm.astype(np.int32)
+
+def rank_in(j, i):
+    """1-based rank of gene i within gene j's list, or 0 when absent."""
+    arr = sorted_nb[j]
+    k = int(np.searchsorted(arr, i))
+    if k >= arr.shape[0] or int(arr[k]) != i:
+        return 0
+    return int(sorted_pos[j][k]) + 1
+
+coexpr_rows = []
+kept_degree = [0] * N
+for i in range(N):
+    idx_i = nbr_idx[i]
+    r_i = nbr_r[i]
+    wb_src = keep_ids[i]
+    for pos in range(idx_i.shape[0]):
+        j = int(idx_i[pos])
+        rank_j = rank_in(j, i)
+        if rank_j == 0:
+            continue   # not reciprocal: i is outside j's top-K
+        rank_self = pos + 1
+        mr = math.sqrt(rank_self * rank_j)
+        coexpr_rows.append(
+            (wb_src, keep_ids[j], round(float(r_i[pos]), 3), round(mr, 2), rank_self, rank_j)
+        )
+        kept_degree[i] += 1
+
+cur.executemany('INSERT OR IGNORE INTO cengen_coexpression VALUES (?,?,?,?,?,?)', coexpr_rows)
+med = int(np.median(kept_degree)) if kept_degree else 0
+mean = float(np.mean(kept_degree)) if kept_degree else 0.0
+print(f'cengen_coexpression: {len(coexpr_rows)} rows ({N} informative genes, '
+      f'median {med} / mean {mean:.0f} neighbors per gene)', file=sys.stderr)
 
 # ---------- KEGG cel pathways (worm-native: insulin/IGF, TGF-beta, longevity, etc.) ----------
 cur.executescript("""
@@ -1439,6 +1567,30 @@ for go_id, df in cur.execute('SELECT go_id, COUNT(DISTINCT wormbase_gene) FROM g
         idf_rows.append((go_id, df, max(math.log(N_total / df), 0.0)))
 cur.executemany('INSERT INTO go_term_freq VALUES (?,?,?)', idf_rows)
 print(f'go_term_freq: {len(idf_rows)} terms (N_total={N_total})', file=sys.stderr)
+
+# ---------- WormCat IDF ----------
+# Depth is not specificity: 'Non-coding RNA: ncRNA' is a Category 2 holding
+# thousands of genes. Weight by rarity, as GO already is.
+cur.executescript("""
+CREATE TABLE wormcat_term_freq (
+  level    INTEGER NOT NULL,
+  category TEXT NOT NULL,
+  df       INTEGER NOT NULL,
+  idf      REAL NOT NULL,
+  PRIMARY KEY (level, category)
+) WITHOUT ROWID;
+""")
+wc_total = cur.execute('SELECT COUNT(DISTINCT wormbase_gene) FROM wormcat').fetchone()[0] or 1
+wc_idf_rows = []
+for lvl, col in ((1, 'category_1'), (2, 'category_2'), (3, 'category_3')):
+    for cat, df in cur.execute(
+        f'SELECT {col}, COUNT(DISTINCT wormbase_gene) FROM wormcat '
+        f'WHERE {col} IS NOT NULL AND {col} != \'\' GROUP BY {col}'
+    ):
+        if df > 0:
+            wc_idf_rows.append((lvl, cat, df, max(math.log(wc_total / df), 0.0)))
+cur.executemany('INSERT INTO wormcat_term_freq VALUES (?,?,?,?)', wc_idf_rows)
+print(f'wormcat_term_freq: {len(wc_idf_rows)} categories (N_total={wc_total})', file=sys.stderr)
 
 # ---------- FTS5 ----------
 # Aggregate per-gene phenotype names, allele IDs, tissue names, and GO term
@@ -1783,6 +1935,50 @@ else:
     print(f'paper_meta: +{len(extra)} resolved live '
           f'({len(missing_wb)} WBPaper + {len(missing_pmid)} PMID)', file=sys.stderr)
 
+# ---------- output assertions ----------
+# A build that quietly drops a feature and still publishes can do it again.
+# Roughly half of the 2026-08-13 build (measured counts alongside), so a table
+# losing most of its rows fails while ordinary source drift does not.
+MIN_ROWS = {
+    'annotations': 25000,          # 52110
+    'gene_go': 250000,             # 537378 (direct + propagated)
+    'go_terms': 24000,             # 48329
+    'go_term_freq': 5000,          # 9519
+    'wormcat': 15000,              # 31389
+    'wormcat_term_freq': 350,      # 750
+    'neuronal': 600,               # 1313
+    'synaptogenesis': 120,         # 242
+    'interactions': 25000,         # 49087
+    'cengen_expression': 250000,   # 507574
+    'cengen_coexpression': 500000, # 2104706
+    'cengen_calls': 350000,        # 790889
+    'gene_disease': 15000,         # 30325
+    'gene_phenotype': 55000,       # 119053
+    'gene_paper': 80000,           # 167180
+    'paper_meta': 9000,            # 18725
+    'orthologs': 45000,            # 98628
+}
+import os as _assert_os
+if _assert_os.environ.get('DISABLE_KEGG', '').strip().lower() not in ('1', 'true', 'yes', 'on'):
+    MIN_ROWS['kegg_pathway'] = 75          # 153
+    MIN_ROWS['gene_kegg_pathway'] = 3500   # 7486
+
+failures = []
+for tbl, floor in sorted(MIN_ROWS.items()):
+    try:
+        n = cur.execute(f'SELECT COUNT(*) FROM {tbl}').fetchone()[0]
+    except sqlite3.Error as e:
+        failures.append(f'{tbl}: unreadable ({e})')
+        continue
+    if n < floor:
+        failures.append(f'{tbl}: {n} rows, expected >= {floor}')
+if failures:
+    print('BUILD ASSERTION FAILED:', file=sys.stderr)
+    for f in failures:
+        print(f'  {f}', file=sys.stderr)
+    sys.exit(1)
+print(f'output assertions: {len(MIN_ROWS)} tables above their row floors', file=sys.stderr)
+
 conn.commit()
 conn.executescript('VACUUM; ANALYZE;')
 conn.close()
@@ -1801,9 +1997,34 @@ EXPR_VER="$(head -c 4000 "$EXPR_TSV" 2>/dev/null | grep -oE 'Alliance Database V
 set -o pipefail
 ALLIANCE_VER="${ALLIANCE_VER:-unknown}"
 EXPR_VER="${EXPR_VER:-unknown}"
-GO_DATE="$(date -u +%Y-%m-%d)" # we always pull current GO
+# The GO release from the ontology header: a build date is not a data version.
+GO_DATE="$(grep -m1 -oE '^data-version: releases/[0-9]{4}-[0-9]{2}-[0-9]{2}' "$OBO" 2>/dev/null | sed 's|.*/||' || true)"
+if [[ -z "$GO_DATE" ]]; then
+  GO_DATE="$(grep -m1 -oE '^date: [0-9]{2}:[0-9]{2}:[0-9]{4}' "$OBO" 2>/dev/null | awk '{print $2}' | awk -F: '{print $3 "-" $2 "-" $1}' || true)"
+fi
+# Download date of the file actually used; sources are cached and reused.
+GO_FETCHED="$(stat -f '%Sm' -t '%Y-%m-%d' "$OBO" 2>/dev/null || stat -c '%y' "$OBO" 2>/dev/null | cut -d' ' -f1 || true)"
+GO_FETCHED="${GO_FETCHED:-$(date -u +%Y-%m-%d)}"
+GO_DATE="${GO_DATE:-$GO_FETCHED}"
 WB_DATE="$(stat -c '%y' "$GENE_IDS" 2>/dev/null | cut -d' ' -f1 || echo '')"
 WBBT_DATE="$(stat -c '%y' "$WBBT_OBO" 2>/dev/null | cut -d' ' -f1 || echo '')"
+
+# Per-table counts, so quoted numbers come from one identified artifact.
+RECORDS_JSON="$("${PY[@]}" -c '
+import json, sqlite3, sys
+tables = ["annotations", "go_terms", "gene_go", "wormcat", "neuronal", "synaptogenesis",
+          "interactions", "gene_phenotype", "allele_phenotype", "cengen_expression",
+          "cengen_coexpression", "gene_disease", "orthologs", "gene_paper", "paper_meta",
+          "kegg_pathway", "gene_kegg_pathway"]
+con = sqlite3.connect(sys.argv[1])
+out = {}
+for t in tables:
+    try:
+        out[t] = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+    except sqlite3.Error:
+        pass
+print(json.dumps(out, indent=4)[1:-1].strip())
+' "$TMP_DB")"
 
 cat >"$DEST_DIR/version.json" <<EOF
 {
@@ -1812,9 +2033,12 @@ cat >"$DEST_DIR/version.json" <<EOF
   "raw_size": $RAW_SIZE,
   "gz_size": $GZ_SIZE,
   "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "records": {
+    $RECORDS_JSON
+  },
   "sources": {
     "wormbase": { "release": "$WB_RELEASE", "date": "$WB_DATE" },
-    "go": { "date": "$GO_DATE" },
+    "go": { "date": "$GO_DATE", "fetched": "$GO_FETCHED" },
     "biogrid": { "version": "$BIOGRID_VERSION" },
     "alliance_orthology": { "version": "$ALLIANCE_VER" },
     "wormbase_phenotype": { "release": "$WB_RELEASE", "date": "$WB_DATE" },
