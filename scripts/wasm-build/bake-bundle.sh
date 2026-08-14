@@ -9,6 +9,13 @@
 
 set -euo pipefail
 
+# r-universe serves only current builds, so this cannot force a resolve; it
+# fails the bake when the repos have drifted. ALLOW_BUNDLE_DRIFT=1 bakes anyway.
+PIN_DESeq2="${PIN_DESeq2:-1.52.0}"
+PIN_apeglm="${PIN_apeglm:-1.34.0}"
+PIN_ashr="${PIN_ashr:-2.2-63}"
+PIN_Rsubread="${PIN_Rsubread:-2.26.0}"
+
 OUT=/out
 LOCAL_REPO_DIR="${OUT}/bin/emscripten/contrib/4.5"
 LIB_DIR=$(mktemp -d) # the staging library
@@ -89,6 +96,25 @@ if (dir.exists(local_dir)) {
     }
   }
 }
+pins <- c(DESeq2 = "${PIN_DESeq2}", apeglm = "${PIN_apeglm}",
+          ashr = "${PIN_ashr}", Rsubread = "${PIN_Rsubread}")
+drift <- character(0)
+for (nm in names(pins)) {
+  got <- manifest\$version[match(nm, manifest\$name)]
+  if (is.na(got)) {
+    drift <- c(drift, paste0(nm, ": not resolved (pinned ", pins[[nm]], ")"))
+  } else if (!identical(as.character(got), pins[[nm]])) {
+    drift <- c(drift, paste0(nm, ": repos serve ", got, ", pinned ", pins[[nm]]))
+  }
+}
+if (length(drift) > 0) {
+  msg <- paste(c("pinned package versions drifted:", paste0("  ", drift)), collapse = "\\n")
+  if (identical(Sys.getenv("ALLOW_BUNDLE_DRIFT"), "1")) {
+    cat("WARNING: ", msg, "\\n", sep = "")
+  } else {
+    stop(msg, "\\nUpdate the PIN_* values in bake-bundle.sh, or set ALLOW_BUNDLE_DRIFT=1.")
+  }
+}
 write.table(manifest, file = "${WORK}/manifest.tsv", sep = "\\t",
             quote = FALSE, row.names = FALSE)
 cat("wrote ", nrow(manifest), " entries\\n")
@@ -143,6 +169,23 @@ echo ""
 echo "==> bundle baked:"
 echo "    ${OUT}/deseq2-bundle.data         (${DATA_SIZE})"
 echo "    ${OUT}/deseq2-bundle.js.metadata  (${META_SIZE})"
+# The client reads this to report versions and to key its OPFS cache.
+echo "==> step 4: emit bundle manifest"
+BUNDLE_HASH=$(tail -n +2 "${WORK}/manifest.tsv" | sort | awk -F'\t' '{print $1 "@" $2}' | sha256sum | cut -c1-12)
+{
+  printf '{\n'
+  printf '  "bundleVersion": "%s",\n' "${BUNDLE_HASH}"
+  printf '  "baked": "%s",\n' "$(date -u +%Y-%m-%d)"
+  printf '  "dataBytes": %s,\n' "$(stat -c%s "${OUT}/deseq2-bundle.data" 2>/dev/null || stat -f%z "${OUT}/deseq2-bundle.data")"
+  printf '  "rVersion": "%s",\n' "$("${RSCRIPT}" -e 'cat(paste(R.version$major, R.version$minor, sep="."))')"
+  printf '  "packages": [\n'
+  tail -n +2 "${WORK}/manifest.tsv" | sort | awk -F'\t' '{
+    printf "    {\"name\": \"%s\", \"version\": \"%s\", \"repo\": \"%s\"}%s\n", $1, $2, $3, (NR==1?"":"")
+  }' | sed '$!s/$/,/'
+  printf '  ]\n}\n'
+} >"${OUT}/deseq2-bundle.manifest.json"
+echo "    ${OUT}/deseq2-bundle.manifest.json (bundleVersion ${BUNDLE_HASH})"
+
 echo ""
 echo "==> manifest of packages in bundle:"
 column -t -s $'\t' <"${WORK}/manifest.tsv"
