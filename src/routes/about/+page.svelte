@@ -239,6 +239,7 @@
   } | null>(null);
   let dbVersion = $state<string>('');
   let rawDbSize = $state<number>(0);
+  let gzDbSize = $state<number>(0);
   let builtAt = $state<string>('');
 
   // Ticker keeps "X ago" labels accurate while the page is open.
@@ -271,6 +272,7 @@
       type VersionDoc = {
         version?: string;
         raw_size?: number;
+        gz_size?: number;
         built_at?: string;
         sources?: {
           wormbase?: { release?: string; date?: string };
@@ -286,6 +288,7 @@
       const v: VersionDoc = await (await fetch('/data/version.json')).json();
       dbVersion = v.version ?? '';
       rawDbSize = v.raw_size ?? 0;
+      gzDbSize = v.gz_size ?? 0;
       builtAt = v.built_at ?? '';
       const s = v.sources ?? {};
       srcVersions = {
@@ -374,6 +377,12 @@
             DB version
           </div>
           <div class="font-mono">{dbVersion || '...'}</div>
+        </div>
+        <div>
+          <div class="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
+            DB size (download)
+          </div>
+          <div class="font-mono">{fmtMB(gzDbSize)}</div>
         </div>
         <div>
           <div class="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">

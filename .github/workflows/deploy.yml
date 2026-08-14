@@ -43,19 +43,21 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # build-db.sh needs numpy for the CeNGEN co-expression neighbours.
+      - name: Install numpy
+        run: python -m pip install --disable-pip-version-check numpy
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Resolve WB release
         id: wb
         run: |
-          if [[ -n "${WB_RELEASE:-}" ]]; then
-            echo "release=$WB_RELEASE" >> "$GITHUB_OUTPUT"
-          else
-            R="$(curl -fsS --max-time 10 'https://ftp.ebi.ac.uk/pub/databases/wormbase/releases/' 2>/dev/null \
-              | grep -oE 'WS[0-9]+' | sort -u -t S -k 2 -n | tail -1)"
-            echo "release=${R:-WS298}" >> "$GITHUB_OUTPUT"
-          fi
+          echo "release=${WB_RELEASE:-WS298}" >> "$GITHUB_OUTPUT"
           # ISO week stamp so the always-latest sources (GO/Alliance/BioGRID)
           # get re-fetched at least weekly.
           echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
