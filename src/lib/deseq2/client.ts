@@ -42,10 +42,11 @@ export async function runOneContrast(
   shrinkage: Shrinkage,
   reference: string,
   onProgress?: (line: string) => void,
+  alpha = 0.05,
 ): Promise<DESeq2Contrast> {
   const webR = await getPrimary(onProgress);
   onProgress?.(`[contrast] ${pair.treatment}_vs_${pair.reference} (${shrinkage})`);
-  return runContrast(webR, pair, shrinkage, reference);
+  return runContrast(webR, pair, shrinkage, reference, alpha);
 }
 
 export async function runAllContrasts(
@@ -56,8 +57,9 @@ export async function runAllContrasts(
   onProgress?: (line: string) => void,
   onContrast?: (i: number, c: DESeq2Contrast) => void,
   poolSize?: number,
+  alpha = 0.05,
 ): Promise<DESeq2Contrast[]> {
-  const pool = new ContrastPool(ddsBlob, reference, { onLine: onProgress, size: poolSize });
+  const pool = new ContrastPool(ddsBlob, reference, { onLine: onProgress, size: poolSize, alpha });
   onProgress?.(`[pool] running ${pairs.length} contrast(s) in parallel ...`);
   try {
     return await pool.runAll(pairs, shrinkage, onContrast);
