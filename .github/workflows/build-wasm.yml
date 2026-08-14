@@ -170,6 +170,7 @@ jobs:
           path: |
             scripts/wasm-cran/deseq2-bundle.data
             scripts/wasm-cran/deseq2-bundle.js.metadata
+            scripts/wasm-cran/deseq2-bundle.manifest.json
             scripts/wasm-cran/bin/emscripten/contrib/4.5/*.tgz
             scripts/wasm-cran/bin/emscripten/contrib/4.5/PACKAGES*
             scripts/wasm-cran/webr-pthread/v0.5.9/**
@@ -211,12 +212,31 @@ jobs:
         run: |
           set -euo pipefail
           aws --version
+          # Content-addressed copy first: the fixed keys below are a moving
+          # pointer that each bake overwrites.
+          HASH="$(python3 -c 'import json;print(json.load(open("scripts/wasm-cran/deseq2-bundle.manifest.json"))["bundleVersion"])')"
+          echo "bundle version: $HASH"
+          for f in deseq2-bundle.data deseq2-bundle.js.metadata deseq2-bundle.manifest.json; do
+            case "$f" in
+              *.data) ct=application/octet-stream ;;
+              *) ct=application/json ;;
+            esac
+            aws s3 cp "scripts/wasm-cran/$f" \
+              "s3://wormie-data/wasm-cran/$HASH/$f" \
+              --endpoint-url "$R2_ENDPOINT" --content-type "$ct"
+          done
+          echo "archived at wasm-cran/$HASH/" >> "$GITHUB_STEP_SUMMARY"
+
           aws s3 cp scripts/wasm-cran/deseq2-bundle.data \
             "s3://wormie-data/wasm-cran/deseq2-bundle.data" \
             --endpoint-url "$R2_ENDPOINT" --content-type application/octet-stream
           aws s3 cp scripts/wasm-cran/deseq2-bundle.js.metadata \
             "s3://wormie-data/wasm-cran/deseq2-bundle.js.metadata" \
             --endpoint-url "$R2_ENDPOINT" --content-type application/json
+          aws s3 cp scripts/wasm-cran/deseq2-bundle.manifest.json \
+            "s3://wormie-data/wasm-cran/deseq2-bundle.manifest.json" \
+            --endpoint-url "$R2_ENDPOINT" --content-type application/json \
+            --cache-control "no-cache"
 
       - name: Upload local CRAN .tgz packages to R2
         if: ${{ github.event.inputs.deploy != 'false' }}

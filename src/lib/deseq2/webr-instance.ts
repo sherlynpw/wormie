@@ -1,8 +1,49 @@
 const WEBR_URL = 'https://webr.r-wasm.org/v0.5.9/webr.mjs';
 const BUNDLE_BASE = '/wasm-cran/';
-// Bump when rebuilding the bundle to invalidate the OPFS cache.
-const BUNDLE_VERSION = 'v2-simd';
+// Fallback for bundles baked before the manifest existed; the live key is the
+// manifest's bundleVersion, so a rebake invalidates OPFS on its own.
+const BUNDLE_VERSION_FALLBACK = 'v2-simd';
 const OPFS_DIR = 'wasm-cran-cache';
+
+export interface BundlePackage {
+  name: string;
+  version: string;
+  repo: string;
+}
+
+export interface BundleManifest {
+  bundleVersion: string;
+  baked: string;
+  rVersion: string;
+  /** Size of deseq2-bundle.data, so the UI never hardcodes a download size. */
+  dataBytes?: number;
+  packages: BundlePackage[];
+}
+
+let manifestCache: Promise<BundleManifest | null> | null = null;
+
+/** Versions of the R packages baked into the deployed bundle, for Methods text. */
+export function getBundleManifest(): Promise<BundleManifest | null> {
+  if (!manifestCache) {
+    manifestCache = (async () => {
+      try {
+        const r = await fetch(`${BUNDLE_BASE}deseq2-bundle.manifest.json`);
+        if (!r.ok) return null;
+        const m = (await r.json()) as BundleManifest;
+        return m?.bundleVersion && Array.isArray(m.packages) ? m : null;
+      } catch {
+        return null;
+      }
+    })();
+  }
+  return manifestCache;
+}
+
+/** Version of a single baked package, or null when the manifest is unavailable. */
+export async function getPackageVersion(name: string): Promise<string | null> {
+  const m = await getBundleManifest();
+  return m?.packages.find((p) => p.name === name)?.version ?? null;
+}
 
 export interface WebRInstance {
   init(): Promise<void>;
@@ -87,8 +128,17 @@ function loadBundle(onLine?: (s: string) => void) {
   if (!bundleCache) {
     bundleCache = (async () => {
       const log = (s: string) => onLine?.(`[cache] ${s}`);
-      const dataKey = `deseq2-bundle.${BUNDLE_VERSION}.data`;
-      const metaKey = `deseq2-bundle.${BUNDLE_VERSION}.metadata.json`;
+      const manifest = await getBundleManifest();
+      const version = manifest?.bundleVersion ?? BUNDLE_VERSION_FALLBACK;
+      if (manifest) {
+        const pkg = (n: string) => manifest.packages.find((p) => p.name === n)?.version ?? '?';
+        log(
+          `bundle ${version} (baked ${manifest.baked}, R ${manifest.rVersion}): ` +
+            `DESeq2 ${pkg('DESeq2')}, apeglm ${pkg('apeglm')}, ashr ${pkg('ashr')}, Rsubread ${pkg('Rsubread')}`,
+        );
+      }
+      const dataKey = `deseq2-bundle.${version}.data`;
+      const metaKey = `deseq2-bundle.${version}.metadata.json`;
       const dir = await opfsHandle();
 
       if (dir) {
