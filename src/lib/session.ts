@@ -68,10 +68,10 @@ export function sessionToolPath(tool: SessionTool): string {
 export function sessionToolLabel(tool: SessionTool): string {
   switch (tool) {
     case 'enrichment':
-      return 'Enrichment';
+      return 'Over-representation';
     case 'gsea':
-      return 'GSEA';
+      return 'Preranked GSEA';
     case 'gmt':
-      return 'Custom GMT';
+      return 'Custom gene sets';
   }
 }
