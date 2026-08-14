@@ -233,7 +233,7 @@ function opSubquery(op: Op): { sql: string; params: unknown[] } | null {
     case 'type':
       return {
         sql: `SELECT wormbase_gene FROM annotations WHERE LOWER(gene_type) LIKE ?`,
-        params: [`%${v.toLowerCase()}%`],
+        params: [`%${normalizeBiotype(v)}%`],
       };
     case 'expressed': {
       // Syntax variants: expressed:AVA (medium threshold), expressed:AVA@stringent (liberal|medium|conservative|stringent),
@@ -614,7 +614,7 @@ export async function runSearch(
         annoParams.push(v.toLowerCase());
       } else {
         conds.push('LOWER(a.gene_type) LIKE ?');
-        annoParams.push(`%${v.toLowerCase()}%`);
+        annoParams.push(`%${normalizeBiotype(v)}%`);
       }
     }
     const sql = `${BASE_SELECT}
@@ -1053,11 +1053,18 @@ export async function getMatchedRowsForExport(term: string, cap = 50_000): Promi
   return rows;
 }
 
+// WormBase writes biotypes with spaces ('protein coding'); our examples use
+// underscores.
+export function normalizeBiotype(v: string): string {
+  return v.toLowerCase().trim().replace(/[_-]+/g, ' ');
+}
+
 // Batch resolve WBGene IDs to {gene_name, sequence_name}: one round-trip beats N hover-time fetches.
 export interface GeneNameMeta {
   wormbase_gene: string;
   gene_name: string | null;
   sequence_name: string | null;
+  gene_type: string | null;
 }
 
 export async function getGeneNames(ids: string[]): Promise<Map<string, GeneNameMeta>> {
@@ -1078,9 +1085,10 @@ export async function getGeneNames(ids: string[]): Promise<Map<string, GeneNameM
       wormbase_gene: string;
       gene_name: string | null;
       sequence_name: string | null;
+      gene_type: string | null;
     }>(
       `WITH inputs(input_id) AS (SELECT value FROM json_each(?))
-       SELECT i.input_id, a.wormbase_gene, a.gene_name, a.sequence_name
+       SELECT i.input_id, a.wormbase_gene, a.gene_name, a.sequence_name, a.gene_type
        FROM inputs i JOIN annotations a ON a.wormbase_gene = i.input_id`,
       [JSON.stringify(canonical)],
     );
@@ -1089,6 +1097,7 @@ export async function getGeneNames(ids: string[]): Promise<Map<string, GeneNameM
         wormbase_gene: r.wormbase_gene,
         gene_name: r.gene_name,
         sequence_name: r.sequence_name,
+        gene_type: r.gene_type,
       });
     }
   }
@@ -1100,9 +1109,10 @@ export async function getGeneNames(ids: string[]): Promise<Map<string, GeneNameM
       wormbase_gene: string;
       gene_name: string | null;
       sequence_name: string | null;
+      gene_type: string | null;
     }>(
       `WITH inputs(input_lower) AS (SELECT value FROM json_each(?))
-       SELECT i.input_lower, a.wormbase_gene, a.gene_name, a.sequence_name
+       SELECT i.input_lower, a.wormbase_gene, a.gene_name, a.sequence_name, a.gene_type
        FROM inputs i JOIN annotations a
          ON LOWER(a.gene_name) = i.input_lower
          OR LOWER(a.sequence_name) = i.input_lower`,
@@ -1116,6 +1126,7 @@ export async function getGeneNames(ids: string[]): Promise<Map<string, GeneNameM
         wormbase_gene: r.wormbase_gene,
         gene_name: r.gene_name,
         sequence_name: r.sequence_name,
+        gene_type: r.gene_type,
       });
     }
   }
@@ -1143,34 +1154,85 @@ export async function getDiseasesFor(wormbase_gene: string): Promise<DiseaseAsso
   );
 }
 
+// A cached DB build can be older than the app deployed against it, so an older
+// build degrades instead of throwing.
+const schemaFeature = new Map<string, Promise<boolean>>();
+
+function hasTable(name: string): Promise<boolean> {
+  const key = `t:${name}`;
+  let p = schemaFeature.get(key);
+  if (!p) {
+    p = query<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = ?`,
+      [name],
+    )
+      .then((r) => (r[0]?.n ?? 0) > 0)
+      .catch(() => false);
+    schemaFeature.set(key, p);
+  }
+  return p;
+}
+
+function hasColumn(table: string, column: string): Promise<boolean> {
+  const key = `c:${table}.${column}`;
+  let p = schemaFeature.get(key);
+  if (!p) {
+    p = query<{ n: number }>(`SELECT COUNT(*) AS n FROM pragma_table_info(?) WHERE name = ?`, [
+      table,
+      column,
+    ])
+      .then((r) => (r[0]?.n ?? 0) > 0)
+      .catch(() => false);
+    schemaFeature.set(key, p);
+  }
+  return p;
+}
+
 export interface CengenCoexprNeighbor {
   wormbase_gene: string;
   gene_name: string | null;
   concise_description: string | null;
   pearson: number;
+  mutual_rank: number;
+  /** Neighbour's position in this gene's list. */
+  rank_self: number;
+  /** This gene's position in the neighbour's list. 0 on pre-rank builds. */
+  rank_other: number;
 }
 
-// Top co-expressed genes ranked by Pearson correlation of log1p TMM across CeNGEN's 41 bulk neuron types.
-// Pass `neuronType` to further restrict to genes called expressed there at `minThreshold` (binary calls);
-// Pearson scores still come from the global vector.
+// Co-expressed genes across CeNGEN's 41 bulk neuron types. A stored pair is both
+// significant at p < 0.001 and reciprocal (each gene in the other's top 200), so
+// the list is bounded at 200 per gene. Ordering is by mutual rank rather than raw
+// Pearson, which otherwise puts the same broadly expressed genes atop every list.
+// Pass `neuronType` to further restrict to genes called expressed there at `minThreshold`
+// (binary calls); Pearson scores still come from the global vector.
 export async function getCengenCoexpressionFor(
   wormbase_gene: string,
   limit = 20,
   opts: { neuronType?: string; minThreshold?: number } = {},
 ): Promise<CengenCoexprNeighbor[]> {
+  const ranked = await hasColumn('cengen_coexpression', 'mutual_rank');
+  const hasRanks = ranked && (await hasColumn('cengen_coexpression', 'rank_self'));
+  const scoreCols = hasRanks
+    ? `c.mutual_rank, c.rank_self, c.rank_other`
+    : ranked
+      ? `c.mutual_rank, 0 AS rank_self, 0 AS rank_other`
+      : `0 AS mutual_rank, 0 AS rank_self, 0 AS rank_other`;
+  const order = ranked ? 'c.mutual_rank ASC' : 'c.pearson DESC';
   if (opts.neuronType) {
     return query<CengenCoexprNeighbor>(
       `SELECT c.neighbor AS wormbase_gene,
 			        a.gene_name,
 			        a.concise_description,
-			        c.pearson
+			        c.pearson,
+			        ${scoreCols}
 			 FROM cengen_coexpression c
 			 JOIN cengen_calls cc ON cc.wormbase_gene = c.neighbor
 			 LEFT JOIN annotations a ON a.wormbase_gene = c.neighbor
 			 WHERE c.wormbase_gene = ?
 			   AND cc.neuron_type = ?
 			   AND cc.max_threshold >= ?
-			 ORDER BY c.pearson DESC
+			 ORDER BY ${order}
 			 LIMIT ?`,
       [wormbase_gene, opts.neuronType, opts.minThreshold ?? 2, limit],
     );
@@ -1179,11 +1241,12 @@ export async function getCengenCoexpressionFor(
     `SELECT c.neighbor AS wormbase_gene,
 		        a.gene_name,
 		        a.concise_description,
-		        c.pearson
+		        c.pearson,
+		        ${scoreCols}
 		 FROM cengen_coexpression c
 		 LEFT JOIN annotations a ON a.wormbase_gene = c.neighbor
 		 WHERE c.wormbase_gene = ?
-		 ORDER BY c.pearson DESC
+		 ORDER BY ${order}
 		 LIMIT ?`,
     [wormbase_gene, limit],
   );
@@ -1982,7 +2045,7 @@ export async function getFacets(term: string): Promise<Facets> {
         params.push(op.value.toLowerCase());
       } else if (op.key === 'type') {
         conds.push('LOWER(gene_type) LIKE ?');
-        params.push(`%${op.value.toLowerCase()}%`);
+        params.push(`%${normalizeBiotype(op.value)}%`);
       }
     }
     const where = conds.join(' AND ');
@@ -2639,6 +2702,36 @@ export async function getSimilarGenes(wormbase_gene: string, limit = 16): Promis
     score: number;
     top_shared_json: string | null;
   };
+  // IDF-weighted like the GO half where the build provides the frequencies;
+  // older builds fall back to the flat per-level weight.
+  const wcIdf = await hasTable('wormcat_term_freq');
+  const wcMatchCte = wcIdf
+    ? `wc_match AS (
+		    SELECT w.wormbase_gene,
+		           (CASE WHEN w.category_1 IN src_wc THEN 1 ELSE 0 END
+		          + CASE WHEN w.category_2 IN src_wc THEN 1 ELSE 0 END
+		          + CASE WHEN w.category_3 IN src_wc THEN 1 ELSE 0 END) AS n,
+		           (CASE WHEN w.category_1 IN src_wc THEN COALESCE(f1.idf, 0) ELSE 0 END
+		          + CASE WHEN w.category_2 IN src_wc THEN COALESCE(f2.idf, 0) ELSE 0 END
+		          + CASE WHEN w.category_3 IN src_wc THEN COALESCE(f3.idf, 0) ELSE 0 END) AS wsc
+		    FROM wormcat w
+		    LEFT JOIN wormcat_term_freq f1 ON f1.level = 1 AND f1.category = w.category_1
+		    LEFT JOIN wormcat_term_freq f2 ON f2.level = 2 AND f2.category = w.category_2
+		    LEFT JOIN wormcat_term_freq f3 ON f3.level = 3 AND f3.category = w.category_3
+		    WHERE w.wormbase_gene != ?
+		  )`
+    : `wc_match AS (
+		    SELECT w.wormbase_gene,
+		           (CASE WHEN w.category_1 IN src_wc THEN 1 ELSE 0 END
+		          + CASE WHEN w.category_2 IN src_wc THEN 1 ELSE 0 END
+		          + CASE WHEN w.category_3 IN src_wc THEN 1 ELSE 0 END) AS n,
+		           (CASE WHEN w.category_1 IN src_wc THEN 3.0 ELSE 0 END
+		          + CASE WHEN w.category_2 IN src_wc THEN 3.0 ELSE 0 END
+		          + CASE WHEN w.category_3 IN src_wc THEN 3.0 ELSE 0 END) AS wsc
+		    FROM wormcat w
+		    WHERE w.wormbase_gene != ?
+		  )`;
+
   const rows = await query<Row>(
     `WITH RECURSIVE
 		  src_go_direct AS (SELECT DISTINCT go_id FROM gene_go WHERE wormbase_gene = ? AND evidence_code != 'IEA-PROP'),
@@ -2698,14 +2791,7 @@ export async function getSimilarGenes(wormbase_gene: string, limit = 16): Promis
 		    GROUP BY wormbase_gene
 		  ),
 
-		  wc_match AS (
-		    SELECT w.wormbase_gene,
-		           (CASE WHEN w.category_1 IN src_wc THEN 1 ELSE 0 END
-		          + CASE WHEN w.category_2 IN src_wc THEN 1 ELSE 0 END
-		          + CASE WHEN w.category_3 IN src_wc THEN 1 ELSE 0 END) AS n
-		    FROM wormcat w
-		    WHERE w.wormbase_gene != ?
-		  ),
+		  ${wcMatchCte},
 
 		  neu_match AS (
 		    SELECT n.wormbase_gene, COUNT(DISTINCT n.category) AS n
@@ -2744,7 +2830,7 @@ export async function getSimilarGenes(wormbase_gene: string, limit = 16): Promis
 		        COALESCE(neu.n, 0) AS shared_neuronal,
 		        COALESCE(ix.n, 0) AS shared_partners,
 		        (COALESCE(g.w, 0)
-		         + COALESCE(w.n, 0) * 3.0
+		         + COALESCE(w.wsc, 0)
 		         + COALESCE(neu.n, 0) * 2.0
 		         + COALESCE(ix.n, 0) * 2.0) AS score,
 		        ts.top_shared_json
