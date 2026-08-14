@@ -15,3 +15,13 @@ export function fmtFold(f: number): string {
   if (Math.abs(f) >= 10) return f.toFixed(1);
   return f.toFixed(2);
 }
+
+// Upstream bibliographies carry inline markup (e.g. "<i>tax-2</i>") that Svelte
+// escapes and renders literally. Stripped rather than rendered as HTML.
+export function fmtTitle(t: string | null | undefined): string {
+  if (!t) return '';
+  return t
+    .replace(/<\/?[a-z][^>]*>/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

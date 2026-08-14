@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import { resolve } from '$app/paths';
   import { untrack } from 'svelte';
+  import { fmtTitle } from '$lib/format';
   import {
     getGene,
     getWormcatFor,
@@ -115,7 +116,12 @@
   let diseasesExpanded = $state(false);
   let interactionsExpanded = $state<Record<string, boolean>>({});
   let orthologsExpanded = $state<Record<string, boolean>>({});
-  let similarExpanded = $state(false);
+  // Fetched past the display limit so the header can state the real total.
+  const SIMILAR_FETCH = 200;
+  // Reciprocity bounds the stored list at 200 per gene, so this fetches all of it.
+  const COEXPR_FETCH = 200;
+  let similarShown = $state(ROW_LIMIT);
+  let coexprShown = $state(ROW_LIMIT);
   let papersExpanded = $state(false);
   let literatureExpanded = $state(false);
   const coexprFiltered = $derived(cengenCoexpr);
@@ -130,11 +136,12 @@
   async function reloadCoexpr(wb: string) {
     coexprLoading = true;
     try {
-      const rows = await getCengenCoexpressionFor(wb, 20, {
+      const rows = await getCengenCoexpressionFor(wb, COEXPR_FETCH, {
         neuronType: coexprNeuron || undefined,
         minThreshold: coexprThreshold,
       });
       cengenCoexpr = rows;
+      coexprShown = ROW_LIMIT;
     } finally {
       coexprLoading = false;
     }
@@ -198,7 +205,7 @@
       getGoFor(wb),
       getOrthologs(wb),
       getInteractionsFor(wb),
-      getSimilarGenes(wb, 16),
+      getSimilarGenes(wb, SIMILAR_FETCH),
       getPhenotypesFor(wb),
       getPhenotypeCategoriesFor(wb),
       getAllelesFor(wb),
@@ -207,7 +214,7 @@
       getPapersFor(wb, 20),
       getGenePapers(wb),
       getCengenExpressionFor(wb),
-      getCengenCoexpressionFor(wb, 20),
+      getCengenCoexpressionFor(wb, COEXPR_FETCH),
       getDiseasesFor(wb),
       getRnaiForGene(wb),
       getPathwaysFor(wb),
@@ -230,6 +237,8 @@
     literaturePapers = lit;
     cengen = ce;
     cengenCoexpr = cx;
+    similarShown = ROW_LIMIT;
+    coexprShown = ROW_LIMIT;
     diseases = dz;
     rnai = rn;
     pathways = pw;
@@ -333,7 +342,6 @@
     const expression: TocLeaf[] = [];
     if (anatomy.length > 0) expression.push({ id: 'tissues', label: 'Tissues' });
     if (cengen.length > 0) expression.push({ id: 'cengen', label: 'CeNGEN neurons' });
-    if (cengenCoexpr.length > 0) expression.push({ id: 'cengen-coexpr', label: 'Co-expressed' });
 
     const ontology: TocLeaf[] = [];
     if (goAnnotations.length > 0) {
@@ -358,7 +366,12 @@
     if (interactions.length > 0) network.push({ id: 'interactions', label: 'Interactions' });
     if (stringInteractions.length > 0)
       network.push({ id: 'string-interactions', label: 'STRING predictions' });
-    if (similar.length > 0) network.push({ id: 'similar', label: 'Similar genes' });
+
+    // The two related-gene measures are a pair; co-expression was hard to find
+    // filed under Expression.
+    const related: TocLeaf[] = [];
+    if (cengenCoexpr.length > 0) related.push({ id: 'cengen-coexpr', label: 'Co-expressed' });
+    if (similar.length > 0) related.push({ id: 'similar', label: 'Annotation similarity' });
 
     const literature: TocLeaf[] = [];
     if (papers.length > 0) literature.push({ id: 'papers', label: 'References' });
@@ -371,6 +384,7 @@
     if (physiology.length) out.push({ label: 'Phenotype & disease', children: physiology });
     if (conservation.length) out.push({ label: 'Conservation', children: conservation });
     if (network.length) out.push({ label: 'Network', children: network });
+    if (related.length) out.push({ label: 'Related genes', children: related });
     if (literature.length) out.push({ label: 'Literature', children: literature });
     return out;
   });
@@ -833,7 +847,7 @@
                           href={synaptoDoiHref(r.doi)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          title={`${r.authors} (${r.year}) — ${r.title}. ${r.journal}`}
+                          title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
                           class="inline-block rounded border bg-background px-1.5 py-0.5 font-mono text-[0.6rem] text-muted-foreground hover:bg-accent"
                         >
                           {rid}
@@ -913,103 +927,6 @@
           </CardHeader>
           <CardContent class="pt-0">
             <CengenStripPlot gene={gene.wormbase_gene} geneName={gene.gene_name} rows={cengen} />
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if cengenCoexpr.length > 0 && gene}
-        {@const safeGene = gene}
-        <Card id="cengen-coexpr">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Co-expressed in CeNGEN neurons
-              <ControlHint id="gene-cengen-coexpr" title="CeNGEN co-expression">
-                Genes whose expression pattern across CeNGEN's 41 bulk-covered neuron types most
-                closely matches this gene (Pearson on log1p TMM, computed at build time). Pick a
-                neuron to restrict neighbors to those also called expressed in that neuron at the
-                chosen threshold; Pearson scores stay global so they still measure overall pattern
-                similarity.
-              </ControlHint>
-            </CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">
-              {coexprFiltered.length} of {cengenCoexpr.length} neighbors
-            </span>
-          </CardHeader>
-          <CardContent class="space-y-2 pt-0">
-            <div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <label class="inline-flex items-center gap-1">
-                in neuron
-                <select
-                  bind:value={coexprNeuron}
-                  onchange={() => reloadCoexpr(safeGene.wormbase_gene)}
-                  class="rounded border bg-card px-1 py-0.5 font-mono text-xs"
-                >
-                  <option value="">(all, global)</option>
-                  {#each coexprNeuronOptions as nt (nt)}
-                    <option value={nt}>{nt}</option>
-                  {/each}
-                </select>
-              </label>
-              {#if coexprNeuron}
-                <label class="inline-flex items-center gap-1">
-                  threshold
-                  <select
-                    bind:value={coexprThreshold}
-                    onchange={() => reloadCoexpr(safeGene.wormbase_gene)}
-                    class="rounded border bg-card px-1 py-0.5 font-mono text-xs"
-                  >
-                    <option value={1}>liberal</option>
-                    <option value={2}>medium</option>
-                    <option value={3}>conservative</option>
-                    <option value={4}>stringent</option>
-                  </select>
-                </label>
-              {/if}
-              {#if coexprLoading}
-                <span>Loading…</span>
-              {/if}
-            </div>
-            {#if coexprFiltered.length === 0}
-              <div class="text-xs italic text-muted-foreground">
-                No co-expressed neighbors meet the filter. Try a looser threshold or "all (global)".
-              </div>
-            {:else}
-              <div class="grid grid-cols-[auto_auto_1fr] items-baseline gap-x-3 gap-y-1 text-xs">
-                <span
-                  class="cursor-help text-right text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  title="Pearson correlation on log1p(TMM) across CeNGEN’s 41 neuron types.&#10;Scale (higher = more similar expression pattern):&#10;  1.00&#9;identical pattern&#10;  0.8 – 0.99&#9;very tight: same neuron-type specificity&#10;  0.5 – 0.8&#9;strong: shared dominant neuron classes&#10;  0.3 – 0.5&#9;moderate: overlapping but distinct programs&#10;  0.1 – 0.3&#9;weak: barely above coincidence"
-                >
-                  Pearson
-                </span>
-                <span
-                  class="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                >
-                  Gene
-                </span>
-                <span
-                  class="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                >
-                  Description
-                </span>
-                {#each coexprFiltered as n (n.wormbase_gene)}
-                  {@const t = Math.max(0, Math.min(1, (n.pearson - 0.1) / 0.9))}
-                  <span
-                    class="rounded px-1.5 py-0.5 text-right font-mono tabular-nums"
-                    style="background-color: hsl(142 {50 + 35 * t}% {92 -
-                      32 * t}%); color: hsl(142 {Math.round(60 + 30 * t)}% {Math.round(
-                      28 - 10 * t,
-                    )}%);"
-                    title="Pearson {n.pearson.toFixed(3)} (1.0 = identical pattern)"
-                  >
-                    {n.pearson.toFixed(3)}
-                  </span>
-                  <GenePill id={n.wormbase_gene} name={n.gene_name} />
-                  <span class="truncate text-muted-foreground">
-                    {n.concise_description ?? ''}
-                  </span>
-                {/each}
-              </div>
-            {/if}
           </CardContent>
         </Card>
       {/if}
@@ -1668,24 +1585,154 @@
         </Card>
       {/if}
 
+      {#if cengenCoexpr.length > 0 && gene}
+        {@const safeGene = gene}
+        <Card id="cengen-coexpr">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Co-expressed in CeNGEN neurons
+              <ControlHint id="gene-cengen-coexpr" title="CeNGEN co-expression">
+                Genes whose expression pattern across CeNGEN's 41 bulk-covered neuron types most
+                closely matches this gene (Pearson on log1p TMM, computed at build time). A pair is
+                kept only if it clears both tests: significant at p &lt; 0.001 (r ≥ 0.495 across 41
+                neuron types), and each gene among the other's 200 strongest partners. The second
+                test removes promiscuous edges that significance alone lets through, so there are no
+                weak entries in the list. Ordering is by mutual rank, the geometric mean of the two
+                ranks shown on each row: the first is where that gene sits among this gene's
+                neighbors, the second where this gene sits among its. #3/#4 is a tighter pair than
+                #3/#180 even though both start the same. Pick a neuron to restrict neighbors to
+                those also called expressed in that neuron at the chosen threshold; Pearson scores
+                stay global so they still measure overall pattern similarity.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">
+              showing {Math.min(coexprShown, coexprFiltered.length)} of {coexprFiltered.length} neighbors
+            </span>
+          </CardHeader>
+          <CardContent class="space-y-2 pt-0">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <label class="inline-flex items-center gap-1">
+                in neuron
+                <select
+                  bind:value={coexprNeuron}
+                  onchange={() => reloadCoexpr(safeGene.wormbase_gene)}
+                  class="rounded border bg-card px-1 py-0.5 font-mono text-xs"
+                >
+                  <option value="">(all, global)</option>
+                  {#each coexprNeuronOptions as nt (nt)}
+                    <option value={nt}>{nt}</option>
+                  {/each}
+                </select>
+              </label>
+              {#if coexprNeuron}
+                <label class="inline-flex items-center gap-1">
+                  threshold
+                  <select
+                    bind:value={coexprThreshold}
+                    onchange={() => reloadCoexpr(safeGene.wormbase_gene)}
+                    class="rounded border bg-card px-1 py-0.5 font-mono text-xs"
+                  >
+                    <option value={1}>liberal</option>
+                    <option value={2}>medium</option>
+                    <option value={3}>conservative</option>
+                    <option value={4}>stringent</option>
+                  </select>
+                </label>
+              {/if}
+              {#if coexprLoading}
+                <span>Loading…</span>
+              {/if}
+            </div>
+            {#if coexprFiltered.length === 0}
+              <div class="text-xs italic text-muted-foreground">
+                No co-expressed neighbors meet the filter. Try a looser threshold or "all (global)".
+              </div>
+            {:else}
+              <div class="grid grid-cols-[auto_auto_1fr] items-baseline gap-x-3 gap-y-1 text-xs">
+                <span
+                  class="cursor-help text-right text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                  title="Pearson correlation on log1p(TMM) across CeNGEN’s 41 neuron types.&#10;Scale (higher = more similar expression pattern):&#10;  1.00&#9;identical pattern&#10;  0.8 – 0.99&#9;very tight: same neuron-type specificity&#10;  0.5 – 0.8&#9;strong: shared dominant neuron classes&#10;  0.3 – 0.5&#9;moderate: overlapping but distinct programs&#10;  0.1 – 0.3&#9;weak: barely above coincidence"
+                >
+                  Pearson
+                </span>
+                <span
+                  class="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Gene
+                </span>
+                <span
+                  class="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Description
+                </span>
+                {#each coexprFiltered.slice(0, coexprShown) as n (n.wormbase_gene)}
+                  {@const t = Math.max(0, Math.min(1, (n.pearson - 0.1) / 0.9))}
+                  <span
+                    class="rounded px-1.5 py-0.5 text-right font-mono tabular-nums"
+                    style="background-color: hsl(142 {50 + 35 * t}% {92 -
+                      32 * t}%); color: hsl(142 {Math.round(60 + 30 * t)}% {Math.round(
+                      28 - 10 * t,
+                    )}%);"
+                    title="Pearson {n.pearson.toFixed(3)} (1.0 = identical pattern)"
+                  >
+                    {n.pearson.toFixed(3)}
+                  </span>
+                  <span class="flex items-baseline gap-1">
+                    <GenePill id={n.wormbase_gene} name={n.gene_name} />
+                    {#if n.rank_self > 0 && n.rank_other > 0}
+                      <span
+                        class="shrink-0 font-mono text-[0.55rem] tabular-nums text-muted-foreground"
+                        title={`#${n.rank_self} in this gene's neighbors, #${n.rank_other} in ${n.gene_name ?? n.wormbase_gene}'s`}
+                      >
+                        #{n.rank_self}/{n.rank_other}
+                      </span>
+                    {/if}
+                  </span>
+                  <span class="truncate text-muted-foreground">
+                    {n.concise_description ?? ''}
+                  </span>
+                {/each}
+              </div>
+              <div class="flex">
+                <ExpandMore
+                  total={coexprFiltered.length}
+                  shown={coexprShown}
+                  expanded={coexprShown > ROW_LIMIT}
+                  step={ROW_LIMIT}
+                  onToggle={(more) =>
+                    (coexprShown = more
+                      ? Math.min(coexprFiltered.length, coexprShown + ROW_LIMIT)
+                      : ROW_LIMIT)}
+                  label="neighbors"
+                />
+              </div>
+            {/if}
+          </CardContent>
+        </Card>
+      {/if}
+
       {#if similar.length > 0}
         <Card id="similar">
-          <CardHeader class="pb-3">
+          <CardHeader class="flex flex-row flex-wrap items-baseline justify-between pb-3">
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Similar genes
               <ControlHint id="gene-similar" title="Similar genes">
-                Ranked by shared GO annotations (IDF-weighted), shared WormCat & neuronal
-                categories, and shared interaction partners. Direct annotations only — propagated GO
-                ancestors aren't used so similarity isn't dominated by trivial parents.
+                Ranked by shared GO and WormCat annotations, both IDF-weighted so a rare category
+                counts for more than a broad one, plus shared neuronal categories and interaction
+                partners. Direct annotations only — propagated GO ancestors aren't used so
+                similarity isn't dominated by trivial parents.
               </ControlHint>
             </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">
+              showing {Math.min(similarShown, similar.length)} of top {similar.length} ranked
+            </span>
             <div class="text-xs text-muted-foreground">
-              Ranked by IDF-weighted shared GO terms (with is_a ancestors), shared WormCat +
-              neuronal categories, and shared interaction partners.
+              Ranked by IDF-weighted shared GO terms (with is_a ancestors) and WormCat categories,
+              plus shared neuronal categories and interaction partners.
             </div>
           </CardHeader>
           <CardContent class="space-y-2 pt-0">
-            {#each similarExpanded ? similar : similar.slice(0, ROW_LIMIT) as s (s.wormbase_gene)}
+            {#each similar.slice(0, similarShown) as s (s.wormbase_gene)}
               <div class="border-b pb-2 last:border-b-0 last:pb-0">
                 <div class="flex items-baseline gap-2 text-sm">
                   <GenePill id={s.wormbase_gene} name={s.gene_name} variant="inline" />
@@ -1741,9 +1788,13 @@
             <div class="flex">
               <ExpandMore
                 total={similar.length}
-                shown={ROW_LIMIT}
-                expanded={similarExpanded}
-                onToggle={(v) => (similarExpanded = v)}
+                shown={similarShown}
+                expanded={similarShown > ROW_LIMIT}
+                step={ROW_LIMIT}
+                onToggle={(more) =>
+                  (similarShown = more
+                    ? Math.min(similar.length, similarShown + ROW_LIMIT)
+                    : ROW_LIMIT)}
                 label="similar genes"
               />
             </div>
@@ -1781,7 +1832,7 @@
                 >
                   {#if p.title}
                     <span class="min-w-0 flex-1 truncate text-xs group-hover:underline">
-                      {p.title}
+                      {fmtTitle(p.title)}
                     </span>
                     <span class="shrink-0 font-mono text-[0.6rem] text-muted-foreground">
                       {p.authors ?? ''}{p.authors && p.year ? ' ' : ''}{p.year ? `(${p.year})` : ''}
@@ -1839,7 +1890,7 @@
                 >
                   {#if p.title}
                     <span class="min-w-0 flex-1 truncate text-xs group-hover:underline">
-                      {p.title}
+                      {fmtTitle(p.title)}
                     </span>
                     <span class="shrink-0 font-mono text-[0.6rem] text-muted-foreground">
                       {p.authors ?? ''}{p.authors && p.year ? ' ' : ''}{p.year ? `(${p.year})` : ''}
