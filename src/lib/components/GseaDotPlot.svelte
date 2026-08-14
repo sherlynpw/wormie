@@ -42,7 +42,6 @@
 
   const innerW = $derived(WIDTH - MARGIN_LEFT - MARGIN_RIGHT);
   const innerH = $derived(top.length * ROW);
-  const height = $derived(MARGIN_TOP + innerH + MARGIN_BOTTOM);
 
   const nesAbsMax = $derived(Math.max(1.5, ...top.map((r) => Math.abs(r.nes))));
   const sizeMax = $derived(Math.max(1, ...top.map((r) => r.size)));
@@ -60,6 +59,27 @@
     const t = Math.sqrt(size / Math.max(1, sizeMax));
     return tMin + t * (tMax - tMin);
   }
+
+  // Both scales are derived from the plotted terms, so panels side by side share
+  // neither ramp nor radius meaning.
+  const legendStops = $derived(
+    Array.from({ length: 6 }, (_, i) => {
+      const t = i / 5;
+      return { value: t * logQMax, color: colorFor(Math.pow(10, -t * logQMax)) };
+    }),
+  );
+  const sizeLegendY = $derived(MARGIN_TOP + legendStops.length * 12 + 24);
+  const sizeLegendSizes = $derived([
+    Math.max(1, Math.round(sizeMax / 4)),
+    Math.max(2, Math.round(sizeMax / 2)),
+    sizeMax,
+  ]);
+
+  // The legend column can outrun a short plot.
+  const legendBottom = $derived(sizeLegendY + 14 + sizeLegendSizes.length * 24 + 14);
+  const height = $derived(
+    Math.max(MARGIN_TOP + innerH + MARGIN_BOTTOM, legendBottom + MARGIN_BOTTOM),
+  );
 
   function colorFor(q: number): string {
     const v = Math.min(1, q > 0 ? -Math.log10(q) / logQMax : 1);
@@ -219,6 +239,60 @@
             </TooltipContent>
           </Tooltip>
         {/each}
+
+        {#each legendStops as st, i (i)}
+          <rect
+            x={WIDTH - MARGIN_RIGHT + 12}
+            y={MARGIN_TOP + i * 12}
+            width="14"
+            height="12"
+            fill={st.color}
+          />
+        {/each}
+        <text
+          x={WIDTH - MARGIN_RIGHT + 12}
+          y={MARGIN_TOP - 6}
+          class="fill-foreground"
+          style="font-size: 10px; font-weight: 500;"
+        >
+          -log10(q)
+        </text>
+        {#each legendStops as st, i (i)}
+          <text
+            x={WIDTH - MARGIN_RIGHT + 30}
+            y={MARGIN_TOP + i * 12 + 9}
+            class="fill-muted-foreground"
+            style="font-size: 10px;"
+          >
+            {st.value.toFixed(1)}
+          </text>
+        {/each}
+
+        <text
+          x={WIDTH - MARGIN_RIGHT + 12}
+          y={sizeLegendY}
+          class="fill-foreground"
+          style="font-size: 10px; font-weight: 500;"
+        >
+          set size
+        </text>
+        {#each sizeLegendSizes as sz, i (i)}
+          {@const lx = WIDTH - MARGIN_RIGHT + 22}
+          {@const ly = sizeLegendY + 14 + i * 24}
+          <circle cx={lx} cy={ly} r={rFor(sz)} fill="hsl(var(--muted-foreground))" opacity="0.6" />
+          <text x={lx + 18} y={ly + 3} class="fill-muted-foreground" style="font-size: 10px;">
+            {sz}
+          </text>
+        {/each}
+
+        <text
+          x={WIDTH - MARGIN_RIGHT + 12}
+          y={sizeLegendY + 14 + sizeLegendSizes.length * 24 + 10}
+          class="fill-muted-foreground"
+          style="font-size: 9px; font-style: italic;"
+        >
+          scaled per plot
+        </text>
       </svg>
     </div>
   </TooltipProvider>
