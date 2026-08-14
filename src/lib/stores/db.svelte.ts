@@ -2,6 +2,36 @@ import { initDb, query } from '$lib/db/client';
 
 type Phase = 'idle' | 'loading' | 'ready' | 'error';
 
+const PIN_KEY = 'wormie:db-version';
+
+function readPin(): string | null {
+  try {
+    return localStorage.getItem(PIN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writePin(v: string): void {
+  try {
+    localStorage.setItem(PIN_KEY, v);
+  } catch {
+    /* private mode: fall through to always-latest */
+  }
+}
+
+// Each deploy overwrites the single R2 artifact, so an older build survives only
+// as the service worker's cache entry. Without this check the request would be
+// served the newest bytes under the old label.
+async function pinnedBuildCached(url: string): Promise<boolean> {
+  try {
+    if (typeof caches === 'undefined') return false;
+    return !!(await caches.match(url));
+  } catch {
+    return false;
+  }
+}
+
 class DbStore {
   phase = $state<Phase>('idle');
   status = $state<string>('Starting up...');
@@ -11,6 +41,23 @@ class DbStore {
   totalGO = $state<number>(0);
   totalWormCat = $state<number>(0);
   totalNeuronal = $state<number>(0);
+  /** Build actually loaded. */
+  version = $state<string>('');
+  /** Newest published build, when it differs from the one loaded. */
+  updateAvailable = $state<string>('');
+  /** Set when a pinned build was no longer cached and the newest had to be loaded. */
+  pinExpired = $state<string>('');
+
+  /** Adopt the newest published build and reload; the worker holds the old one open. */
+  adoptLatest(): void {
+    if (!this.updateAvailable) return;
+    writePin(this.updateAvailable);
+    location.reload();
+  }
+
+  dismissPinExpired(): void {
+    this.pinExpired = '';
+  }
 
   async ensure(dbUrl: string, fallbackVersion: string): Promise<void> {
     if (this.phase === 'ready') return;
@@ -22,16 +69,33 @@ class DbStore {
 
     // Resolve live DB version from /data/version.json so pipeline rebuilds
     // trigger a worker-side refetch without code changes.
-    let version = fallbackVersion;
+    let latest = fallbackVersion;
     try {
       const res = await fetch('/data/version.json', { cache: 'no-store' });
       if (res.ok) {
         const v = (await res.json()) as { version?: string };
-        if (v?.version) version = v.version;
+        if (v?.version) latest = v.version;
       }
     } catch {
       // noop: fall back to the hardcoded version
     }
+
+    // Stay on the loaded build so an analysis in progress isn't re-based; the
+    // newer one is offered instead of applied.
+    let version = latest;
+    const pinned = readPin();
+    if (pinned && pinned !== latest) {
+      if (await pinnedBuildCached(`${dbUrl}?v=${encodeURIComponent(pinned)}`)) {
+        version = pinned;
+        this.updateAvailable = latest;
+      } else {
+        this.pinExpired = pinned;
+        writePin(latest);
+      }
+    } else if (!pinned) {
+      writePin(latest);
+    }
+    this.version = version;
 
     // Cache-bust via version query param: avoids stale bytes after a pipeline
     // rebuild given the long edge TTL set in src/worker.ts.

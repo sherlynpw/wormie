@@ -54,6 +54,52 @@
     { key: 'synaptogenesis', label: 'Synaptogenesis', icon: Cable },
   ];
 
+  type ToolLink = { href: string; match: string; label: string; icon: IconComponent };
+
+  const LOOKUP: ToolLink[] = [
+    { href: resolve('/lookup'), match: '/lookup', label: 'Bulk lookup', icon: FileSearch },
+  ];
+
+  const TOOL_GROUPS: { heading: string; items: ToolLink[] }[] = [
+    {
+      heading: 'From reads to results',
+      items: [
+        { href: resolve('/counts'), match: '/counts', label: 'Read counting', icon: Sigma },
+        { href: resolve('/de'), match: '/de', label: 'Differential expression', icon: TrendingUp },
+        {
+          href: resolve('/de/diff'),
+          match: '/de/diff',
+          label: 'Compare contrasts',
+          icon: TrendingUp,
+        },
+        { href: resolve('/gsea'), match: '/gsea', label: 'Preranked GSEA', icon: TrendingUp },
+      ],
+    },
+    {
+      heading: 'Analyses on a gene list',
+      items: [
+        {
+          href: resolve('/ssgsea'),
+          match: '/ssgsea',
+          label: 'Single-sample GSEA',
+          icon: TrendingUp,
+        },
+        {
+          href: resolve('/enrichment'),
+          match: '/enrichment',
+          label: 'Over-representation',
+          icon: BarChart,
+        },
+        { href: resolve('/gmt'), match: '/gmt', label: 'Custom gene sets', icon: TrendingUp },
+        { href: resolve('/nta'), match: '/nta', label: 'Network connectivity', icon: Network },
+      ],
+    },
+  ];
+
+  const MANAGE: ToolLink[] = [
+    { href: resolve('/datasets'), match: '/datasets', label: 'Datasets', icon: FolderTree },
+  ];
+
   const STATUSES = [
     { key: 'live', label: 'Live' },
     { key: 'dead', label: 'Dead' },
@@ -126,126 +172,64 @@
       Tools
     </div>
     <nav class="flex flex-col gap-0.5">
-      <a
-        href={resolve('/lookup')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/lookup'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
+      {#each LOOKUP as t (t.match)}
+        {@const Icon = t.icon}
+        <a
+          href={t.href}
+          class={cn(
+            'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+            page.url.pathname === t.match
+              ? 'bg-accent font-medium text-accent-foreground'
+              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+          )}
+        >
+          <Icon class="h-4 w-4" />
+          {t.label}
+        </a>
+      {/each}
+    </nav>
+
+    {#each TOOL_GROUPS as g (g.heading)}
+      <div
+        class="mb-1 mt-3 px-2 text-[0.6rem] font-medium uppercase tracking-wider text-muted-foreground/70"
       >
-        <FileSearch class="h-4 w-4" />
-        Bulk lookup
-      </a>
-      <a
-        href={resolve('/counts')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/counts'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        <Sigma class="h-4 w-4" />
-        Counts (BAM)
-      </a>
-      <a
-        href={resolve('/de')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/de'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        <TrendingUp class="h-4 w-4" />
-        DESeq2
-      </a>
-      <a
-        href={resolve('/enrichment')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/enrichment'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        <BarChart class="h-4 w-4" />
-        Enrichment
-      </a>
-      <a
-        href={resolve('/gsea')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/gsea'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        <TrendingUp class="h-4 w-4" />
-        GSEA
-      </a>
-      <a
-        href={resolve('/de/diff')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/de/diff'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        <TrendingUp class="h-4 w-4" />
-        DE diff
-      </a>
-      <a
-        href={resolve('/gmt')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/gmt'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        <TrendingUp class="h-4 w-4" />
-        Custom GMT
-      </a>
-      <a
-        href={resolve('/ssgsea')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/ssgsea'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        <TrendingUp class="h-4 w-4" />
-        ssGSEA
-      </a>
-      <a
-        href={resolve('/nta')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/nta'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        <TrendingUp class="h-4 w-4" />
-        Network topology
-      </a>
-      <a
-        href={resolve('/datasets')}
-        class={cn(
-          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          page.url.pathname === '/datasets'
-            ? 'bg-accent font-medium text-accent-foreground'
-            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-        )}
-      >
-        <TrendingUp class="h-4 w-4" />
-        Datasets
-      </a>
+        {g.heading}
+      </div>
+      <nav class="flex flex-col gap-0.5">
+        {#each g.items as t (t.match)}
+          {@const Icon = t.icon}
+          <a
+            href={t.href}
+            class={cn(
+              'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+              page.url.pathname === t.match
+                ? 'bg-accent font-medium text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+            )}
+          >
+            <Icon class="h-4 w-4" />
+            {t.label}
+          </a>
+        {/each}
+      </nav>
+    {/each}
+
+    <nav class="mt-3 flex flex-col gap-0.5">
+      {#each MANAGE as t (t.match)}
+        {@const Icon = t.icon}
+        <a
+          href={t.href}
+          class={cn(
+            'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+            page.url.pathname === t.match
+              ? 'bg-accent font-medium text-accent-foreground'
+              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+          )}
+        >
+          <Icon class="h-4 w-4" />
+          {t.label}
+        </a>
+      {/each}
       <a
         href={resolve('/bookmarks')}
         class={cn(
@@ -356,7 +340,41 @@
           <dt>Neuronal</dt>
           <dd>{db.totalNeuronal.toLocaleString()}</dd>
         </div>
+        {#if db.version}
+          <div class="flex justify-between gap-2">
+            <dt>Build</dt>
+            <dd class="truncate" title={db.version}>{db.version}</dd>
+          </div>
+        {/if}
       </dl>
+      {#if db.updateAvailable}
+        <div class="mb-2 rounded border border-dashed px-2 py-1.5 text-[0.65rem] leading-snug">
+          <div class="text-muted-foreground">
+            A newer database build is available ({db.updateAvailable}). You are on
+            {db.version} so results stay comparable.
+          </div>
+          <button
+            type="button"
+            onclick={() => db.adoptLatest()}
+            class="mt-1 rounded border px-1.5 py-0.5 transition-colors hover:bg-accent"
+          >
+            Update and reload
+          </button>
+        </div>
+      {:else if db.pinExpired}
+        <div class="mb-2 rounded border border-dashed px-2 py-1.5 text-[0.65rem] leading-snug">
+          <div class="text-muted-foreground">
+            Build {db.pinExpired} is no longer available offline, so {db.version} was loaded.
+          </div>
+          <button
+            type="button"
+            onclick={() => db.dismissPinExpired()}
+            class="mt-1 rounded border px-1.5 py-0.5 transition-colors hover:bg-accent"
+          >
+            Dismiss
+          </button>
+        </div>
+      {/if}
       <a
         href={resolve('/about')}
         class={cn(

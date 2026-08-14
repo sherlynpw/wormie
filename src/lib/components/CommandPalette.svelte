@@ -221,7 +221,7 @@
               Bulk lookup
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
-              value="enrichment"
+              value="enrichment over-representation ora"
               onSelect={() => navigate('/enrichment')}
               class={cn(
                 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
@@ -229,7 +229,7 @@
               )}
             >
               <BarChart class="h-4 w-4 text-muted-foreground" />
-              Enrichment analysis
+              Over-representation
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="gsea"
@@ -251,10 +251,10 @@
               )}
             >
               <TrendingUp class="h-4 w-4 text-muted-foreground" />
-              ssGSEA (single-sample)
+              Single-sample GSEA
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
-              value="nta network topology"
+              value="nta network topology connectivity"
               onSelect={() => navigate('/nta')}
               class={cn(
                 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
@@ -262,7 +262,7 @@
               )}
             >
               <TrendingUp class="h-4 w-4 text-muted-foreground" />
-              Network topology analysis
+              Network connectivity
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="cell-type"
