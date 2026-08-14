@@ -5,7 +5,7 @@ const NODE_W = 220;
 const NODE_H = 80;
 
 export type GraphDirection = 'TB' | 'LR' | 'BT' | 'RL';
-export type LayoutKind = 'dagre-TB' | 'dagre-LR' | 'radial';
+export type LayoutKind = 'dagre-TB' | 'dagre-LR' | 'radial' | 'concentric';
 
 export interface LayoutOpts {
   kind?: LayoutKind;
@@ -160,9 +160,88 @@ export function radialLayout<T extends Node>(nodes: T[], edges: Edge[], focalId:
   });
 }
 
+// Concentric rings over the full circle, treating edges as undirected.
+// radialLayout's ancestor/descendant split suits a GO DAG but fans an
+// interaction graph to one side, since a focal gene sits on one side of the
+// stored (gene_a, gene_b) pairs.
+export function concentricLayout<T extends Node>(nodes: T[], edges: Edge[], focalId: string): T[] {
+  const adj = new Map<string, string[]>();
+  for (const n of nodes) adj.set(n.id, []);
+  for (const e of edges) {
+    adj.get(e.source)?.push(e.target);
+    adj.get(e.target)?.push(e.source);
+  }
+
+  const dist = new Map<string, number>([[focalId, 0]]);
+  const queue = [focalId];
+  while (queue.length) {
+    const cur = queue.shift()!;
+    const d = dist.get(cur)!;
+    for (const nb of adj.get(cur) ?? []) {
+      if (dist.has(nb)) continue;
+      dist.set(nb, d + 1);
+      queue.push(nb);
+    }
+  }
+
+  const rings = new Map<number, string[]>();
+  let maxRing = 0;
+  for (const n of nodes) {
+    if (n.id === focalId) continue;
+    const d = dist.get(n.id);
+    if (d !== undefined) maxRing = Math.max(maxRing, d);
+  }
+  for (const n of nodes) {
+    if (n.id === focalId) continue;
+    // Disconnected nodes park outside the reachable rings.
+    const d = dist.get(n.id) ?? maxRing + 1;
+    const arr = rings.get(d) ?? [];
+    arr.push(n.id);
+    rings.set(d, arr);
+  }
+
+  const positions = new Map<string, { x: number; y: number }>([[focalId, { x: 0, y: 0 }]]);
+  const PER_NODE = NODE_W * 0.8;
+  const BASE_RADIUS = 300;
+  const RING_GAP = 260;
+  let prevRadius = 0;
+
+  for (const ring of [...rings.keys()].sort((a, b) => a - b)) {
+    const ids = rings.get(ring)!;
+    const count = ids.length;
+    const r = Math.max(
+      BASE_RADIUS + (ring - 1) * RING_GAP,
+      (count * PER_NODE) / (2 * Math.PI),
+      prevRadius + NODE_H * 1.6,
+    );
+    prevRadius = r;
+    const step = (2 * Math.PI) / count;
+    // Half-step alternate rings so nodes don't line up radially.
+    const offset = -Math.PI / 2 + (ring % 2 === 0 ? step / 2 : 0);
+    for (let i = 0; i < count; i++) {
+      const angle = offset + i * step;
+      positions.set(ids[i], { x: r * Math.cos(angle), y: r * Math.sin(angle) });
+    }
+  }
+
+  return nodes.map((n) => {
+    const p = positions.get(n.id) ?? { x: 0, y: 0 };
+    return {
+      ...n,
+      position: { x: p.x - NODE_W / 2, y: p.y - NODE_H / 2 },
+      targetPosition: Position.Left,
+      sourcePosition: Position.Right,
+    };
+  });
+}
+
 export function applyLayout<T extends Node>(nodes: T[], edges: Edge[], opts: LayoutOpts = {}): T[] {
   const kind = opts.kind ?? 'dagre-TB';
   if (kind === 'dagre-LR') return dagreLayout(nodes, edges, 'LR');
+  if (kind === 'concentric') {
+    if (!opts.focalId) return dagreLayout(nodes, edges, 'TB');
+    return concentricLayout(nodes, edges, opts.focalId);
+  }
   if (kind === 'radial') {
     if (!opts.focalId) return dagreLayout(nodes, edges, 'TB');
     return radialLayout(nodes, edges, opts.focalId);

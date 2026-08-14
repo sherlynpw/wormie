@@ -33,7 +33,7 @@
   let notFound = $state(false);
 
   let edgeTypes = $state({ physical: true, genetic: true, other: false });
-  let layoutKind = $state<LayoutKind>('radial');
+  let layoutKind = $state<LayoutKind>('concentric');
   // Hide bridge nodes; show one virtual focal→target edge per target, labelled with hop count.
   let targetsOnly = $state(false);
 
@@ -657,7 +657,8 @@
           bind:value={layoutKind}
           class="rounded border bg-card px-1.5 py-0.5 font-mono text-xs"
         >
-          <option value="radial">radial (focal in center)</option>
+          <option value="concentric">concentric (focal in center)</option>
+          <option value="radial">radial arcs (directed)</option>
           <option value="dagre-TB">tree, top to bottom</option>
           <option value="dagre-LR">tree, left to right</option>
         </select>
