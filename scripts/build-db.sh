@@ -30,6 +30,10 @@ echo "WormBase release: $WB_RELEASE"
 
 EBI_WB="https://ftp.ebi.ac.uk/pub/databases/wormbase/releases/${WB_RELEASE}/species/c_elegans/PRJNA13758/annotation"
 GENE_IDS="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.geneIDs.txt.gz"
+# Canonical gene models, shipped for /counts so nobody has to hunt for a GTF that
+# matches the assembly. Served on demand, not bundled into the database.
+GTF_URL="https://ftp.ebi.ac.uk/pub/databases/wormbase/releases/${WB_RELEASE}/species/c_elegans/PRJNA13758/c_elegans.PRJNA13758.${WB_RELEASE}.canonical_geneset.gtf.gz"
+GTF_GZ="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.canonical_geneset.gtf.gz"
 FUNC_DESC="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.functional_descriptions.txt.gz"
 XREFS="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.xrefs.txt.gz"
 # Allele-level phenotype associations
@@ -94,6 +98,7 @@ fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.functional_descriptions.txt.gz
 fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.xrefs.txt.gz" "$XREFS"
 fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.phenotype_association.wb.gz" "$WB_PHENO"
 fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.rnai_phenotypes.wb.gz" "$RNAI_PHENO"
+fetch "$GTF_URL" "$GTF_GZ" || echo "warning: canonical geneset GTF unavailable for $WB_RELEASE" >&2
 fetch "$GAF_URL" "$GAF"
 fetch "$OBO_URL" "$OBO"
 fetch "$ALLIANCE_ORTHO_URL" "$ORTHO"
@@ -1998,16 +2003,26 @@ set -o pipefail
 ALLIANCE_VER="${ALLIANCE_VER:-unknown}"
 EXPR_VER="${EXPR_VER:-unknown}"
 # The GO release from the ontology header: a build date is not a data version.
+# GNU and BSD stat take different flags, and a wrong guess here silently writes
+# the other tool's output into version.json. Try GNU, fall back to BSD, then keep
+# only a leading YYYY-MM-DD.
+file_mtime_date() {
+  local d
+  d="$(stat -c '%y' "$1" 2>/dev/null | cut -d' ' -f1)"
+  [ -n "$d" ] || d="$(stat -f '%Sm' -t '%Y-%m-%d' "$1" 2>/dev/null)"
+  printf '%s' "$d" | tr -d '\n' | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}' || true
+}
+
 GO_DATE="$(grep -m1 -oE '^data-version: releases/[0-9]{4}-[0-9]{2}-[0-9]{2}' "$OBO" 2>/dev/null | sed 's|.*/||' || true)"
 if [[ -z "$GO_DATE" ]]; then
   GO_DATE="$(grep -m1 -oE '^date: [0-9]{2}:[0-9]{2}:[0-9]{4}' "$OBO" 2>/dev/null | awk '{print $2}' | awk -F: '{print $3 "-" $2 "-" $1}' || true)"
 fi
 # Download date of the file actually used; sources are cached and reused.
-GO_FETCHED="$(stat -f '%Sm' -t '%Y-%m-%d' "$OBO" 2>/dev/null || stat -c '%y' "$OBO" 2>/dev/null | cut -d' ' -f1 || true)"
+GO_FETCHED="$(file_mtime_date "$OBO")"
 GO_FETCHED="${GO_FETCHED:-$(date -u +%Y-%m-%d)}"
 GO_DATE="${GO_DATE:-$GO_FETCHED}"
-WB_DATE="$(stat -c '%y' "$GENE_IDS" 2>/dev/null | cut -d' ' -f1 || echo '')"
-WBBT_DATE="$(stat -c '%y' "$WBBT_OBO" 2>/dev/null | cut -d' ' -f1 || echo '')"
+WB_DATE="$(file_mtime_date "$GENE_IDS")"
+WBBT_DATE="$(file_mtime_date "$WBBT_OBO")"
 
 # Per-table counts, so quoted numbers come from one identified artifact.
 RECORDS_JSON="$("${PY[@]}" -c '
@@ -2026,6 +2041,37 @@ for t in tables:
 print(json.dumps(out, indent=4)[1:-1].strip())
 ' "$TMP_DB")"
 
+# Published as SAF (exon rows only) rather than the GTF: featureCounts needs
+# nothing else for gene-level counting, and the GTF expands to 174 MB in memory
+# against 9 MB for this.
+ANNOTATION_FILE=""
+ANNOTATION_SIZE=0
+if [[ -s "$GTF_GZ" ]]; then
+  "${PY[@]}" -c '
+import gzip, re, sys
+src, dst = sys.argv[1], sys.argv[2]
+n = 0
+with gzip.open(src, "rt") as f, gzip.open(dst, "wt") as o:
+    o.write("GeneID\tChr\tStart\tEnd\tStrand\n")
+    for line in f:
+        if line.startswith("#"):
+            continue
+        p = line.rstrip("\n").split("\t")
+        if len(p) < 9 or p[2] != "exon":
+            continue
+        m = re.search(r"gene_id .([^\"]+).", p[8])
+        if not m:
+            continue
+        o.write(f"{m.group(1)}\t{p[0]}\t{p[3]}\t{p[4]}\t{p[6]}\n")
+        n += 1
+if n == 0:
+    sys.exit("annotation: no exon rows found in " + src)
+print(f"annotation.saf: {n} exon rows", file=sys.stderr)
+' "$GTF_GZ" "$DEST_DIR/annotation.saf.gz"
+  ANNOTATION_FILE="annotation.saf.gz"
+  ANNOTATION_SIZE=$(stat -c%s "$DEST_DIR/annotation.saf.gz" 2>/dev/null || stat -f%z "$DEST_DIR/annotation.saf.gz")
+fi
+
 cat >"$DEST_DIR/version.json" <<EOF
 {
   "version": "$VERSION",
@@ -2033,6 +2079,13 @@ cat >"$DEST_DIR/version.json" <<EOF
   "raw_size": $RAW_SIZE,
   "gz_size": $GZ_SIZE,
   "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "annotation": {
+    "file": "$ANNOTATION_FILE",
+    "release": "$WB_RELEASE",
+    "gz_size": $ANNOTATION_SIZE,
+    "format": "saf",
+    "source": "WormBase canonical geneset, exon rows"
+  },
   "records": {
     $RECORDS_JSON
   },
@@ -2050,6 +2103,28 @@ cat >"$DEST_DIR/version.json" <<EOF
   }
 }
 EOF
+
+# version.json is parsed by the client on every load; a malformed one silently
+# costs the app its own build metadata. Fail here instead of publishing it.
+"${PY[@]}" -c '
+import json, sys
+p = sys.argv[1]
+try:
+    d = json.load(open(p))
+except Exception as e:
+    sys.exit(f"version.json is not valid JSON: {e}")
+for k in ("version", "gz_size", "raw_size", "records", "sources"):
+    if k not in d:
+        sys.exit(f"version.json is missing {k}")
+import re
+for src, val in d["sources"].items():
+    for field, v in val.items():
+        if isinstance(v, str) and ("\n" in v or "\t" in v):
+            sys.exit(f"version.json: sources.{src}.{field} contains a control character")
+        if field in ("date", "fetched") and v and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
+            sys.exit(f"version.json: sources.{src}.{field} is not a date: {v!r}")
+print("version.json validated")
+' "$DEST_DIR/version.json"
 
 echo
 echo "Built $DEST_DIR/wormie.sqlite.gz:"
