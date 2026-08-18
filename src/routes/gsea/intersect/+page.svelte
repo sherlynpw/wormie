@@ -4,6 +4,7 @@
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Badge } from '$lib/components/ui/badge';
   import { toast } from 'svelte-sonner';
+  import LoadDatasetPicker from '$lib/components/LoadDatasetPicker.svelte';
   import Upload from 'lucide-svelte/icons/upload';
   import X from 'lucide-svelte/icons/x';
   import PageHint from '$lib/components/PageHint.svelte';
@@ -39,21 +40,22 @@
   let jaccardThreshold = $state<number>(0.3);
   let dragOver = $state(false);
 
-  async function ingestFile(f: File) {
+  function ingestText(txt: string, label: string) {
     try {
-      const txt = await f.text();
       const b = JSON.parse(txt) as Bundle;
       if (b.format !== 'wb.gsea.bundle.v1') {
-        toast.error('Not a wb.gsea bundle', { description: f.name });
+        toast.error('Not a wb.gsea bundle', { description: label });
         return;
       }
-      bundles = [...bundles, { label: f.name.replace(/\.bundle\.json$/, ''), bundle: b }];
-      toast.success('Loaded', {
-        description: `${f.name}: ${b.terms.length} ${b.kind} terms`,
-      });
+      bundles = [...bundles, { label, bundle: b }];
+      toast.success('Loaded', { description: `${label}: ${b.terms.length} ${b.kind} terms` });
     } catch (e) {
       toast.error('Could not parse bundle', { description: String(e) });
     }
+  }
+
+  async function ingestFile(f: File) {
+    ingestText(await f.text(), f.name.replace(/\.bundle\.json$/, ''));
   }
 
   async function onPick(e: Event) {
@@ -172,10 +174,10 @@
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
   <PageHint id="gsea-intersect" title="Find biology that holds across comparisons">
-    Drop 2+ <code>.bundle.json</code> files exported from any GSEA run (the <b>JSON</b> button).
-    Output: terms passing q ≤ cutoff in ≥ K bundles with leading-edge overlap above the Jaccard
-    threshold. Ranked by <code>|median NES| × mean Jaccard</code> so consistent and overlapping wins over
-    single big hits.
+    Combine 2+ GSEA runs: save a bundle from any run (the <b>Save</b> button on its results) and
+    load it here, or drop <code>.bundle.json</code> files exported with <b>JSON</b>. Output: terms
+    passing q ≤ cutoff in ≥ K bundles with leading-edge overlap above the Jaccard threshold. Ranked
+    by <code>|median NES| × mean Jaccard</code> so consistent and overlapping wins over single big hits.
   </PageHint>
 
   <Card>
@@ -215,6 +217,14 @@
               onchange={onPick}
             />
           </label>
+          <div class="flex items-center gap-2 text-xs text-muted-foreground">
+            or
+            <LoadDatasetPicker
+              type="gsea-bundle"
+              label="load a saved bundle"
+              onload={(ds) => ingestText(ds.body, ds.name)}
+            />
+          </div>
         </div>
       </div>
 

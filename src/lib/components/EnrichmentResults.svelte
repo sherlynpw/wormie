@@ -304,6 +304,9 @@
   const allResults = $derived(results[active] ?? []);
   const activeResults = $derived(effQ >= 1 ? allResults : allResults.filter((r) => r.q <= effQ));
   const significantCount = $derived(allResults.filter((r) => r.q <= SIG_THRESHOLD).length);
+  // Read off the results so the stated universe cannot drift from the one tested.
+  const universeN = $derived(allResults[0]?.N ?? 0);
+  const activeLabel = $derived(ALL_KINDS.find((k) => k.key === active)?.label ?? active);
 
   // ORA sanity: when n/N > 0.5 (input is most of the annotated universe), fold collapses to ~1x
   // and q-values become meaningless. Usually hit when a full DESeq2 table is pasted unfiltered.
@@ -453,6 +456,7 @@
           <span class="font-semibold tabular-nums text-foreground">{significantCount}</span>
           significant (q ≤ 0.05) of {allResults.length} tested
         </span>
+
         <label class="inline-flex items-center gap-1" title="Hide terms above this q-value">
           <span>show q ≤</span>
           <input
@@ -600,6 +604,19 @@
         {/if}
       {/if}
     </div>
+    {#if universeN > 0}
+      <p class="mt-1 text-xs text-muted-foreground">
+        {#if backgroundLabel}
+          Tested against the genes in your differential expression table ({universeN.toLocaleString()}
+          of them carry a
+          {activeLabel} annotation), not the full annotated set, so fold enrichment is not comparable
+          with a run on a pasted gene list.
+        {:else}
+          Tested against every gene in the database carrying a {activeLabel} annotation ({universeN.toLocaleString()}
+          of them).
+        {/if}
+      </p>
+    {/if}
   </div>
 
   {#if !isImported && ids.length < 2}

@@ -5,6 +5,8 @@
   import { Input } from '$lib/components/ui/input';
   import { Badge } from '$lib/components/ui/badge';
   import PageHint from '$lib/components/PageHint.svelte';
+  import ControlHint from '$lib/components/ControlHint.svelte';
+  import { onMount } from 'svelte';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import ArrowRight from 'lucide-svelte/icons/arrow-right';
   import Download from 'lucide-svelte/icons/download';
@@ -80,6 +82,50 @@
       toast.message(`Ignored ${skipped} file(s) (only .bam / .gtf / .gff / .saf accepted)`);
     }
   }
+  // The bundled annotation is the WormBase canonical geneset for the release the
+  // database was built from, fetched on demand rather than shipped in the DB.
+  let bundled = $state<{ file: string; release: string; gz_size: number; format?: string } | null>(
+    null,
+  );
+  let bundledLoading = $state(false);
+
+  onMount(async () => {
+    try {
+      const r = await fetch('/data/version.json', { cache: 'no-cache' });
+      if (!r.ok) return;
+      const v = (await r.json()) as {
+        annotation?: { file: string; release: string; gz_size: number; format?: string };
+      };
+      if (v.annotation?.file) bundled = v.annotation;
+    } catch {
+      // no bundled annotation; the file picker still works
+    }
+  });
+
+  async function useBundledAnnotation() {
+    if (!bundled || bundledLoading) return;
+    bundledLoading = true;
+    try {
+      const res = await fetch(`/data/${bundled.file}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // featureCounts reads plain text, so unzip before staging it. The extension
+      // decides how the wrapper parses it, so it has to match the format shipped.
+      const stream = res.body?.pipeThrough(new DecompressionStream('gzip'));
+      const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+      const ext = bundled.format === 'saf' ? 'saf' : 'gtf';
+      gtfFile = new File([bytes], `c_elegans.${bundled.release}.canonical_geneset.${ext}`, {
+        type: 'text/plain',
+      });
+      toast.success(`Using WormBase ${bundled.release} annotation`);
+    } catch (e) {
+      toast.error('Could not load the bundled annotation', {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      bundledLoading = false;
+    }
+  }
+
   function onGtfPick(e: Event) {
     const input = e.target as HTMLInputElement;
     gtfFile = input.files?.[0] ?? null;
@@ -155,10 +201,18 @@
     Back
   </Button>
 
-  <PageHint id="counts.intro" title="Counts (featureCounts)">
-    Compile a counts matrix from one or more BAM files in your browser using subread's
-    featureCounts. The BAM bytes never leave your machine. After counting, continue to DESeq2 →
-    enrichment, or download the matrix for offline use.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Read counting</h1>
+    <p class="text-sm text-muted-foreground">From aligned reads to a counts table</p>
+  </header>
+
+  <PageHint id="counts.intro" title="What this step does">
+    A BAM file is what an aligner (STAR, HISAT2, bowtie2) writes after matching your sequencing
+    reads to the genome: one entry per read, saying where it landed. Counting turns that into a
+    table of how many reads fell inside each gene, one column per sample. That table is the input
+    every differential expression method expects. Drop your BAM files here and featureCounts, the
+    standard counting tool, builds it. If a collaborator already sent you a counts table, skip
+    straight to differential expression.
   </PageHint>
 
   <Card
@@ -199,6 +253,14 @@
           <Button variant="outline" size="sm" onclick={() => bamInput?.click()} disabled={running}>
             {bamFiles.length ? 'Add more BAMs' : 'Choose BAM file(s)'}
           </Button>
+          <ControlHint id="counts-bam" title="What a BAM file is">
+            The file your aligner writes after matching sequencing reads to the genome: one record
+            per read, saying which chromosome and position it landed on. STAR, HISAT2 and bowtie2
+            all produce them, and a sequencing core will usually return them alongside the FASTQ
+            files. Pick one BAM per sample; sorting is not required and the <code>.bai</code> index is
+            not needed. If you only have FASTQ files, they have to be aligned first, which is not something
+            this page can do.
+          </ControlHint>
           <span class="text-xs text-muted-foreground">
             {bamFiles.length
               ? `${bamFiles.length} file${bamFiles.length === 1 ? '' : 's'}`
@@ -237,10 +299,34 @@
 
       <div class="grid gap-2">
         <div class="flex items-center gap-2">
+          {#if bundled}
+            <Button
+              variant="outline"
+              size="sm"
+              onclick={useBundledAnnotation}
+              disabled={running || bundledLoading}
+            >
+              {bundledLoading ? 'Loading...' : `Use WormBase ${bundled.release}`}
+            </Button>
+          {/if}
           <Button variant="outline" size="sm" onclick={() => gtfInput?.click()} disabled={running}>
-            Choose annotation
+            {bundled ? 'Or choose your own' : 'Choose annotation'}
           </Button>
           <span class="text-xs text-muted-foreground">GTF, GFF3, or SAF</span>
+          <ControlHint id="counts-gtf" title="What the annotation is, and where to get one">
+            The BAM says where each read landed; the annotation says where the genes are, so the two
+            together give a count per gene. The <b>Use WormBase</b> button loads the canonical gene
+            models for the release this site was built from, which is the right choice unless you
+            aligned to something else. Otherwise download
+            <code>c_elegans.PRJNA13758.WSxxx.canonical_geneset.gtf.gz</code> from the WormBase FTP
+            site, or the matching release from Ensembl Genomes.
+            <br /><br />
+            It must match the genome your reads were aligned to. Two mismatches cause almost all zero-count
+            results: a different assembly, and different chromosome naming, where the annotation says
+            <code>I, II, III</code>
+            and the BAM says <code>chrI, chrII</code>. If every gene comes back at zero, that is the
+            first thing to check.
+          </ControlHint>
         </div>
         {#if gtfFile}
           <Badge variant="secondary" class="w-fit font-mono text-xs">

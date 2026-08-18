@@ -31,6 +31,9 @@
   import EnrichmentHeatmap from '$lib/components/EnrichmentHeatmap.svelte';
   import LayoutGrid from 'lucide-svelte/icons/layout-grid';
   import { resolve } from '$app/paths';
+  import SaveDatasetButton from '$lib/components/SaveDatasetButton.svelte';
+  import { goto } from '$app/navigation';
+  import { buildIdsQuery } from '$lib/share';
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import GseaEnrichmentPlot from '$lib/components/GseaEnrichmentPlot.svelte';
   import PlotExportMenu from '$lib/components/PlotExportMenu.svelte';
@@ -128,6 +131,11 @@
     for (const id of missing) {
       nameMap.set(id, res.get(id)?.gene_name ?? null);
     }
+  }
+
+  async function sendGenes(genes: string[], to: 'enrichment' | 'nta') {
+    const q = await buildIdsQuery(genes);
+    await goto(resolve(`/${to}`) + `?${q}`);
   }
 
   function toggleExpandedAndResolve(termId: string, leadingEdge: string[]) {
@@ -345,12 +353,11 @@
 
   // JSON bundle: per-term leading edges + NES/q for /gsea/intersect cross-comparison; lighter
   // than TSV (no descriptions, just IDs).
-  function exportJsonBundle() {
+  // Shared by the download and the save-to-datasets paths so a stored bundle is
+  // byte-identical to a downloaded one.
+  function buildBundleJson(): string {
     const r = results[active] ?? [];
-    if (r.length === 0) {
-      toast.error('Nothing to export');
-      return;
-    }
+    if (r.length === 0) return '';
     const payload = {
       format: 'wb.gsea.bundle.v1',
       kind: active,
@@ -367,12 +374,23 @@
         leading_edge: row.leading_edge,
       })),
     };
+    return JSON.stringify(payload, null, 2);
+  }
+
+  function exportJsonBundle() {
+    const json = buildBundleJson();
+    if (!json) {
+      toast.error('Nothing to export');
+      return;
+    }
     const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
     downloadBlob(
-      new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
+      new Blob([json], { type: 'application/json' }),
       `gsea_${active}_${ts}.bundle.json`,
     );
-    toast.success('Bundle exported', { description: `${r.length} ${active} terms` });
+    toast.success('Bundle exported', {
+      description: `${(results[active] ?? []).length} ${active} terms`,
+    });
   }
 
   const SIG_THRESHOLD = 0.25;
@@ -626,11 +644,17 @@
           size="sm"
           disabled={activeResults.length === 0}
           onclick={exportJsonBundle}
-          title="Export a JSON bundle to combine with other GSEA runs in /gsea/intersect"
+          title="Download a JSON bundle to combine with other GSEA runs in /gsea/intersect"
         >
           <Download class="h-3 w-3" />
           JSON
         </Button>
+        <SaveDatasetButton
+          type="gsea-bundle"
+          body={buildBundleJson}
+          defaultName={`${active} bundle`}
+          disabled={allResults.length === 0}
+        />
         <Button
           variant="outline"
           size="sm"
@@ -858,6 +882,28 @@
                       >
                         open in gene browser →
                       </a>
+                      <button
+                        type="button"
+                        class="text-[0.65rem] text-primary hover:underline"
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          void sendGenes(r.leading_edge, 'enrichment');
+                        }}
+                        title="Run over-representation on the leading-edge genes"
+                      >
+                        test for enrichment →
+                      </button>
+                      <button
+                        type="button"
+                        class="text-[0.65rem] text-primary hover:underline"
+                        onclick={(e) => {
+                          e.stopPropagation();
+                          void sendGenes(r.leading_edge, 'nta');
+                        }}
+                        title="Test whether the leading-edge genes interact with each other"
+                      >
+                        test connectivity →
+                      </button>
                     </div>
                     <div class="flex flex-wrap gap-1">
                       {#each r.leading_edge as g (g)}

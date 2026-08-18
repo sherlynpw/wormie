@@ -50,9 +50,11 @@
     kind: TermKind;
     id: string;
     children?: import('svelte').Snippet;
+    /** Extra content for the card, e.g. the evidence behind this term for one gene. */
+    footer?: import('svelte').Snippet;
   };
 
-  let { kind, id, children }: Props = $props();
+  let { kind, id, children, footer }: Props = $props();
   let open = $state(false);
   let detail = $state<TermDetail | null>(null);
   let loading = $state(false);
@@ -101,6 +103,7 @@
   <HoverCardContent>
     {#if loading && !detail}
       <div class="text-sm text-muted-foreground">Loading {id}...</div>
+      {#if footer}<div class="mt-2 border-t pt-2">{@render footer()}</div>{/if}
     {:else if detail}
       {@const ext = externalHref(detail)}
       <div class="space-y-1.5">
@@ -142,6 +145,7 @@
             {detail.definition}
           </div>
         {/if}
+        {#if footer}<div class="border-t pt-1.5">{@render footer()}</div>{/if}
       </div>
     {:else if open}
       <div class="text-sm text-muted-foreground">Not found.</div>

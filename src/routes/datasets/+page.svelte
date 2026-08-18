@@ -12,7 +12,7 @@
   import { parseGeneList } from '$lib/gene-parse';
   import { decodeSession, sessionToolLabel, sessionToolPath } from '$lib/session';
 
-  type Param = 'paste' | 'gmt' | 'ranked' | 'deseq2' | 'results' | 'counts' | 'session';
+  type Param = 'paste' | 'gmt' | 'ranked' | 'deseq2' | 'results' | 'counts' | 'session' | 'bundle';
   type Target = { path: string; param: Param; label: string };
   // First entry is the default target; rest appear in "Open in ..." submenu.
   const TYPE_ROUTES: Record<DatasetType, Target[]> = {
@@ -31,6 +31,7 @@
     ],
     gmt: [{ path: '/gmt', param: 'gmt', label: 'GMT' }],
     counts: [{ path: '/ssgsea', param: 'counts', label: 'ssGSEA' }],
+    'gsea-bundle': [{ path: '/gsea/intersect', param: 'bundle', label: 'GSEA intersect' }],
     // Placeholder replaced by sessionTargets() at render time.
     session: [{ path: '', param: 'session', label: 'Open session' }],
   };
@@ -167,18 +168,24 @@
     Back
   </Button>
 
-  <PageHint id="datasets" title="Saved inputs">
-    Named, reusable inputs across the site (gene lists, ranked stats, DESeq2 tables, GMTs, count
-    matrices). Each tool has a "Save" button that drops the current input here, and a picker to load
-    any saved one. Stored in browser localStorage; no server.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Datasets</h1>
+    <p class="text-sm text-muted-foreground">Gene lists and tables saved for reuse</p>
+  </header>
+
+  <PageHint id="datasets" title="How saving works">
+    Anything you paste into a tool can be named and kept here: gene lists, ranked lists, counts
+    tables, differential expression results, GMT files. Every tool has a <b>Save</b> button that drops
+    its current input into this list, and a picker to load one back, so a list you assembled once can
+    be reused across analyses without pasting it again.
   </PageHint>
 
   <Card>
     <CardHeader>
-      <CardTitle class="text-xl">Datasets</CardTitle>
+      <CardTitle class="text-xl">Saved inputs</CardTitle>
       <div class="text-sm text-muted-foreground">
-        Saved gene lists, ranked stats, DESeq2 outputs, GMT collections, and counts matrices. All
-        persisted in your browser ONLY.
+        Gene lists, ranked lists, differential expression results, GMT collections and counts
+        matrices.
       </div>
     </CardHeader>
     <CardContent>

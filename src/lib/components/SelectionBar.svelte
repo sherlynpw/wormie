@@ -15,6 +15,7 @@
     clipboardTsv,
   } from '$lib/exports';
   import { buildIdsQuery } from '$lib/share';
+  import Network from 'lucide-svelte/icons/network';
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { toast } from 'svelte-sonner';
@@ -63,6 +64,11 @@
   async function gotoGsea() {
     const q = await buildIdsQuery(selection.ids);
     goto(resolve(`/gsea?${q}`));
+  }
+
+  async function gotoNta() {
+    const q = await buildIdsQuery(selection.ids);
+    goto(resolve(`/nta?${q}`));
   }
 
   async function gotoLookup() {
@@ -296,6 +302,10 @@
         <Button variant="outline" size="sm" disabled={selection.ids.length < 2} onclick={gotoGsea}>
           <TrendingUp class="h-3 w-3" />
           GSEA
+        </Button>
+        <Button variant="outline" size="sm" disabled={selection.ids.length < 2} onclick={gotoNta}>
+          <Network class="h-3 w-3" />
+          Network
         </Button>
         <Button
           variant="outline"

@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import { resolve } from '$app/paths';
   import { untrack } from 'svelte';
+  import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import { fmtTitle } from '$lib/format';
   import {
     getGene,
@@ -124,6 +125,19 @@
   let coexprShown = $state(ROW_LIMIT);
   let papersExpanded = $state(false);
   let literatureExpanded = $state(false);
+  const rnaiByPhenotype = $derived.by(() => {
+    const m = new SvelteMap<string, { reagents: string[]; papers: SvelteSet<string> }>();
+    for (const r of rnai) {
+      for (const pid of r.phenotype_ids) {
+        let e = m.get(pid);
+        if (!e) m.set(pid, (e = { reagents: [], papers: new SvelteSet() }));
+        e.reagents.push(r.wbrnai_id);
+        for (const p of r.paper_ids) e.papers.add(p);
+      }
+    }
+    return m;
+  });
+
   const coexprFiltered = $derived(cengenCoexpr);
   const coexprNeuronOptions = $derived(
     // Only neurons where the gene is called expressed (max_threshold >= 1) so the picker shows useful filters.
@@ -332,58 +346,49 @@
   // Dynamic TOC: leaves appear only if their section has data; groups vanish when all children are empty.
   // Card render order below mirrors this grouping.
   const tocEntries = $derived.by<TocEntry[]>(() => {
-    const overview: TocLeaf[] = [{ id: 'overview', label: 'Overview' }];
-
-    const identity: TocLeaf[] = [];
+    // Grouped by the question a reader arrives with, not by the source each panel came from.
+    const identity: TocLeaf[] = [{ id: 'overview', label: 'Overview' }];
+    if (orthologs.length > 0) {
+      identity.push({ id: 'phylo', label: 'Conservation' });
+      identity.push({ id: 'orthologs', label: 'Orthologs' });
+    }
     if (xrefs.length > 0) identity.push({ id: 'external', label: 'External resources' });
-    if (wormcat?.category_1) identity.push({ id: 'wormcat', label: 'WormCat' });
-    if (neuronal.length > 0) identity.push({ id: 'neuronal', label: 'Neuronal class' });
+
+    const perturbation: TocLeaf[] = [];
+    if (alleles.length > 0) perturbation.push({ id: 'alleles', label: 'Alleles' });
+    void allelesExpanded; // alleles use <details>; flagged here for parity if that changes
+    if (phenotypes.length > 0) perturbation.push({ id: 'phenotypes', label: 'Phenotypes' });
+    if (diseases.length > 0) perturbation.push({ id: 'diseases', label: 'Diseases' });
+
+    const annotation: TocLeaf[] = [];
+    if (goAnnotations.length > 0) annotation.push({ id: 'go', label: 'Gene Ontology' });
+    if (wormcat?.category_1) annotation.push({ id: 'wormcat', label: 'WormCat' });
+    if (neuronal.length > 0) annotation.push({ id: 'neuronal', label: 'Neuronal class' });
+    if (synaptogenesis.length > 0)
+      annotation.push({ id: 'synaptogenesis', label: 'Synaptogenesis' });
+    if (pathways.length > 0) annotation.push({ id: 'pathways', label: 'KEGG' });
 
     const expression: TocLeaf[] = [];
     if (anatomy.length > 0) expression.push({ id: 'tissues', label: 'Tissues' });
-    if (cengen.length > 0) expression.push({ id: 'cengen', label: 'CeNGEN neurons' });
+    if (cengen.length > 0) expression.push({ id: 'cengen', label: 'Neurons (CeNGEN)' });
 
-    const ontology: TocLeaf[] = [];
-    if (goAnnotations.length > 0) {
-      ontology.push({ id: 'go-dist', label: 'GO distribution' });
-      ontology.push({ id: 'go', label: 'GO annotations' });
-    }
-    if (pathways.length > 0) ontology.push({ id: 'pathways', label: 'KEGG pathways' });
-
-    const physiology: TocLeaf[] = [];
-    if (phenotypes.length > 0) physiology.push({ id: 'phenotypes', label: 'Phenotypes' });
-    if (alleles.length > 0) physiology.push({ id: 'alleles', label: 'Alleles' });
-    void allelesExpanded; // alleles use <details>; flagged here for parity if that changes
-    if (diseases.length > 0) physiology.push({ id: 'diseases', label: 'Diseases' });
-
-    const conservation: TocLeaf[] = [];
-    if (orthologs.length > 0) {
-      conservation.push({ id: 'phylo', label: 'Phylo footprint' });
-      conservation.push({ id: 'orthologs', label: 'Orthologs' });
-    }
-
-    const network: TocLeaf[] = [];
-    if (interactions.length > 0) network.push({ id: 'interactions', label: 'Interactions' });
-    if (stringInteractions.length > 0)
-      network.push({ id: 'string-interactions', label: 'STRING predictions' });
-
-    // The two related-gene measures are a pair; co-expression was hard to find
-    // filed under Expression.
     const related: TocLeaf[] = [];
+    if (interactions.length > 0)
+      related.push({ id: 'interactions', label: 'Experimental (BioGRID)' });
+    if (stringInteractions.length > 0)
+      related.push({ id: 'string-interactions', label: 'Predicted (STRING)' });
     if (cengenCoexpr.length > 0) related.push({ id: 'cengen-coexpr', label: 'Co-expressed' });
     if (similar.length > 0) related.push({ id: 'similar', label: 'Annotation similarity' });
 
     const literature: TocLeaf[] = [];
     if (papers.length > 0) literature.push({ id: 'papers', label: 'References' });
-    if (literaturePapers.length > 0) literature.push({ id: 'literature', label: 'All literature' });
+    if (literaturePapers.length > 0)
+      literature.push({ id: 'literature', label: 'All publications' });
 
-    const out: TocEntry[] = [...overview];
-    if (identity.length) out.push({ label: 'Identity', children: identity });
+    const out: TocEntry[] = [{ label: 'Identity', children: identity }];
+    if (perturbation.length) out.push({ label: 'Perturbation', children: perturbation });
+    if (annotation.length) out.push({ label: 'Annotation', children: annotation });
     if (expression.length) out.push({ label: 'Expression', children: expression });
-    if (ontology.length) out.push({ label: 'Function (GO)', children: ontology });
-    if (physiology.length) out.push({ label: 'Phenotype & disease', children: physiology });
-    if (conservation.length) out.push({ label: 'Conservation', children: conservation });
-    if (network.length) out.push({ label: 'Network', children: network });
     if (related.length) out.push({ label: 'Related genes', children: related });
     if (literature.length) out.push({ label: 'Literature', children: literature });
     return out;
@@ -931,67 +936,6 @@
         </Card>
       {/if}
 
-      {#if goByNs.total > 0}
-        <Card id="go-dist">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              GO annotation distribution
-              <ControlHint id="gene-go-dist" title="GO annotation distribution">
-                Counts of this gene's <b>direct</b> GO annotations split by namespace (BP / MF / CC) and
-                evidence-code class (experimental vs computational). Propagated ancestor annotations aren't
-                counted here.
-              </ControlHint>
-            </CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">{goByNs.total} annotations</span>
-          </CardHeader>
-          <CardContent class="space-y-2 pt-0">
-            <div class="flex h-6 overflow-hidden rounded-md border">
-              {#if goByNs.BP > 0}
-                <div
-                  class="flex items-center justify-center bg-emerald-500/70 font-mono text-[0.7rem] font-semibold text-white dark:bg-emerald-600/70"
-                  style="width: {(goByNs.BP / goByNs.total) * 100}%"
-                  title="Biological process: {goByNs.BP}"
-                >
-                  {goByNs.BP}
-                </div>
-              {/if}
-              {#if goByNs.MF > 0}
-                <div
-                  class="flex items-center justify-center bg-violet-500/70 font-mono text-[0.7rem] font-semibold text-white dark:bg-violet-600/70"
-                  style="width: {(goByNs.MF / goByNs.total) * 100}%"
-                  title="Molecular function: {goByNs.MF}"
-                >
-                  {goByNs.MF}
-                </div>
-              {/if}
-              {#if goByNs.CC > 0}
-                <div
-                  class="flex items-center justify-center bg-amber-500/70 font-mono text-[0.7rem] font-semibold text-white dark:bg-amber-600/70"
-                  style="width: {(goByNs.CC / goByNs.total) * 100}%"
-                  title="Cellular component: {goByNs.CC}"
-                >
-                  {goByNs.CC}
-                </div>
-              {/if}
-            </div>
-            <div class="flex gap-4 text-xs text-muted-foreground">
-              <div class="flex items-center gap-1.5">
-                <span class="h-3 w-3 rounded-sm bg-emerald-500/70"></span>
-                Biological process ({goByNs.BP})
-              </div>
-              <div class="flex items-center gap-1.5">
-                <span class="h-3 w-3 rounded-sm bg-violet-500/70"></span>
-                Molecular function ({goByNs.MF})
-              </div>
-              <div class="flex items-center gap-1.5">
-                <span class="h-3 w-3 rounded-sm bg-amber-500/70"></span>
-                Cellular component ({goByNs.CC})
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      {/if}
-
       {#if goAnnotations.length}
         <Card id="go">
           <CardHeader class="flex flex-row items-baseline justify-between pb-3">
@@ -1112,12 +1056,46 @@
             <div class="flex flex-wrap gap-1">
               {#each phenotypesExpanded ? phenotypes : phenotypes.slice(0, CHIP_LIMIT) as p (p.term_id)}
                 {@const rnaiOnly = p.n_alleles === 0 && p.n_evidence > 0}
+                {@const ev = rnaiByPhenotype.get(p.term_id)}
                 <TermHover kind="phenotype" id={p.term_id}>
+                  {#snippet footer()}
+                    {#if ev}
+                      <div class="space-y-1">
+                        <div class="text-[0.65rem] text-muted-foreground">
+                          Scored by {ev.reagents.length} RNAi experiment{ev.reagents.length === 1
+                            ? ''
+                            : 's'}{ev.papers.size > 0
+                            ? ` across ${ev.papers.size} paper${ev.papers.size === 1 ? '' : 's'}`
+                            : ''}
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                          <!-- eslint-disable svelte/no-navigation-without-resolve -->
+                          {#each ev.reagents.slice(0, 8) as id (id)}
+                            <a
+                              href={`https://wormbase.org/species/c_elegans/rnai/${id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="rounded border bg-card px-1 py-0.5 font-mono text-[0.55rem] text-muted-foreground hover:bg-accent hover:text-foreground"
+                              title="Clone and library on WormBase"
+                            >
+                              {id.replace('WBRNAi', '')}
+                            </a>
+                          {/each}
+                          <!-- eslint-enable svelte/no-navigation-without-resolve -->
+                          {#if ev.reagents.length > 8}
+                            <span class="text-[0.55rem] text-muted-foreground"
+                              >+{ev.reagents.length - 8}</span
+                            >
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+                  {/snippet}
                   <a
                     href={resolve(`/phenotype/${p.term_id}`)}
                     class="inline-flex items-baseline gap-1 rounded border bg-card px-1.5 py-0.5 text-xs transition-colors hover:bg-accent"
                     title={rnaiOnly
-                      ? `${p.term_id} · ${p.n_evidence} RNAi/non-allele evidence row${p.n_evidence === 1 ? '' : 's'} (no alleles)`
+                      ? `${p.term_id} · scored by ${ev ? ev.reagents.length : p.n_evidence} RNAi experiment${(ev ? ev.reagents.length : p.n_evidence) === 1 ? '' : 's'}${ev && ev.papers.size > 0 ? ` across ${ev.papers.size} paper${ev.papers.size === 1 ? '' : 's'}` : ''}${ev ? `: ${ev.reagents.slice(0, 6).join(', ')}${ev.reagents.length > 6 ? ' ...' : ''}` : ''}`
                       : `${p.term_id} · ${p.n_alleles} allele${p.n_alleles === 1 ? '' : 's'}${p.n_evidence > p.n_alleles ? ` + ${p.n_evidence - p.n_alleles} other evidence` : ''}`}
                   >
                     <span>{p.name}</span>
@@ -1127,7 +1105,7 @@
                         >RNAi</span
                       >
                       <span class="font-mono text-[0.6rem] text-muted-foreground"
-                        >{p.n_evidence}</span
+                        >{ev ? ev.reagents.length : p.n_evidence}</span
                       >
                     {:else}
                       <span class="font-mono text-[0.6rem] text-muted-foreground"
@@ -1278,94 +1256,6 @@
                 label="diseases"
               />
             </div>
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if rnai.length > 0}
-        <Card id="rnai">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              RNAi reagents
-              <ControlHint id="gene-rnai" title="RNAi reagents">
-                WormBase-curated RNAi knockdown experiments that targeted this gene, with the
-                phenotypes scored. Each reagent links to its WormBase RNAi page where the source
-                library (Ahringer, ORFeome, etc.) and clone names (sjj_*, mv_*) live.
-              </ControlHint>
-            </CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">
-              {rnai.length} reagent{rnai.length === 1 ? '' : 's'}
-            </span>
-          </CardHeader>
-          <CardContent class="pt-0">
-            <div class="overflow-x-auto rounded-md border bg-card">
-              <table class="w-full text-sm">
-                <thead class="border-b bg-card">
-                  <tr>
-                    <th
-                      class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      Reagent
-                    </th>
-                    <th
-                      class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      Phenotypes
-                    </th>
-                    <th
-                      class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                    >
-                      Observed
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each rnai.slice(0, 30) as r (r.wbrnai_id)}
-                    <tr class="border-b last:border-b-0 hover:bg-muted/30">
-                      <td class="px-3 py-2 align-top">
-                        <a
-                          href={`https://wormbase.org/species/c_elegans/rnai/${r.wbrnai_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="font-mono text-primary hover:underline"
-                          title="View clone names + library on WormBase"
-                        >
-                          {r.wbrnai_id}
-                        </a>
-                      </td>
-                      <td
-                        class="px-3 py-2 text-right align-top font-mono tabular-nums text-muted-foreground"
-                      >
-                        {r.phenotype_count}
-                      </td>
-                      <td class="px-3 py-2 align-top">
-                        <div class="flex flex-wrap gap-1">
-                          {#each r.phenotype_names.slice(0, 6) as name, i (r.phenotype_ids[i])}
-                            <a
-                              href={resolve(`/phenotype/${r.phenotype_ids[i]}`)}
-                              class="inline-block rounded border bg-background px-1.5 py-0.5 text-[0.65rem] hover:bg-accent"
-                            >
-                              {name}
-                            </a>
-                          {/each}
-                          {#if r.phenotype_names.length > 6}
-                            <span class="text-[0.65rem] italic text-muted-foreground"
-                              >+{r.phenotype_names.length - 6} more</span
-                            >
-                          {/if}
-                        </div>
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </div>
-            {#if rnai.length > 30}
-              <div class="mt-2 text-[0.7rem] text-muted-foreground">
-                Showing 30 of {rnai.length} reagents (sorted by phenotype count). For the full list, see
-                WormBase.
-              </div>
-            {/if}
           </CardContent>
         </Card>
       {/if}

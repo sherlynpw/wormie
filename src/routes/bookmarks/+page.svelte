@@ -44,7 +44,7 @@
 </script>
 
 <svelte:head>
-  <title>Bookmarks · wormie.rs.ht</title>
+  <title>Starred genes · wormie.rs.ht</title>
 </svelte:head>
 
 <div class="mx-auto max-w-5xl space-y-4 p-4 md:p-6">
@@ -53,15 +53,21 @@
     Back
   </Button>
 
-  <PageHint id="bookmarks" title="Your saved genes">
-    Local stars + free-text notes. Visible only on this browser; no server. Click a row to open the
-    gene; the note is editable inline from the gene page. Export the whole list as a TSV anytime.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Starred genes</h1>
+    <p class="text-sm text-muted-foreground">Your starred genes and notes</p>
+  </header>
+
+  <PageHint id="bookmarks" title="Keeping track of genes">
+    The star on any gene page adds it here, along with a note you can write in your own words — why
+    it caught your eye, which experiment it came from. Click a row to reopen the gene, edit the note
+    inline, or export the whole list as a spreadsheet.
   </PageHint>
 
   <Card>
     <CardHeader>
       <div class="flex flex-wrap items-baseline justify-between gap-3">
-        <CardTitle class="text-xl">Bookmarks</CardTitle>
+        <CardTitle class="text-xl">Your list</CardTitle>
         <div class="flex items-center gap-2">
           <Badge variant="muted" class="text-xs">{bookmarks.count()} saved</Badge>
           {#if bookmarks.count() > 0}

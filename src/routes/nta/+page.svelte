@@ -2,12 +2,24 @@
   import { runNta, type NtaResult, type NullModel, type EdgeKind } from '$lib/nta';
   import { bulkLookup } from '$lib/queries';
   import { parseGeneList } from '$lib/gene-parse';
+  import { readIdsFromUrl } from '$lib/share';
+  import { page } from '$app/state';
+  import { onMount } from 'svelte';
   import MethodsButton from '$lib/components/MethodsButton.svelte';
+  import PageHint from '$lib/components/PageHint.svelte';
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
   import { toast } from 'svelte-sonner';
 
   let pasteText = $state('');
+
+  onMount(async () => {
+    const ids = await readIdsFromUrl(page.url);
+    if (ids.length > 0) {
+      pasteText = ids.join('\n');
+      toast.success(`Loaded ${ids.length.toLocaleString()} genes`);
+    }
+  });
   let perms = $state(1000);
   let nullModel = $state<NullModel>('degree');
   let edgeKind = $state<EdgeKind>('all');
@@ -40,21 +52,24 @@
   }
 </script>
 
-<svelte:head><title>Network analysis · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Network connectivity · wormie.rs.ht</title></svelte:head>
 
 <div class="container mx-auto max-w-5xl space-y-6 p-4">
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Network connectivity</h1>
-    <p class="text-sm text-muted-foreground">
-      Tests whether a query gene list is more interconnected in the BioGRID interaction graph than a
-      random gene set. BioGRID carries both physical and genetic interactions, which support
-      different claims; pick which are in play and the test, the null and the edge list all follow
-      that choice. The default null draws each random gene from the same degree bin as the query
-      gene it replaces, so a list of well-studied genes does not score high merely because such
-      genes are better connected. Reports observed within-set edges and a permutation z-score.
-      Local-first; no data leaves the browser.
-    </p>
+    <p class="text-sm text-muted-foreground">Interactions among the genes in a list</p>
   </header>
+
+  <PageHint id="nta.intro" title="What is being tested">
+    BioGRID records pairs of genes seen to interact: physically, where the proteins bind, or
+    genetically, where mutating both produces an effect neither produces alone. Picture that as a
+    network, genes as dots and interactions as lines between them. This asks whether your genes are
+    joined to each other by more lines than a comparable random set would be, which is evidence they
+    work together rather than being an unrelated collection. Well-studied genes have more known
+    partners simply because more people looked, so the random sets are matched gene by gene on how
+    many partners each already has. Many genes have no recorded interaction at all; the result says
+    how many of yours could be tested.
+  </PageHint>
 
   <Card>
     <CardHeader><CardTitle>Input</CardTitle></CardHeader>
