@@ -62,14 +62,15 @@ jobs:
           # get re-fetched at least weekly.
           echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
 
+      # No restore-keys: a prefix fallback would restore an arbitrarily old .cache,
+      # and build-db.sh skips any source it already has, so a "weekly" build could
+      # publish months-old GO and BioGRID files.
       - name: Cache data sources
         if: ${{ github.event.inputs.force_refresh != 'true' }}
         uses: actions/cache@v4
         with:
           path: .cache
           key: data-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}
-          restore-keys: |
-            data-${{ steps.wb.outputs.release }}-
 
       - name: Cache built DB output
         id: db-cache
@@ -86,6 +87,9 @@ jobs:
 
       - name: Build DB
         if: ${{ steps.db-cache.outputs.cache-hit != 'true' }}
+        env:
+          # The weekly run exists to refresh the moving sources, so it ignores the cache.
+          FORCE_REFRESH: ${{ (github.event_name == 'schedule' || github.event.inputs.force_refresh == 'true') && '1' || '' }}
         run: bun run build-db
 
       - name: Typecheck
@@ -98,6 +102,7 @@ jobs:
           ls -lh static/data/
           mv static/data/wormie.sqlite.gz deploy-data/
           mv static/data/version.json deploy-data/
+          [ -f static/data/annotation.saf.gz ] && mv static/data/annotation.saf.gz deploy-data/ || true
           ls -lh deploy-data/
 
       - name: Build SvelteKit
@@ -188,6 +193,10 @@ jobs:
             --endpoint-url "$R2_ENDPOINT" --content-type application/gzip
           aws s3 cp deploy-data/version.json "s3://wormie-data/version.json" \
             --endpoint-url "$R2_ENDPOINT" --content-type application/json
+          if [ -f deploy-data/annotation.saf.gz ]; then
+            aws s3 cp deploy-data/annotation.saf.gz "s3://wormie-data/annotation.saf.gz" \
+              --endpoint-url "$R2_ENDPOINT" --content-type application/gzip
+          fi
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
