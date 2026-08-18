@@ -71,15 +71,24 @@
     Back
   </Button>
 
-  <PageHint id="lookup" title="Bulk name → WBGene resolver">
-    Paste up to thousands of mixed identifiers (gene names, sequence names, WBGene IDs, synonyms,
-    Entrez IDs). Resolves each to its canonical WBGene with the best-match strategy, surfacing
-    ambiguities. Pipe straight to the gene browser or selection for downstream tools.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Gene name resolver</h1>
+    <p class="text-sm text-muted-foreground">Any gene name into a WormBase ID</p>
+  </header>
+
+  <PageHint id="lookup" title="Why gene names need resolving">
+    One gene answers to several names: a common name (<code>daf-16</code>), a sequence name (<code
+      >R13H8.1</code
+    >), aliases from older papers, an Entrez number, and its permanent WormBase ID (<code
+      >WBGene00000912</code
+    >). Only the WormBase ID is stable, so every tool here keys on it. Paste any mixture of the
+    rest, one per line or comma-separated, and each is matched to its WormBase ID. Anything that
+    matches several genes, or none, is listed separately rather than quietly dropped.
   </PageHint>
 
   <Card>
     <CardHeader class="pb-3">
-      <CardTitle class="text-base">Bulk gene lookup</CardTitle>
+      <CardTitle class="text-base">Paste gene names or IDs</CardTitle>
       <div class="text-xs text-muted-foreground">
         Paste a list of WBGene IDs, gene names, sequence names, or aliases. One per line, comma,
         space, or pipe-separated all work.

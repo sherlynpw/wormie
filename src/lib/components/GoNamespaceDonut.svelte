@@ -57,12 +57,13 @@
     MF: 'hsl(200 70% 40%)',
     CC: 'hsl(150 55% 35%)',
   };
-  // Evidence tier opacity applied to the namespace base colour.
-  const TIER_ALPHA: Record<string, number> = {
-    experimental: 1.0,
-    curated: 0.75,
-    inferred: 0.5,
-    electronic: 0.3,
+  // Evidence tier as a grey ramp: hue means namespace, value means evidence, so
+  // the two rings encode different things and neither fades into the background.
+  const TIER_GREY: Record<string, string> = {
+    experimental: 'hsl(0 0% 28%)',
+    curated: 'hsl(0 0% 46%)',
+    inferred: 'hsl(0 0% 64%)',
+    electronic: 'hsl(0 0% 80%)',
   };
 
   // Aggregate: nsCounts = namespace total; cells = flat (namespace, tier) buckets for inner arcs.
@@ -198,7 +199,7 @@
       {/each}
       <!-- Inner ring: evidence tier within namespace -->
       {#each slices.inner as s (s.ns + ':' + s.tier)}
-        <path d={s.path} fill={NS_COLOR[s.ns]} fill-opacity={TIER_ALPHA[s.tier]}>
+        <path d={s.path} fill={TIER_GREY[s.tier]}>
           <title>{NS_LABEL[s.ns]} · {TIERS.find((t) => t.key === s.tier)?.label}: {s.count}</title>
         </path>
       {/each}
@@ -245,9 +246,7 @@
       <div class="flex flex-col gap-0.5">
         {#each TIERS as t (t.key)}
           <div class="inline-flex items-center gap-1.5">
-            <span
-              class="inline-block h-2 w-2 rounded-sm"
-              style="background:hsl(0 0% 50% / {TIER_ALPHA[t.key]})"
+            <span class="inline-block h-2 w-2 rounded-sm" style="background:{TIER_GREY[t.key]}"
             ></span>
             <span>{t.label}</span>
           </div>

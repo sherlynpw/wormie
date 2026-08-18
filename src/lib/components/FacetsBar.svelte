@@ -14,6 +14,8 @@
 
   const q = $derived(page.url.searchParams.get('q') ?? '');
   const currentView = $derived(page.url.searchParams.get('view') ?? 'cards');
+  const currentStatus = $derived(page.url.searchParams.get('status') ?? 'live');
+  const isGeneList = $derived(currentView === 'cards' || currentView === 'table');
 
   const HOME_PARAMS = new Set(['q', 'fields', 'view', 'status', 'page']);
   function urlForView(view: string): string {
@@ -27,6 +29,27 @@
     url.searchParams.set('view', view);
     return url.pathname + url.search;
   }
+
+  function urlWith(params: Record<string, string>): string {
+    const url = new SvelteURL(page.url);
+    const stale: string[] = [];
+    for (const k of url.searchParams.keys()) {
+      if (!HOME_PARAMS.has(k)) stale.push(k);
+    }
+    for (const k of stale) url.searchParams.delete(k);
+    url.pathname = '/';
+    for (const [k, v] of Object.entries(params)) {
+      if (v) url.searchParams.set(k, v);
+      else url.searchParams.delete(k);
+    }
+    return url.pathname + url.search;
+  }
+
+  const STATUSES = [
+    { key: 'live', label: 'live' },
+    { key: 'dead', label: 'dead' },
+    { key: 'all', label: 'all' },
+  ];
 
   type FacetItem = { view: string; label: string; count: number };
   const items: FacetItem[] = $derived(
@@ -60,7 +83,41 @@
       </a>
     {/each}
     <span class="ml-auto font-mono text-muted-foreground">{elapsedMs.toFixed(0)} ms</span>
-    {#if currentView === 'cards' || currentView === 'table'}
+
+    <div class="inline-flex overflow-hidden rounded border" title="Include retired gene IDs">
+      {#each STATUSES as st (st.key)}
+        <a
+          href={resolve(urlWith({ status: st.key }) as '/')}
+          class={cn(
+            'px-1.5 py-0.5 text-[0.7rem] transition-colors',
+            currentStatus === st.key
+              ? 'bg-accent text-accent-foreground'
+              : 'bg-card text-muted-foreground hover:bg-accent/50',
+          )}
+        >
+          {st.label}
+        </a>
+      {/each}
+    </div>
+
+    {#if isGeneList}
+      <div class="inline-flex overflow-hidden rounded border">
+        {#each [{ key: 'cards', label: 'cards' }, { key: 'table', label: 'table' }] as v (v.key)}
+          <a
+            href={resolve(urlWith({ view: v.key }) as '/')}
+            class={cn(
+              'px-1.5 py-0.5 text-[0.7rem] transition-colors',
+              currentView === v.key
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-card text-muted-foreground hover:bg-accent/50',
+            )}
+          >
+            {v.label}
+          </a>
+        {/each}
+      </div>
+    {/if}
+    {#if isGeneList}
       <button
         type="button"
         onclick={() => density.toggle()}

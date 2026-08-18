@@ -3,7 +3,14 @@
 
 import { idbDelete, idbGetAll, idbPut, STORE_DATASETS } from '$lib/idb';
 
-export type DatasetType = 'gene-list' | 'ranked' | 'deseq2' | 'gmt' | 'counts' | 'session';
+export type DatasetType =
+  | 'gene-list'
+  | 'ranked'
+  | 'deseq2'
+  | 'gmt'
+  | 'counts'
+  | 'session'
+  | 'gsea-bundle';
 
 export interface Dataset {
   id: string;
@@ -22,6 +29,7 @@ const TYPE_LABELS: Record<DatasetType, string> = {
   gmt: 'GMT collection',
   counts: 'Counts matrix',
   session: 'Analysis session',
+  'gsea-bundle': 'GSEA result bundle',
 };
 export function labelFor(t: DatasetType): string {
   return TYPE_LABELS[t];

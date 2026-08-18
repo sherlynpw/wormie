@@ -5,6 +5,9 @@
   import { getGeneNames } from '$lib/queries';
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
+  import { buildIdsQuery } from '$lib/share';
+  import LoadDatasetPicker from '$lib/components/LoadDatasetPicker.svelte';
+  import SaveDatasetButton from '$lib/components/SaveDatasetButton.svelte';
   import { Badge } from '$lib/components/ui/badge';
   import GenePill from '$lib/components/GenePill.svelte';
   import PageHint from '$lib/components/PageHint.svelte';
@@ -12,6 +15,7 @@
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import { toast } from 'svelte-sonner';
   import { resolve } from '$app/paths';
+  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { handoff } from '$lib/pipeline-handoff';
@@ -142,6 +146,11 @@
     return 'hsl(0 0% 80% / 0.5)';
   }
   const flipped = $derived(joined.filter((j) => j.flipped));
+
+  async function sendFlipped(to: 'enrichment' | 'nta') {
+    const q = await buildIdsQuery(flipped.map((j) => j.gene));
+    await goto(resolve(`/${to}`) + `?${q}`);
+  }
   // Each gene falls in exactly one bucket; tab counts sum to joined.length.
   function sigOf(j: Joined): 'flipped' | 'both' | 'aOnly' | 'bOnly' | 'ns' {
     if (j.flipped) return 'flipped';
@@ -251,7 +260,7 @@
 </script>
 
 <svelte:head>
-  <title>DE contrast diff · wormie.rs.ht</title>
+  <title>Compare contrasts · wormie.rs.ht</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
@@ -260,10 +269,18 @@
     Back
   </Button>
 
-  <PageHint id="de-diff" title="Compare two DESeq2 contrasts">
-    Paste two DESeq2 result tables to scatter their log2 fold changes against each other. Genes
-    whose direction flips between contrasts (positive in one, negative in the other, both magnitudes
-    > 0.5) are highlighted in purple. Pearson r quantifies overall agreement.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Compare contrasts</h1>
+    <p class="text-sm text-muted-foreground">Two comparisons side by side</p>
+  </header>
+
+  <PageHint id="de-diff" title="Reading the plot">
+    Two comparisons from the same study — a mutant against wild type at two timepoints, say, or two
+    mutants against one control — plotted against each other, one dot per gene, its fold change in
+    the first comparison on one axis and in the second on the other. Genes along the diagonal behave
+    the same way in both. Genes in purple reverse: up in one comparison, down in the other, which is
+    usually the interesting minority. Pearson r summarises how closely the two agree overall. Result
+    tables from DESeq2, edgeR or limma all work.
   </PageHint>
 
   <div class="grid gap-3 sm:grid-cols-2">
@@ -278,11 +295,27 @@
         </div>
       </CardHeader>
       <CardContent class="space-y-2">
-        <input
-          bind:value={labelA}
-          placeholder="Label for contrast A"
-          class="w-full rounded border bg-background px-2 py-1 text-sm"
-        />
+        <div class="flex flex-wrap items-center gap-2">
+          <input
+            bind:value={labelA}
+            placeholder="Label for contrast A"
+            class="min-w-40 flex-1 rounded border bg-background px-2 py-1 text-sm"
+          />
+          <LoadDatasetPicker
+            type="deseq2"
+            label="Load"
+            onload={(ds) => {
+              textA = ds.body;
+              if (!labelA) labelA = ds.name;
+            }}
+          />
+          <SaveDatasetButton
+            type="deseq2"
+            body={() => textA}
+            defaultName={labelA || 'contrast A'}
+            disabled={!textA.trim()}
+          />
+        </div>
         <textarea
           bind:value={textA}
           rows="6"
@@ -302,11 +335,27 @@
         </div>
       </CardHeader>
       <CardContent class="space-y-2">
-        <input
-          bind:value={labelB}
-          placeholder="Label for contrast B"
-          class="w-full rounded border bg-background px-2 py-1 text-sm"
-        />
+        <div class="flex flex-wrap items-center gap-2">
+          <input
+            bind:value={labelB}
+            placeholder="Label for contrast B"
+            class="min-w-40 flex-1 rounded border bg-background px-2 py-1 text-sm"
+          />
+          <LoadDatasetPicker
+            type="deseq2"
+            label="Load"
+            onload={(ds) => {
+              textB = ds.body;
+              if (!labelB) labelB = ds.name;
+            }}
+          />
+          <SaveDatasetButton
+            type="deseq2"
+            body={() => textB}
+            defaultName={labelB || 'contrast B'}
+            disabled={!textB.trim()}
+          />
+        </div>
         <textarea
           bind:value={textB}
           rows="6"
@@ -336,6 +385,22 @@
                 <span>Pearson <span class="font-mono">{pearson.toFixed(3)}</span></span>
               {/if}
               <span>Flipped: <b>{flipped.length}</b></span>
+              {#if flipped.length > 0}
+                <button
+                  type="button"
+                  onclick={() => sendFlipped('enrichment')}
+                  class="rounded border px-1.5 py-0.5 transition-colors hover:bg-accent"
+                >
+                  Test for enrichment
+                </button>
+                <button
+                  type="button"
+                  onclick={() => sendFlipped('nta')}
+                  class="rounded border px-1.5 py-0.5 transition-colors hover:bg-accent"
+                >
+                  Test connectivity
+                </button>
+              {/if}
             </div>
             <PlotExportMenu getSvg={() => svgEl} baseName={`de-diff-${labelA}-vs-${labelB}`} />
           </div>

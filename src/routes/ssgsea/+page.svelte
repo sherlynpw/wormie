@@ -2,9 +2,24 @@
   import { runCustomSsgsea, type CustomTermSet, type SsgseaScores } from '$lib/db/client';
   import SsgseaResults from '$lib/components/SsgseaResults.svelte';
   import MethodsButton from '$lib/components/MethodsButton.svelte';
+  import PageHint from '$lib/components/PageHint.svelte';
+  import ControlHint from '$lib/components/ControlHint.svelte';
   import { toast } from 'svelte-sonner';
+  import { onMount } from 'svelte';
+  import { page } from '$app/state';
+  import { handoff } from '$lib/pipeline-handoff';
 
   let exprText = $state('');
+  let exprSource = $state('');
+
+  onMount(() => {
+    if (page.url.searchParams.get('from') !== 'de') return;
+    const h = handoff.ssgsea.consume();
+    if (!h) return;
+    exprText = h.tsv;
+    exprSource = h.label;
+    toast.success('Loaded expression matrix from /de', { description: h.label });
+  });
   let gmtText = $state('');
   let alpha = $state(0.25);
   let normalize = $state(true);
@@ -83,22 +98,55 @@
   }
 </script>
 
-<svelte:head><title>ssGSEA · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Single-sample GSEA · wormie.rs.ht</title></svelte:head>
 
 <div class="container mx-auto max-w-6xl space-y-6 p-4">
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Single-sample GSEA</h1>
-    <p class="text-sm text-muted-foreground">
-      Barbie 2009 / GSVA::ssgseaParam. Per-sample, per-set enrichment scores from an expression
-      matrix and a custom GMT. Computation runs in a Web Worker; no data leaves the browser.
-      Validated to <code>cor = 1.0000</code> against R GSVA on synthetic data.
-    </p>
+    <p class="text-sm text-muted-foreground">One score per gene set, per sample</p>
   </header>
+
+  <PageHint id="ssgsea.intro" title="What you get, and what to do with it">
+    Each sample is scored on its own: its genes are sorted from highest to lowest expression, and
+    the score says how near the top of that sample's ranking a gene set's members sit. Positive
+    means concentrated near the top, negative near the bottom. Nothing is compared, so this is the
+    method to reach for when there are no two groups to contrast: a time course, a panel of strains,
+    single worms. Every set scored in every sample gives one matrix:
+    <pre
+      class="my-2 overflow-x-auto rounded bg-background/60 p-2 font-mono text-[0.65rem] leading-relaxed">                 WT.D1  WT.D3  WT.D7  mut.D1  mut.D3  mut.D7
+neuronal          0.31   0.28   0.19    0.30    0.44    0.52
+mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
+    One row per gene set, one column per sample, with replicates as their own columns.
+    <br /><br />
+    <b>Run every sample you mean to compare in one go.</b> Scores are divided by the range across
+    the whole matrix, so adding a sample or a gene set shifts every number. Two separate runs cannot
+    be compared, even for the same set.
+    <br /><br />
+    <b>The scores are descriptive, not a test.</b> There are no p-values here, so a difference between
+    0.44 and 0.30 is a starting point rather than a result. To make a claim, export the matrix and test
+    the scores across replicates, a t-test per set or limma on the set-by-sample matrix, just as you would
+    with expression values. With one sample per condition no test is possible and the plot is the whole
+    story.
+  </PageHint>
 
   <div class="grid gap-4 md:grid-cols-2">
     <section class="space-y-2">
-      <label class="block text-sm font-medium" for="expr">Expression matrix (genes × samples)</label
-      >
+      <label class="block text-sm font-medium" for="expr">
+        Expression matrix (genes × samples)
+        <ControlHint id="ssgsea-expr" title="Which values to paste">
+          Genes down the rows, samples across the columns, one expression value per cell, tab or
+          comma separated with a header row of sample names. The <b>Continue to ssGSEA</b> button on
+          the differential expression page sends one of these for you.
+          <br /><br />
+          Use values that are comparable between genes within a sample: TPM, RPKM, or a variance-stabilised
+          matrix. Genes are ranked inside each sample, so library size does not matter and normalising
+          across samples changes nothing. Raw counts do work, but longer genes then rank above shorter
+          ones at the same expression level, because nothing has corrected for gene length.
+        </ControlHint>
+        {#if exprSource}
+          <span class="ml-1 font-normal text-muted-foreground">· {exprSource}</span>
+        {/if}
+      </label>
       <textarea
         id="expr"
         class="h-48 w-full rounded border bg-background p-2 font-mono text-xs"
@@ -112,7 +160,14 @@
     </section>
 
     <section class="space-y-2">
-      <label class="block text-sm font-medium" for="gmt">Gene sets (GMT)</label>
+      <label class="block text-sm font-medium" for="gmt">
+        Gene sets (GMT)
+        <ControlHint id="ssgsea-gmt" title="Where gene sets come from">
+          One set per line: its name, a description, then its genes, separated by tabs. MSigDB
+          publishes ready-made collections, or write your own in a spreadsheet and save as
+          tab-separated text. Sets much smaller than about fifteen genes give noisy scores.
+        </ControlHint>
+      </label>
       <textarea
         id="gmt"
         class="h-48 w-full rounded border bg-background p-2 font-mono text-xs"

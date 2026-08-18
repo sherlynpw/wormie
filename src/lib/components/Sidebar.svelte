@@ -3,11 +3,8 @@
   import { page } from '$app/state';
   import { db } from '$lib/stores/db.svelte';
   import { recents } from '$lib/stores/recents.svelte';
-  import { getStatusCounts, type StatusCounts } from '$lib/queries';
   import { Separator } from '$lib/components/ui/separator';
   import { cn } from '$lib/utils';
-  import LayoutGrid from 'lucide-svelte/icons/layout-grid';
-  import Table from 'lucide-svelte/icons/table';
   import FolderTree from 'lucide-svelte/icons/folder-tree';
   import Network from 'lucide-svelte/icons/network';
   import Brain from 'lucide-svelte/icons/brain';
@@ -25,40 +22,21 @@
   import { resolve } from '$app/paths';
   import { SvelteURL } from 'svelte/reactivity';
 
-  let statusCounts = $state<StatusCounts | null>(null);
-  $effect(() => {
-    if (db.phase !== 'ready') return;
-    getStatusCounts()
-      .then((c) => (statusCounts = c))
-      .catch(() => {});
-  });
-
   const viewedGenes = $derived(recents.items.filter((r) => r.kind === 'gene').slice(0, 6));
 
-  function fmt(n: number | undefined): string {
-    if (n === undefined || n === null) return '';
-    return n.toLocaleString();
-  }
-
-  type ViewKey = 'cards' | 'table' | 'wormcat' | 'go' | 'neuronal' | 'synaptogenesis';
+  type ViewKey = 'wormcat' | 'go' | 'neuronal' | 'synaptogenesis';
   // lucide-svelte v1: legacy class component types; widened to any.
 
   type IconComponent = any;
 
   const VIEWS: { key: ViewKey; label: string; icon: IconComponent }[] = [
-    { key: 'cards', label: 'Cards', icon: LayoutGrid },
-    { key: 'table', label: 'Table', icon: Table },
     { key: 'wormcat', label: 'WormCat', icon: FolderTree },
-    { key: 'go', label: 'GO Terms', icon: Network },
+    { key: 'go', label: 'GO terms', icon: Network },
     { key: 'neuronal', label: 'Neuronal', icon: Brain },
     { key: 'synaptogenesis', label: 'Synaptogenesis', icon: Cable },
   ];
 
   type ToolLink = { href: string; match: string; label: string; icon: IconComponent };
-
-  const LOOKUP: ToolLink[] = [
-    { href: resolve('/lookup'), match: '/lookup', label: 'Bulk lookup', icon: FileSearch },
-  ];
 
   const TOOL_GROUPS: { heading: string; items: ToolLink[] }[] = [
     {
@@ -66,6 +44,12 @@
       items: [
         { href: resolve('/counts'), match: '/counts', label: 'Read counting', icon: Sigma },
         { href: resolve('/de'), match: '/de', label: 'Differential expression', icon: TrendingUp },
+        {
+          href: resolve('/enrichment'),
+          match: '/enrichment',
+          label: 'Over-representation',
+          icon: BarChart,
+        },
         {
           href: resolve('/de/diff'),
           match: '/de/diff',
@@ -76,19 +60,19 @@
       ],
     },
     {
-      heading: 'Analyses on a gene list',
+      heading: 'Start from a gene list',
       items: [
+        {
+          href: resolve('/lookup'),
+          match: '/lookup',
+          label: 'Gene name resolver',
+          icon: FileSearch,
+        },
         {
           href: resolve('/ssgsea'),
           match: '/ssgsea',
           label: 'Single-sample GSEA',
           icon: TrendingUp,
-        },
-        {
-          href: resolve('/enrichment'),
-          match: '/enrichment',
-          label: 'Over-representation',
-          icon: BarChart,
         },
         { href: resolve('/gmt'), match: '/gmt', label: 'Custom gene sets', icon: TrendingUp },
         { href: resolve('/nta'), match: '/nta', label: 'Network connectivity', icon: Network },
@@ -96,19 +80,11 @@
     },
   ];
 
-  const MANAGE: ToolLink[] = [
+  const SAVED: ToolLink[] = [
     { href: resolve('/datasets'), match: '/datasets', label: 'Datasets', icon: FolderTree },
   ];
 
-  const STATUSES = [
-    { key: 'live', label: 'Live' },
-    { key: 'dead', label: 'Dead' },
-    { key: 'all', label: 'All' },
-  ] as const;
-
   const currentView = $derived((page.url.searchParams.get('view') ?? 'cards') as ViewKey);
-  // Default 'live' hides dead genes; ?status=all opts in.
-  const currentStatus = $derived(page.url.searchParams.get('status') ?? 'live');
   // View tabs only active on /; tool pages (/gsea etc.) must not highlight them.
   const onHome = $derived(page.url.pathname === '/');
 
@@ -141,7 +117,7 @@
     <div
       class="mb-1.5 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
     >
-      View
+      Explore by annotation
     </div>
     <nav class="flex flex-col gap-0.5">
       {#each VIEWS as v (v.key)}
@@ -166,32 +142,12 @@
   <Separator />
 
   <div class="my-4">
-    <div
-      class="mb-1.5 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-    >
-      Tools
-    </div>
-    <nav class="flex flex-col gap-0.5">
-      {#each LOOKUP as t (t.match)}
-        {@const Icon = t.icon}
-        <a
-          href={t.href}
-          class={cn(
-            'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-            page.url.pathname === t.match
-              ? 'bg-accent font-medium text-accent-foreground'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-          )}
-        >
-          <Icon class="h-4 w-4" />
-          {t.label}
-        </a>
-      {/each}
-    </nav>
-
-    {#each TOOL_GROUPS as g (g.heading)}
+    {#each TOOL_GROUPS as g, gi (g.heading)}
       <div
-        class="mb-1 mt-3 px-2 text-[0.6rem] font-medium uppercase tracking-wider text-muted-foreground/70"
+        class="mb-1 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground {gi >
+        0
+          ? 'mt-3'
+          : ''}"
       >
         {g.heading}
       </div>
@@ -214,8 +170,13 @@
       </nav>
     {/each}
 
-    <nav class="mt-3 flex flex-col gap-0.5">
-      {#each MANAGE as t (t.match)}
+    <div
+      class="mb-1 mt-3 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+    >
+      Saved locally
+    </div>
+    <nav class="flex flex-col gap-0.5">
+      {#each SAVED as t (t.match)}
         {@const Icon = t.icon}
         <a
           href={t.href}
@@ -240,48 +201,13 @@
         )}
       >
         <Star class="h-4 w-4" />
-        Bookmarks
+        Starred genes
         {#if bookmarks.initialized && bookmarks.count() > 0}
           <span class="ml-auto font-mono text-[0.65rem] tabular-nums text-muted-foreground">
             {bookmarks.count()}
           </span>
         {/if}
       </a>
-    </nav>
-  </div>
-
-  <Separator />
-
-  <div class="my-4">
-    <div
-      class="mb-1.5 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-    >
-      Status
-    </div>
-    <nav class="flex flex-col gap-0.5">
-      {#each STATUSES as s (s.key)}
-        {@const active = onHome && currentStatus === s.key}
-        {@const count =
-          s.key === 'live'
-            ? statusCounts?.live
-            : s.key === 'dead'
-              ? statusCounts?.dead
-              : statusCounts?.all}
-        <a
-          href={resolve(buildUrl({ status: s.key }) as '/')}
-          class={cn(
-            'flex items-baseline justify-between gap-2 rounded-md px-2 py-1 text-sm transition-colors',
-            active
-              ? 'bg-accent/40 font-medium text-foreground'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-          )}
-        >
-          <span>{s.label}</span>
-          <span class="font-mono text-[0.65rem] tabular-nums text-muted-foreground"
-            >{fmt(count)}</span
-          >
-        </a>
-      {/each}
     </nav>
   </div>
 

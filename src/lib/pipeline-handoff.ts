@@ -29,6 +29,8 @@ export const handoff = {
   deseq2: slot<{ tsv: string }>(),
   /** Ranked list from /de to /gsea. Score is the Wald stat (signed effect magnitude, mirrors fgsea's recommended input). */
   gsea: slot<{ contrastName: string; rows: { gene: string; score: number }[] }>(),
+  /** VST expression matrix handed off from /de to /ssgsea. */
+  ssgsea: slot<{ tsv: string; label: string }>(),
   /** Two contrasts handed off from /de to /de/diff. */
   deseqDiff: slot<{ a: { name: string; tsv: string }; b: { name: string; tsv: string } }>(),
 };

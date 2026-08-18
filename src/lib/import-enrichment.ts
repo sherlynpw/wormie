@@ -51,6 +51,23 @@ function splitRow(line: string): string[] {
 }
 
 // Detect DESeq2/per-gene DE output: extract gene IDs and Wald stat (for /gsea handoff).
+/**
+ * Column signatures of single-cell marker tables (Seurat FindMarkers, scanpy
+ * rank_genes_groups). Detected only so the caller can explain why they are not
+ * accepted as a per-gene DE table.
+ */
+export function looksLikeSingleCellMarkers(text: string): boolean {
+  const first = text.split(/\r?\n/).find((l) => l.trim().length > 0);
+  if (!first) return false;
+  const header = first.toLowerCase();
+  return (
+    header.includes('avg_log2fc') ||
+    header.includes('avg_logfc') ||
+    header.includes('p_val_adj') ||
+    (header.includes('logfoldchanges') && header.includes('pvals_adj'))
+  );
+}
+
 export function detectDeseqTable(text: string): DeseqExtract | null {
   const lines = text
     .split(/\r?\n/)
@@ -58,24 +75,52 @@ export function detectDeseqTable(text: string): DeseqExtract | null {
     .filter((l) => l.trim().length > 0 && !l.startsWith('#'));
   if (lines.length < 2) return null;
   const header = splitRow(lines[0]).map((h) => h.toLowerCase().replace(/^"+|"+$/g, ''));
-  const idCandidates = ['gene_id', 'wormbase_gene', 'wbgene', 'gene', 'id', 'gene_name', 'symbol'];
+  const idCandidates = [
+    'gene_id',
+    'wormbase_gene',
+    'wbgene',
+    'gene',
+    'genes',
+    'id',
+    'gene_name',
+    'symbol',
+  ];
   let gi = -1;
   for (const cand of idCandidates) {
     gi = header.indexOf(cand);
     if (gi >= 0) break;
   }
-  const looksDeseq =
-    header.includes('basemean') ||
-    header.includes('log2foldchange') ||
-    header.includes('padj') ||
-    header.includes('lfcse');
-  if (gi < 0 || !looksDeseq) return null;
-  const statCol = header.indexOf('stat');
-  const padjCol = header.indexOf('padj');
-  const lfcCol = (() => {
-    const ix = header.indexOf('log2foldchange');
-    return ix >= 0 ? ix : header.indexOf('log2fc');
-  })();
+  // First column is often the unnamed rownames column in R exports (edgeR topTags,
+  // limma topTable written with write.csv).
+  if (gi < 0 && (header[0] === '' || header[0] === 'x' || header[0] === 'row.names')) gi = 0;
+
+  const firstOf = (...names: string[]) => {
+    for (const n of names) {
+      const ix = header.indexOf(n);
+      if (ix >= 0) return ix;
+    }
+    return -1;
+  };
+
+  // Column synonyms across the three per-gene DE tables users paste.
+  //   DESeq2/PyDESeq2  log2FoldChange / padj      / stat
+  //   edgeR            logFC          / FDR       / LR or F
+  //   limma            logFC          / adj.P.Val / t
+  const lfcCol = firstOf('log2foldchange', 'log2fc', 'logfc');
+  const padjCol = firstOf('padj', 'fdr', 'adj.p.val', 'adj.pval');
+  const statCol = firstOf('stat', 't', 'lr', 'f', 'b');
+  const pvalCol = firstOf('pvalue', 'p.value', 'p_value', 'pval');
+
+  // Term-level output (clusterProfiler and friends) is handled by the other
+  // parser; those tables carry these columns and must not be claimed here.
+  const termLevel =
+    header.includes('generatio') ||
+    header.includes('bgratio') ||
+    header.includes('description') ||
+    header.includes('p.adjust');
+  const looksDe =
+    lfcCol >= 0 || padjCol >= 0 || header.includes('basemean') || header.includes('lfcse');
+  if (gi < 0 || !looksDe || termLevel) return null;
   const rows: DeseqExtract['rows'] = [];
   const stats: { gene: string; score: number }[] = [];
   const num = (s: string): number | null => {
@@ -89,7 +134,16 @@ export function detectDeseqTable(text: string): DeseqExtract | null {
     if (!g) continue;
     const padj = padjCol >= 0 ? num(parts[padjCol]) : null;
     const log2fc = lfcCol >= 0 ? num(parts[lfcCol]) : null;
-    const stat = statCol >= 0 ? num(parts[statCol]) : null;
+    let stat = statCol >= 0 ? num(parts[statCol]) : null;
+    // edgeR's LR and F are unsigned; carry the fold-change sign so a ranked list
+    // built from them still separates up from down.
+    if (stat !== null && log2fc !== null && (header[statCol] === 'lr' || header[statCol] === 'f')) {
+      stat = Math.abs(stat) * (log2fc < 0 ? -1 : 1);
+    }
+    if (stat === null && pvalCol >= 0 && log2fc !== null) {
+      const p = num(parts[pvalCol]);
+      if (p !== null && p > 0) stat = -Math.log10(p) * (log2fc < 0 ? -1 : 1);
+    }
     rows.push({ gene: g, padj, log2fc, stat });
     if (stat !== null) stats.push({ gene: g, score: stat });
   }

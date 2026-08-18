@@ -210,7 +210,7 @@
               Tools
             </div>
             <CommandPrimitive.Item
-              value="bulk-lookup"
+              value="bulk-lookup gene name resolver ids"
               onSelect={() => navigate('/lookup')}
               class={cn(
                 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
@@ -218,7 +218,7 @@
               )}
             >
               <FileSearch class="h-4 w-4 text-muted-foreground" />
-              Bulk lookup
+              Gene name resolver
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="enrichment over-representation ora"

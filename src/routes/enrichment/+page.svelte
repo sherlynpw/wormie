@@ -20,7 +20,11 @@
   import { decodeSession, type Session } from '$lib/session';
   import { lastInputs } from '$lib/stores/lastInputs.svelte';
   import { onMount } from 'svelte';
-  import { parseClusterProfilerCsv, detectDeseqTable } from '$lib/import-enrichment';
+  import {
+    parseClusterProfilerCsv,
+    detectDeseqTable,
+    looksLikeSingleCellMarkers,
+  } from '$lib/import-enrichment';
   import type { EnrichmentKind, EnrichmentResult } from '$lib/db/client';
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
@@ -380,6 +384,13 @@
       });
       return;
     }
+    if (looksLikeSingleCellMarkers(importText)) {
+      toast.error('Single-cell marker table', {
+        description:
+          'Seurat / scanpy marker tables are already filtered, so their rows are not the set of genes tested. Paste the marker gene names into the gene-list box instead, which tests them against the genome-wide universe.',
+      });
+      return;
+    }
     try {
       const parsed = parseClusterProfilerCsv(importText);
       if (Object.keys(parsed.results).length === 0) {
@@ -422,7 +433,10 @@
       const universe = [...new Set(bg.hits.map((h) => h.wormbase_gene))];
       deBackground =
         universe.length > 0
-          ? { genes: universe, label: `DESeq2 rows (${universe.length.toLocaleString()})` }
+          ? {
+              genes: universe,
+              label: `differential expression (${universe.length.toLocaleString()} genes)`,
+            }
           : null;
       resolvedIds = unique;
       deseqRows = null;
@@ -483,11 +497,24 @@
     </Button>
   </div>
 
-  <PageHint id="enrichment" title="How to run over-representation analysis">
-    Drop a DESeq2 .csv on the textarea (or paste gene IDs). Resolves names → WBGene. Runs
-    hypergeometric ORA against GO (BP/MF/CC), Phenotype, WormCat, and Tissue using your ranked
-    list's intersection as the universe. For preranked / weighted analysis use
-    <a href={resolve('/gsea')} class="text-primary hover:underline">/gsea</a> instead.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Over-representation</h1>
+    <p class="text-sm text-muted-foreground">
+      Annotations that turn up more often than expected by chance
+    </p>
+  </header>
+
+  <PageHint id="enrichment" title="What over-representation asks">
+    You have a list of genes worth explaining: the ones that changed, or hits from a screen. Genes
+    carry annotations describing what they do (GO terms), what happens when they break (phenotypes),
+    which tissue they act in, and which WormCat category they fall under. This asks whether any of
+    those labels turns up in your list more often than drawing the same number of genes at random
+    would give. Each label gets a <b>fold enrichment</b> (how many times more often than expected)
+    and a <b>q-value</b>, the false discovery rate across all labels tested; q ≤ 0.05 is the usual
+    cutoff. Paste gene names, or a differential expression table from DESeq2, edgeR or limma and
+    choose which genes to test. If nothing in your list passes a significance cutoff, try
+    <a href={resolve('/gsea')} class="text-primary hover:underline">preranked GSEA</a>, which needs
+    no cutoff.
   </PageHint>
 
   <Card>
@@ -684,9 +711,13 @@
         <div class="space-y-2">
           {#if mode === 'deseq2'}
             <div class="text-xs text-muted-foreground">
-              Paste a DESeq2 / per-gene DE table (CSV or TSV) with at least <span class="font-mono"
-                >gene_id, padj, log2FoldChange</span
-              >. Renders a volcano + DE filter so you pick a subset before ORA. Auto-falls-back to
+              Paste a per-gene DE table (CSV or TSV) from DESeq2, edgeR or limma. Needs a gene
+              column plus a fold change and an adjusted p-value under any of their usual names (<span
+                class="font-mono">log2FoldChange</span
+              >/<span class="font-mono">logFC</span>,
+              <span class="font-mono">padj</span>/<span class="font-mono">FDR</span>/<span
+                class="font-mono">adj.P.Val</span
+              >). Renders a volcano + DE filter so you pick a subset before ORA. Auto-falls-back to
               the clusterProfiler renderer if the body actually contains term-level results.
             </div>
           {:else}
@@ -850,12 +881,12 @@
                 </Button>
                 <ControlHint id="enrich-de-subset" title="DE-subset ORA">
                   Runs hypergeometric over-representation on the filtered subset against GO /
-                  Phenotype / WormCat / Tissue. The universe is set to your DESeq2 row set ({deseqRows
-                    ? deseqRows.length.toLocaleString()
-                    : 0} genes), not the whole genome, so terms whose members were never expressed in
-                  this experiment don't inflate the background. A directional run keeps that same universe,
-                  so up- and down-regulated genes are each tested against every tested row. The universe
-                  in force is shown on the results card and can be cleared there.
+                  Phenotype / WormCat / Tissue. The universe is set to the genes in your
+                  differential expression table ({deseqRows ? deseqRows.length.toLocaleString() : 0} of
+                  them), not the whole genome, so terms whose members were never expressed in this experiment
+                  don't inflate the background. A directional run keeps that same universe, so up- and
+                  down-regulated genes are each tested against every tested row. The universe in force
+                  is shown on the results card and can be cleared there.
                 </ControlHint>
               </div>
               <div class="text-[0.7rem] text-muted-foreground">

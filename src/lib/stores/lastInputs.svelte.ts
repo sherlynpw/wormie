@@ -22,6 +22,7 @@ function load(): Record<DatasetType, LastInput | null> {
     gmt: null,
     counts: null,
     session: null,
+    'gsea-bundle': null,
   };
   if (typeof localStorage === 'undefined') return empty;
   try {

@@ -341,14 +341,22 @@
     </Button>
   </div>
 
-  <PageHint id="gsea" title="How to run preranked GSEA here">
-    Paste a DESeq2 CSV (or drop the file) and click <b>Resolve & run</b>. Auto-detects the
-    <code>stat</code> column. Defaults <code>minSize=15</code>, <code>maxSize=500</code>,
-    <code>multilevel</code> on, <code>collapse</code> on (groups redundant terms by leading-edge
-    Jaccard). Click any term to see its running-ES plot. <b>Share link</b> copies a URL that
-    restores the ranked list when opened. <b>JSON</b> exports a bundle for
-    <a href={resolve('/gsea/intersect')} class="text-primary hover:underline">/gsea/intersect</a> to combine
-    multiple comparisons.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Preranked GSEA</h1>
+    <p class="text-sm text-muted-foreground">Gene sets concentrated at one end of a ranking</p>
+  </header>
+
+  <PageHint id="gsea" title="When to use this instead of a gene list">
+    Over-representation needs you to draw a line: a gene is in your list or it is not. That throws
+    away everything just below the line, and a real but modest response often leaves no single gene
+    significant. Preranked GSEA draws no line. Order every gene by a statistic — usually the one
+    from a differential expression run, where the largest positive values are the most convincingly
+    up and the largest negative the most convincingly down — then, for each gene set, ask whether
+    its members cluster near one end of that ordering or are scattered through it. A set whose genes
+    all shift a little together will show up here and not in an over-representation test. Each set
+    gets a <b>NES</b> (positive means shifted toward the top of your ranking, negative toward the bottom)
+    and a q-value; for GSEA q ≤ 0.25 is the conventional cutoff, deliberately looser than the 0.05 used
+    elsewhere. Click any set to see where its genes fell.
   </PageHint>
 
   <Card>

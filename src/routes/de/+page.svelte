@@ -5,6 +5,8 @@
   import { Input } from '$lib/components/ui/input';
   import { Badge } from '$lib/components/ui/badge';
   import PageHint from '$lib/components/PageHint.svelte';
+  import ControlHint from '$lib/components/ControlHint.svelte';
+  import SaveDatasetButton from '$lib/components/SaveDatasetButton.svelte';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import ArrowRight from 'lucide-svelte/icons/arrow-right';
   import Download from 'lucide-svelte/icons/download';
@@ -434,6 +436,14 @@
     await goto(resolve('/gsea') + '?from=de');
   }
 
+  async function continueToSsgsea() {
+    if (!fit?.vstCountsTsv) return;
+    // ssGSEA ranks genes within each sample, so any per-sample monotone transform
+    // gives identical scores; VST is sent because it is the conventional input.
+    handoff.ssgsea.set({ tsv: fit.vstCountsTsv, label: 'VST counts from /de' });
+    await goto(resolve('/ssgsea') + '?from=de');
+  }
+
   let diffA = $state<string>('');
   let diffB = $state<string>('');
   const computedNames = $derived(Array.from(contrasts.keys()));
@@ -588,11 +598,21 @@
     Back
   </Button>
 
-  <PageHint id="de.intro" title="DESeq2 (counts → DE)">
-    Runs real Bioconductor DESeq2 in your browser via WebR. Paste or upload a featureCounts-style
-    counts table (or arrive from /counts), assign a condition to each sample, pick reference and
-    treatment levels, and get a DESeq2 results table you can download or hand off to /enrichment.
-    First run pays ~15-20s for the R session warm-up; subsequent runs are seconds.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Differential expression</h1>
+    <p class="text-sm text-muted-foreground">Genes that change between conditions</p>
+  </header>
+
+  <PageHint id="de.intro" title="What the numbers mean">
+    Give it a counts table and say which samples are which condition. It then asks, gene by gene,
+    whether the difference between conditions is larger than the variation between replicates of the
+    same condition. Two numbers come back per gene. The <b>log2 fold change</b> is the size and
+    direction of the change: 1 means doubled, -1 means halved, 0 means no change. The
+    <b>adjusted p-value</b> (padj) is the false discovery rate: because thousands of genes are tested
+    at once, some will look convincing by chance, and this correction accounts for it. padj &lt; 0.05
+    is the usual cutoff, meaning roughly 5% of the genes you call changed are expected to be false. The
+    engine is DESeq2, the most widely used method for this. The first run spends 15-20 s starting R; later
+    runs take seconds.
   </PageHint>
 
   <Card
@@ -605,7 +625,19 @@
   >
     <CardHeader>
       <CardTitle class="flex items-center justify-between text-lg">
-        <span>Counts</span>
+        <span class="inline-flex items-center gap-1.5">
+          Counts
+          <ControlHint id="de-counts" title="Which table this needs">
+            A table of raw read counts: genes down the rows, samples across the columns, whole
+            numbers in the cells. The output of the read counting page, of featureCounts or HTSeq at
+            the command line, or of a pipeline such as nf-core/rnaseq.
+            <br /><br />
+            It must be raw counts, not TPM, FPKM or anything already normalised. Those are already adjusted
+            for library size and gene length, and DESeq2 does its own normalisation while modelling the
+            counting noise, which needs the untouched numbers. Feeding it normalised values does not error,
+            it just quietly gives you the wrong answer.
+          </ControlHint>
+        </span>
         <span class="text-xs font-normal text-muted-foreground">
           drag &amp; drop counts.tsv anywhere on this card
         </span>
@@ -1164,6 +1196,21 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             title="Snapshot every visible plot on this page and zip them"
           >
             <ImageIcon class="h-4 w-4" /> Snapshot plots (zip)
+          </Button>
+          <SaveDatasetButton
+            type="deseq2"
+            body={() => activeContrastObj?.tsv ?? ''}
+            defaultName={activeContrastObj?.name}
+            disabled={!activeContrastObj}
+            size="default"
+          />
+          <Button
+            variant="outline"
+            onclick={continueToSsgsea}
+            disabled={!fit?.vstCountsTsv}
+            title="Hand off the VST expression matrix (all samples) to /ssgsea"
+          >
+            Continue to ssGSEA <ArrowRight class="h-4 w-4" />
           </Button>
           <Button
             variant="outline"

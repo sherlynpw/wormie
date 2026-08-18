@@ -347,10 +347,24 @@
     Back
   </Button>
 
-  <PageHint id="gmt" title="Custom gene sets (GMT)">
-    Paste or drop a GMT file (MSigDB hallmark, curated, your own). If your sets use human symbols,
-    toggle <b>map orthologs</b> to translate via WormBase. Then paste either a gene list (for ORA) or
-    a ranked stat list (for GSEA) and run.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Custom gene sets</h1>
+    <p class="text-sm text-muted-foreground">Annotations you supply, not the built-in ones</p>
+  </header>
+
+  <PageHint id="gmt" title="When the built-in annotations are not the right ones">
+    Enrichment elsewhere on the site tests your genes against GO terms, phenotypes, WormCat
+    categories and tissues. Often the grouping you actually care about is not one of those: the
+    targets of a transcription factor from a recent paper, the hits of someone else's screen, genes
+    a reviewer asked you to check, or a pathway you curated yourself. Put those groups in a file and
+    test against them here instead.
+    <br /><br />
+    The file format is called GMT and it is plain text: one gene set per line, the set's name first, then
+    a description, then its genes, each separated by a tab. A spreadsheet saved as tab-separated text
+    will do. MSigDB publishes thousands of ready-made ones. If the sets name human genes, switch on
+    <b>map orthologs</b> and they are translated to their worm counterparts first. Then paste a gene list,
+    such as the genes that changed in your experiment, to test which sets it is enriched for, or paste
+    a ranked list to run GSEA against the same sets.
   </PageHint>
 
   <Card>
