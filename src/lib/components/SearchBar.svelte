@@ -85,6 +85,18 @@
     const set = new Set(activeFields);
     return DEFAULT_FTS_FIELDS.every((f) => set.has(f));
   });
+  // Collapsed by default; opened automatically when the selection is customised so
+  // a non-default search never hides why it is returning what it returns.
+  let showFieldsManual = $state(false);
+  const showFields = $derived(showFieldsManual || !isDefault);
+  const fieldSummary = $derived(
+    allActive
+      ? 'all fields'
+      : isDefault
+        ? 'names and IDs'
+        : `${activeFields.length} field${activeFields.length === 1 ? '' : 's'}`,
+  );
+
   const canShare = $derived(
     typeof page !== 'undefined' && page.url.searchParams.toString().length > 0,
   );
@@ -333,15 +345,25 @@
         { key: 'go', example: 'go:apoptosis', help: 'GO term (name or ID)' },
         { key: 'cat', example: 'cat:"cell cycle"', help: 'WormCat category (quote multi-word)' },
         { key: 'pheno', example: 'pheno:locomotion', help: 'WBPhenotype term' },
-        { key: 'tissue', example: 'tissue:neuron', help: 'WBbt anatomy term' },
         { key: 'neuronal', example: 'neuronal:GABA', help: 'Neuronal classification' },
         {
           key: 'syn',
           example: 'syn:innexin',
           help: 'Synaptogenesis panel class / subclass / notes (quote multi-word)',
         },
-        { key: 'ortho', example: 'ortho:human', help: 'Has ortholog in species/symbol' },
-        { key: 'expressed', example: 'expressed:AVA', help: 'Expressed in CeNGEN neuron class' },
+      ],
+    },
+    {
+      label: 'Expression',
+      ops: [
+        { key: 'expressed', example: 'expressed:AVA', help: 'Expressed in a CeNGEN neuron class' },
+        { key: 'tissue', example: 'tissue:neuron', help: 'WBbt anatomy term' },
+      ],
+    },
+    {
+      label: 'Conservation',
+      ops: [
+        { key: 'ortho', example: 'ortho:human', help: 'Has an ortholog in this species / symbol' },
       ],
     },
     {
@@ -352,7 +374,6 @@
         { key: 'wb', example: 'wb~WBGene0000*', help: 'WBGene ID (LIKE/glob)' },
         { key: 'desc', example: 'desc:insulin', help: 'Any description field' },
         { key: 'allele', example: 'allele:e1370', help: 'Allele ID / symbol' },
-        { key: 'status', example: 'status:live', help: 'Gene status (live/dead/...)' },
         { key: 'type', example: 'type:protein_coding', help: 'Biotype' },
       ],
     },
@@ -476,8 +497,24 @@
     <Button type="submit">Search</Button>
   </form>
 
-  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-    <span class="font-medium text-foreground/80">Search in:</span>
+  <div class="flex items-center gap-2 text-xs text-muted-foreground">
+    <button
+      type="button"
+      onclick={() => (showFieldsManual = !showFieldsManual)}
+      class="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+      aria-expanded={showFields}
+    >
+      Search in: <span class="text-foreground/80">{fieldSummary}</span>
+      <span class="text-[0.6rem]">{showFields ? '▴' : '▾'}</span>
+    </button>
+  </div>
+
+  <div
+    class={cn(
+      'flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground',
+      showFields ? 'flex' : 'hidden',
+    )}
+  >
     {#each VISIBLE_FTS_FIELDS as f (f)}
       {@const checked = activeFields.includes(f)}
       <label
@@ -515,7 +552,7 @@
   </div>
 
   <!-- Operator chips -->
-  <div class="flex flex-wrap items-start gap-x-2 gap-y-1 text-xs">
+  <div class="space-y-1.5 text-xs">
     <button
       type="button"
       onclick={() => (showOps = !showOps)}
@@ -526,9 +563,9 @@
     </button>
     {#if showOps}
       {#each OP_GROUPS as g (g.label)}
-        <div class="inline-flex flex-wrap items-center gap-1">
-          <span class="text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-            {g.label}:
+        <div class="flex flex-wrap items-center gap-1">
+          <span class="w-24 shrink-0 text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+            {g.label}
           </span>
           {#each g.ops as op (op.key)}
             <button
@@ -542,15 +579,13 @@
           {/each}
         </div>
       {/each}
-      <span class="basis-full text-[0.65rem] text-muted-foreground">
-        Combine with AND / OR / NOT. Append <span class="font-mono">*</span> for prefix (<span
-          class="font-mono">daf*</span
-        >) or quote a phrase (<span class="font-mono">"insulin signaling"</span>). Use
-        <span class="font-mono">~</span>
-        instead of <span class="font-mono">:</span> for glob LIKE on identifier fields (<span
-          class="font-mono">wb~WBGene0000*</span
-        >).
-      </span>
+      <div class="text-[0.65rem] leading-relaxed text-muted-foreground">
+        Click a filter to insert it, then type the value. Combine them with
+        <span class="font-mono">AND</span>, <span class="font-mono">OR</span>,
+        <span class="font-mono">NOT</span>. End a word with <span class="font-mono">*</span> to
+        match anything after it (<span class="font-mono">daf*</span> finds every daf gene), or quote
+        a phrase to match it exactly (<span class="font-mono">"insulin signaling"</span>).
+      </div>
     {/if}
   </div>
 </div>

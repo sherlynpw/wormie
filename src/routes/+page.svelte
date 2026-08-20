@@ -5,6 +5,7 @@
   import { untrack, onMount } from 'svelte';
   import { runSearch, getFacets, getMatchedIds, type GeneRow, type Facets } from '$lib/queries';
   import { readIdsFromUrl } from '$lib/share';
+  import { cn } from '$lib/utils';
   import { exportTsv, exportCsv } from '$lib/exports';
   import { buildIdsQuery } from '$lib/share';
   import {
@@ -25,6 +26,7 @@
   import SynaptogenesisView from '$lib/components/views/SynaptogenesisView.svelte';
   import GoView from '$lib/components/views/GoView.svelte';
   import { Button } from '$lib/components/ui/button';
+  import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import Pagination from '$lib/components/Pagination.svelte';
   import PageHint from '$lib/components/PageHint.svelte';
   import { toast } from 'svelte-sonner';
@@ -130,6 +132,23 @@
     return `${q} status:${statusFilter}`.trim();
   });
   const totalPages = $derived(facets ? Math.max(1, Math.ceil(facets.n_genes / PAGE_SIZE)) : 1);
+  const VIEW_HEADERS: Record<string, { title: string; caption: string }> = {
+    wormcat: { title: 'WormCat', caption: 'Genes grouped by WormCat category' },
+    go: { title: 'GO terms', caption: 'Genes grouped by Gene Ontology term' },
+    neuronal: { title: 'Neuronal class', caption: 'Genes grouped by neuronal classification' },
+    synaptogenesis: {
+      title: 'Synaptogenesis',
+      caption: 'Genes grouped by synaptogenesis panel class',
+    },
+  };
+  const viewHeader = $derived(VIEW_HEADERS[view] ?? null);
+  // `status:` is appended from the live/dead/all toggle, so it is not the user's
+  // text and its chip would offer a remove button that edits nothing.
+  const displayParsed = $derived.by(() => {
+    if (!parsed) return parsed;
+    if (q.includes('status:')) return parsed;
+    return { ...parsed, ops: parsed.ops.filter((o) => o.key !== 'status') };
+  });
 
   let queryToken = 0;
 
@@ -311,93 +330,146 @@
     }
   }
   const hasResults = $derived(needsGeneList && !loading && rows.length > 0);
+
+  // One example row at a time: the full grid was ~50 chips competing with the
+  // search bar for attention.
+  let exampleTab = $state(QUICK_STARTS[0]?.group ?? '');
+  const exampleChips = $derived(
+    QUICK_STARTS.find((g) => g.group === exampleTab)?.chips ?? QUICK_STARTS[0]?.chips ?? [],
+  );
+  let showSyntax = $state(false);
 </script>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
-  <SearchBar initial={q} />
+  <!-- Browsing an annotation tree is not a text search; the bar stays only when a
+       query is already filtering the tree, so it can be seen and cleared. -->
+  {#if needsGeneList || q}
+    <SearchBar initial={q} />
+  {/if}
 
-  <PageHint id="home-search" title="Search tips">
-    Free-text or scoped: <code>pheno:daf-c</code>, <code>tissue:motoneuron</code>,
-    <code>ortho:HSF1</code>, <code>name:daf-2</code>, <code>desc:kinase</code>,
-    <code>expressed:AVA&gt;10</code> (CeNGEN neuron-type expression). Use
-    <code>~</code> for glob: <code>seq~Y110A7A.*</code>. Drop a <code>.txt</code> gene list onto the
-    search bar to filter. Press <kbd class="rounded bg-muted px-1 text-[0.65rem]">/</kbd>
-    to focus search, <kbd class="rounded bg-muted px-1 text-[0.65rem]">?</kbd> for keyboard shortcuts.
-  </PageHint>
+  {#if needsGeneList}
+    <PageHint id="home-search" title="What this step does">
+      Finds genes, and hands the result to any analysis on the left. Typing plain words searches
+      names and descriptions, so <code>insulin</code> returns genes whose text mentions it.
+      <br /><br />
+      To ask a sharper question, put a filter in front of the word. Looking for the genes annotated to
+      insulin signalling, rather than the ones that merely mention it? Search
+      <code>go:"insulin receptor signaling pathway"</code>. Genes that give a dauer phenotype when
+      disrupted: <code>pheno:dauer</code>. Genes expressed in the AVA interneuron:
+      <code>expressed:AVA</code>. Worm genes with a human counterpart:
+      <code>ortho:human</code>. The <b>filters</b> button lists every filter available.
+      <br /><br />
+      Filters combine. <code>go:apoptosis AND tissue:neuron</code> keeps only genes that are both;
+      <code>pheno:dauer OR pheno:lifespan</code> keeps either; <code>NOT type:pseudogene</code>
+      drops a group. A <code>*</code> stands for any ending, so <code>name:daf*</code> catches every
+      daf gene, and <code>desc~*kinase*</code> finds kinase anywhere in a description.
+      <br /><br />
+      You can also paste a gene list (<code>daf-16, daf-2, age-1</code>) or drop a
+      <code>.txt</code> file of gene names onto the search bar to work with just those genes.
+    </PageHint>
+  {/if}
 
-  {#if !q}
-    <div class="space-y-2">
-      <div class="flex flex-wrap items-center gap-1.5 text-xs">
-        <span
-          class="mr-1 text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
-          >Syntax</span
-        >
-        {#each EXAMPLES as e (e.q)}
-          <button
-            type="button"
-            onclick={() => tryExample(e.q)}
-            class="inline-flex items-center rounded-md border bg-card px-2 py-0.5 font-mono text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            {e.label}
-          </button>
-        {/each}
-      </div>
-      {#each QUICK_STARTS as section (section.group)}
-        <div class="flex flex-wrap items-center gap-1.5 text-xs">
-          <span
-            class="w-24 shrink-0 text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
-          >
-            {section.group}
+  {#if !q && needsGeneList}
+    <div class="space-y-4 py-2">
+      <div class="space-y-1.5">
+        <div class="flex flex-wrap items-baseline gap-2">
+          <span class="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
+            Try a search
           </span>
-          {#each section.chips as c (c.q)}
+          <div class="flex flex-wrap gap-1">
+            {#each QUICK_STARTS as section (section.group)}
+              <button
+                type="button"
+                onclick={() => (exampleTab = section.group)}
+                class={cn(
+                  'rounded-md px-2 py-0.5 text-xs transition-colors',
+                  exampleTab === section.group
+                    ? 'bg-accent font-medium text-accent-foreground'
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                )}
+              >
+                {section.group}
+              </button>
+            {/each}
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          {#each exampleChips as c (c.q)}
             <button
               type="button"
               onclick={() => tryExample(c.q)}
-              class="inline-flex items-center rounded-md border bg-card px-2 py-0.5 text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+              class="inline-flex items-center rounded-md border bg-card px-2 py-1 text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
               title={c.q}
             >
               {c.label}
             </button>
           {/each}
         </div>
-      {/each}
-    </div>
-    <div class="space-y-1 text-xs leading-relaxed text-muted-foreground">
-      <div>
-        Paste gene lists (<span class="font-mono">daf-16, daf-2</span>), or use FTS:
-        <span class="font-mono">daf*</span> (prefix),
-        <span class="font-mono">"insulin signaling"</span> (phrase),
-        <span class="font-mono">kinase AND NOT phosphatase</span>.
       </div>
-      <div>
-        Field ops <span class="font-mono">:</span>
-        <span class="font-mono">go:apoptosis</span>,
-        <span class="font-mono">cat:"cell cycle"</span>,
-        <span class="font-mono">neuronal:sensory</span>,
-        <span class="font-mono">type:protein_coding</span>,
-        <span class="font-mono">pheno:Daf-c</span>,
-        <span class="font-mono">tissue:neuron</span>,
-        <span class="font-mono">ortho:FOXO1</span>,
-        <span class="font-mono">allele:tm2200</span>,
-        <span class="font-mono">name:daf</span>,
-        <span class="font-mono">seq:Y110A7A.10</span>,
-        <span class="font-mono">desc:kinase</span>.
-      </div>
-      <div>
-        Glob ops <span class="font-mono">~</span> (LIKE; <span class="font-mono">*</span> any,
-        <span class="font-mono">?</span>
-        one):
-        <span class="font-mono">seq~Y110A7A.*</span>,
-        <span class="font-mono">name~daf-?</span>,
-        <span class="font-mono">wb~WBGene00001*</span>,
-        <span class="font-mono">desc~*kinase*</span>.
+
+      <div class="space-y-1.5">
+        <button
+          type="button"
+          onclick={() => (showSyntax = !showSyntax)}
+          class="text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {showSyntax ? 'Hide' : 'Show'} search syntax
+        </button>
+        {#if showSyntax}
+          <div class="space-y-2 rounded-md border bg-card p-3">
+            <div class="flex flex-wrap gap-1.5">
+              {#each EXAMPLES as e (e.q)}
+                <button
+                  type="button"
+                  onclick={() => tryExample(e.q)}
+                  class="inline-flex items-center rounded-md border bg-background px-2 py-0.5 font-mono text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  {e.label}
+                </button>
+              {/each}
+            </div>
+            <div class="space-y-1 text-xs leading-relaxed text-muted-foreground">
+              <div>
+                Paste a gene list (<span class="font-mono">daf-16, daf-2</span>), or search text:
+                <span class="font-mono">daf*</span> (prefix),
+                <span class="font-mono">"insulin signaling"</span> (phrase),
+                <span class="font-mono">kinase AND NOT phosphatase</span>.
+              </div>
+              <div>
+                Restrict to a field with <span class="font-mono">:</span> —
+                <span class="font-mono">go:apoptosis</span>,
+                <span class="font-mono">cat:"cell cycle"</span>,
+                <span class="font-mono">neuronal:sensory</span>,
+                <span class="font-mono">type:protein_coding</span>,
+                <span class="font-mono">pheno:Daf-c</span>,
+                <span class="font-mono">tissue:neuron</span>,
+                <span class="font-mono">ortho:FOXO1</span>,
+                <span class="font-mono">allele:tm2200</span>,
+                <span class="font-mono">name:daf</span>,
+                <span class="font-mono">seq:Y110A7A.10</span>,
+                <span class="font-mono">desc:kinase</span>.
+              </div>
+              <div>
+                Wildcards with <span class="font-mono">~</span> (<span class="font-mono">*</span>
+                any,
+                <span class="font-mono">?</span> one):
+                <span class="font-mono">seq~Y110A7A.*</span>,
+                <span class="font-mono">name~daf-?</span>,
+                <span class="font-mono">wb~WBGene00001*</span>,
+                <span class="font-mono">desc~*kinase*</span>.
+              </div>
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
   {/if}
 
-  <QueryChips {parsed} />
+  <QueryChips parsed={displayParsed} />
 
-  <FacetsBar {facets} {elapsedMs} />
+  {#if !viewHeader}
+    <FacetsBar {facets} {elapsedMs} />
+  {/if}
 
   {#if hasResults}
     <div class="flex flex-wrap items-center gap-1.5 text-xs">
@@ -468,19 +540,65 @@
     </div>
   {/if}
 
+  {#if viewHeader}
+    <Button variant="ghost" size="sm" href={resolve('/')} class="self-start">
+      <ArrowLeft />
+      Back
+    </Button>
+
+    <header class="space-y-1">
+      <h1 class="text-2xl font-semibold">{viewHeader.title}</h1>
+      <p class="text-sm text-muted-foreground">{viewHeader.caption}</p>
+      <p class="text-[0.7rem] text-muted-foreground">
+        {#if view === 'wormcat'}
+          WormCat 2.0 category tree (Higgins et al.) —
+          <a
+            href="https://doi.org/10.1093/genetics/iyac085"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline underline-offset-2 hover:text-foreground">the paper</a
+          >
+        {:else if view === 'go'}
+          Gene Ontology terms from the GO Consortium, with <em>C. elegans</em> annotations curated
+          by WormBase —
+          <a
+            href="https://wormbase.org/tools/ontology_browser"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline underline-offset-2 hover:text-foreground">browse at WormBase</a
+          >
+        {:else if view === 'neuronal'}
+          Neuronal gene classes from Hobert's survey of the <em>C. elegans</em> neuronal genome —
+          <a
+            href="https://www.ncbi.nlm.nih.gov/books/NBK116086/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="underline underline-offset-2 hover:text-foreground">WormBook</a
+          >
+        {:else if view === 'synaptogenesis'}
+          Synaptogenesis panel curated from the primary literature; each entry links its reference
+        {/if}
+      </p>
+    </header>
+  {/if}
+
+  {#snippet browseMeta()}
+    <FacetsBar {facets} {elapsedMs} align="end" />
+  {/snippet}
+
   <div class:opacity-50={loading}>
     {#if view === 'cards'}
       <CardsView {rows} {highlight} {activeIdx} />
     {:else if view === 'table'}
       <TableView {rows} {highlight} {activeIdx} />
     {:else if view === 'wormcat'}
-      <WormCatView term={effectiveQuery} />
+      <WormCatView term={effectiveQuery} meta={browseMeta} />
     {:else if view === 'neuronal'}
-      <NeuronalView term={effectiveQuery} />
+      <NeuronalView term={effectiveQuery} meta={browseMeta} />
     {:else if view === 'synaptogenesis'}
-      <SynaptogenesisView term={effectiveQuery} />
+      <SynaptogenesisView term={effectiveQuery} meta={browseMeta} />
     {:else if view === 'go'}
-      <GoView term={effectiveQuery} freeText={parsed?.freeText ?? q} />
+      <GoView term={effectiveQuery} freeText={parsed?.freeText ?? q} meta={browseMeta} />
     {/if}
   </div>
 
