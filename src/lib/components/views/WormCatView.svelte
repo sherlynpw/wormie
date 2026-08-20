@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { untrack, type Snippet } from 'svelte';
   import { getWormcatTree, getWormcatGenes, type CatCount, type CatGene } from '$lib/queries';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
@@ -9,7 +9,7 @@
   import ChevronsUp from 'lucide-svelte/icons/chevrons-up';
   import GenePill from '$lib/components/GenePill.svelte';
 
-  let { term }: { term: string } = $props();
+  let { term, meta }: { term: string; meta?: Snippet } = $props();
 
   let tree = $state<CatCount[]>([]);
   let loading = $state(true);
@@ -110,95 +110,101 @@
 {:else if grouped.nodes.length === 0}
   <div class="py-10 text-center text-sm text-muted-foreground">No matching categories.</div>
 {:else}
-  <div class="mb-2 flex gap-1">
-    <Button variant="outline" size="sm" onclick={expandAll}>
-      <ChevronsDown class="h-3 w-3" />
-      Expand all
-    </Button>
-    <Button variant="outline" size="sm" onclick={collapseAll}>
-      <ChevronsUp class="h-3 w-3" />
-      Collapse all
-    </Button>
-  </div>
-  <div class="divide-y rounded-lg border bg-card">
-    {#each grouped.nodes as n1 (n1.cat1)}
-      {@const k1 = `1:${n1.cat1}`}
-      <div>
-        <button
-          type="button"
-          onclick={() => toggle(k1)}
-          class="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/50"
-        >
-          <ChevronRight
-            class={cn(
-              'h-4 w-4 text-muted-foreground transition-transform',
-              expanded[k1] && 'rotate-90',
-            )}
-          />
-          <span class="font-semibold">{n1.cat1}</span>
-          <Badge variant="muted" class="ml-auto tabular-nums">{n1.n.toLocaleString()}</Badge>
-        </button>
-        {#if expanded[k1]}
-          <div class="border-t bg-background">
-            {#each n1.cat2s as n2 (n2.cat2 ?? '')}
-              {@const k2 = `2:${n1.cat1}|${n2.cat2}`}
-              <div class="pl-8">
-                <button
-                  type="button"
-                  onclick={() => toggle(k2)}
-                  class="flex w-full items-center gap-2 py-1.5 pr-3 text-left text-sm transition-colors hover:bg-muted/50"
-                >
-                  <ChevronRight
-                    class={cn(
-                      'h-3.5 w-3.5 text-muted-foreground transition-transform',
-                      expanded[k2] && 'rotate-90',
-                    )}
-                  />
-                  <span>{n2.cat2 ?? '(unset)'}</span>
-                  <Badge variant="muted" class="ml-auto tabular-nums">{n2.n.toLocaleString()}</Badge
+  <div class="space-y-3">
+    <div class="flex flex-wrap items-center gap-1">
+      <Button variant="outline" size="sm" onclick={expandAll}>
+        <ChevronsDown class="h-3 w-3" />
+        Expand all
+      </Button>
+      <Button variant="outline" size="sm" onclick={collapseAll}>
+        <ChevronsUp class="h-3 w-3" />
+        Collapse all
+      </Button>
+      {#if meta}
+        <div class="ml-auto">{@render meta()}</div>
+      {/if}
+    </div>
+    <div class="divide-y rounded-lg border bg-card">
+      {#each grouped.nodes as n1 (n1.cat1)}
+        {@const k1 = `1:${n1.cat1}`}
+        <div>
+          <button
+            type="button"
+            onclick={() => toggle(k1)}
+            class="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/50"
+          >
+            <ChevronRight
+              class={cn(
+                'h-4 w-4 text-muted-foreground transition-transform',
+                expanded[k1] && 'rotate-90',
+              )}
+            />
+            <span class="font-semibold">{n1.cat1}</span>
+            <Badge variant="muted" class="ml-auto tabular-nums">{n1.n.toLocaleString()}</Badge>
+          </button>
+          {#if expanded[k1]}
+            <div class="border-t bg-background">
+              {#each n1.cat2s as n2 (n2.cat2 ?? '')}
+                {@const k2 = `2:${n1.cat1}|${n2.cat2}`}
+                <div class="pl-8">
+                  <button
+                    type="button"
+                    onclick={() => toggle(k2)}
+                    class="flex w-full items-center gap-2 py-1.5 pr-3 text-left text-sm transition-colors hover:bg-muted/50"
                   >
-                </button>
-                {#if expanded[k2]}
-                  <div class="ml-1.5 border-l pl-6">
-                    {#each n2.cat3s as n3 (n3.cat3 ?? '')}
-                      {@const k3 = `3:${n1.cat1}|${n2.cat2}|${n3.cat3}`}
-                      <div>
-                        <button
-                          type="button"
-                          onclick={() => toggleLeaf(k3, n1.cat1, n2.cat2, n3.cat3)}
-                          class="flex w-full items-center gap-2 py-1 pr-3 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/50"
-                        >
-                          <ChevronRight
-                            class={cn(
-                              'h-3.5 w-3.5 transition-transform',
-                              expanded[k3] && 'rotate-90',
-                            )}
-                          />
-                          <span>{n3.cat3 ?? '(unset)'}</span>
-                          <Badge variant="outline" class="ml-auto tabular-nums">
-                            {n3.n.toLocaleString()}
-                          </Badge>
-                        </button>
-                        {#if expanded[k3]}
-                          <div class="flex flex-wrap gap-1 py-1.5 pl-6">
-                            {#if leafGenes[k3]}
-                              {#each leafGenes[k3] as g, i (`${g.wormbase_gene}:${i}`)}
-                                <GenePill id={g.wormbase_gene} name={g.gene_name} />
-                              {/each}
-                            {:else}
-                              <span class="text-xs text-muted-foreground">Loading...</span>
-                            {/if}
-                          </div>
-                        {/if}
-                      </div>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    {/each}
+                    <ChevronRight
+                      class={cn(
+                        'h-3.5 w-3.5 text-muted-foreground transition-transform',
+                        expanded[k2] && 'rotate-90',
+                      )}
+                    />
+                    <span>{n2.cat2 ?? '(unset)'}</span>
+                    <Badge variant="muted" class="ml-auto tabular-nums"
+                      >{n2.n.toLocaleString()}</Badge
+                    >
+                  </button>
+                  {#if expanded[k2]}
+                    <div class="pl-6">
+                      {#each n2.cat3s as n3 (n3.cat3 ?? '')}
+                        {@const k3 = `3:${n1.cat1}|${n2.cat2}|${n3.cat3}`}
+                        <div>
+                          <button
+                            type="button"
+                            onclick={() => toggleLeaf(k3, n1.cat1, n2.cat2, n3.cat3)}
+                            class="flex w-full items-center gap-2 py-1.5 pr-3 text-left text-sm transition-colors hover:bg-muted/50"
+                          >
+                            <ChevronRight
+                              class={cn(
+                                'h-3.5 w-3.5 transition-transform',
+                                expanded[k3] && 'rotate-90',
+                              )}
+                            />
+                            <span>{n3.cat3 ?? '(unset)'}</span>
+                            <Badge variant="outline" class="ml-auto tabular-nums">
+                              {n3.n.toLocaleString()}
+                            </Badge>
+                          </button>
+                          {#if expanded[k3]}
+                            <div class="flex flex-wrap gap-1 py-1.5 pl-6">
+                              {#if leafGenes[k3]}
+                                {#each leafGenes[k3] as g, i (`${g.wormbase_gene}:${i}`)}
+                                  <GenePill id={g.wormbase_gene} name={g.gene_name} />
+                                {/each}
+                              {:else}
+                                <span class="text-xs text-muted-foreground">Loading...</span>
+                              {/if}
+                            </div>
+                          {/if}
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </div>
   </div>
 {/if}

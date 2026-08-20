@@ -1,6 +1,6 @@
 <script lang="ts">
   import { preloadTransitiveCount } from '$lib/stores/go-cache';
-  import { untrack } from 'svelte';
+  import { untrack, type Snippet } from 'svelte';
   import {
     getGoChildren,
     getGoOtherParents,
@@ -17,14 +17,16 @@
   import { Badge } from '$lib/components/ui/badge';
   import { Card, CardContent } from '$lib/components/ui/card';
   import { cn } from '$lib/utils';
+  import { Button } from '$lib/components/ui/button';
   import ChevronRight from 'lucide-svelte/icons/chevron-right';
+  import ChevronsDown from 'lucide-svelte/icons/chevrons-down';
+  import ChevronsUp from 'lucide-svelte/icons/chevrons-up';
   import ExternalLink from 'lucide-svelte/icons/external-link';
   import Network from 'lucide-svelte/icons/network';
-  import Workflow from 'lucide-svelte/icons/workflow';
   import GenePill from '$lib/components/GenePill.svelte';
   import { resolve } from '$app/paths';
 
-  let { term, freeText }: { term: string; freeText: string } = $props();
+  let { term, freeText, meta }: { term: string; freeText: string; meta?: Snippet } = $props();
 
   let namespace = $state<GoNamespace>('BP');
 
@@ -133,6 +135,21 @@
     await Promise.all(tasks);
   }
 
+  // One level only: the GO DAG is loaded lazily and expanding it fully would
+  // fetch thousands of terms.
+  async function expandAll() {
+    const roots = children[GO_NAMESPACE_ROOTS[namespace]] ?? [];
+    await Promise.all(
+      roots.map((t) =>
+        toggle(`${GO_NAMESPACE_ROOTS[namespace]}>${t.go_id}`, t, GO_NAMESPACE_ROOTS[namespace]),
+      ),
+    );
+  }
+
+  function collapseAll() {
+    expanded = {};
+  }
+
   const NS_BADGE: Record<string, string> = {
     BP: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
     MF: 'bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300',
@@ -148,8 +165,8 @@
   <div>
     <div
       role="group"
-      class="flex items-center gap-2 px-3 py-1.5 text-sm transition-colors hover:bg-muted/40"
-      style="padding-left: {0.75 + depth * 1.25}rem"
+      class="flex w-full items-center gap-2 py-2 pr-3 transition-colors hover:bg-muted/50"
+      style="padding-left: {1.25 + depth * 1.5}rem"
       onmouseenter={() => onRowHover(t.go_id)}
       onmouseleave={() => onRowLeave(t.go_id)}
     >
@@ -157,19 +174,19 @@
         type="button"
         class={cn(
           'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded transition-transform',
-          !expandable && 'cursor-default opacity-20',
+          !expandable && 'opacity-20',
           isOpen && 'rotate-90',
         )}
         disabled={!expandable}
         onclick={() => toggle(nodeKey, t, underParent)}
         aria-label="Toggle"
       >
-        <ChevronRight class="h-3.5 w-3.5 text-muted-foreground" />
+        <ChevronRight class="h-4 w-4 text-muted-foreground" />
       </button>
+      <span class={cn('truncate', depth === 0 && 'font-semibold')}>{t.name}</span>
       <a
         href={resolve(`/go/${t.go_id}`)}
-        class="inline-flex shrink-0 items-center gap-1 font-mono text-xs text-primary hover:underline"
-        title="Open graph view"
+        class="shrink-0 font-mono text-[0.65rem] text-muted-foreground hover:text-primary hover:underline"
       >
         {t.go_id}
       </a>
@@ -178,54 +195,27 @@
         target="_blank"
         rel="noopener"
         class="shrink-0 text-muted-foreground hover:text-primary"
-        title="Open in AmiGO"
       >
         <ExternalLink class="h-3 w-3" />
       </a>
-      <span class="truncate">{t.name}</span>
-      <div class="ml-auto flex shrink-0 items-center gap-1.5">
-        <a
-          href={resolve(`/go/${t.go_id}`)}
-          class="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[0.6rem] transition-colors hover:bg-accent hover:text-accent-foreground"
-          title="View as graph"
+      {#if (transitiveCounts[t.go_id] ?? t.n_direct_genes) > 0}
+        <Badge
+          variant="muted"
+          class="ml-auto shrink-0 tabular-nums"
+          title={`${t.n_direct_genes.toLocaleString()} genes annotated directly${
+            transitiveCounts[t.go_id] !== undefined
+              ? `, ${transitiveCounts[t.go_id].toLocaleString()} including sub-terms`
+              : ''
+          }${t.n_children > 0 ? ` · ${t.n_children} sub-terms` : ''}`}
         >
-          <Workflow class="h-3 w-3" />
-          graph
-        </a>
-        {#if t.n_parents > 1}
-          <Badge variant="outline" class="py-0 text-[0.6rem]">
-            {t.n_parents} parents
-          </Badge>
-        {/if}
-        {#if t.n_children > 0}
-          <Badge variant="muted" class="py-0 text-[0.6rem] tabular-nums">
-            {t.n_children} sub
-          </Badge>
-        {/if}
-        {#if transitiveCounts[t.go_id] !== undefined}
-          <Badge
-            variant="default"
-            class="bg-accent py-0 text-[0.6rem] tabular-nums text-accent-foreground hover:bg-accent"
-            title="Genes annotated to this term or any is_a descendant"
-          >
-            {transitiveCounts[t.go_id].toLocaleString()} total
-          </Badge>
-        {/if}
-        {#if t.n_direct_genes > 0}
-          <Badge
-            variant="muted"
-            class="py-0 text-[0.6rem] tabular-nums"
-            title="Genes directly annotated to this term"
-          >
-            {t.n_direct_genes.toLocaleString()} direct
-          </Badge>
-        {/if}
-      </div>
+          {(transitiveCounts[t.go_id] ?? t.n_direct_genes).toLocaleString()}
+        </Badge>
+      {/if}
     </div>
     {#if isOpen && otherParents[nodeKey]?.length}
       <div
         class="text-[0.65rem] italic text-muted-foreground"
-        style="padding-left: {2.5 + depth * 1.25}rem"
+        style="padding-left: {2.75 + depth * 1.5}rem"
       >
         also under
         {#each otherParents[nodeKey] as p, i (p.go_id)}{#if i > 0},
@@ -237,7 +227,7 @@
       {@const showAll = showAllGenes[nodeKey]}
       <div
         class="flex flex-wrap gap-1 py-1.5"
-        style="padding-left: {2.5 + depth * 1.25}rem; padding-right: 0.75rem;"
+        style="padding-left: {2.75 + depth * 1.5}rem; padding-right: 0.75rem;"
       >
         {#if !list}
           <span class="text-xs text-muted-foreground">Loading genes...</span>
@@ -300,15 +290,8 @@
             <ExternalLink class="h-3 w-3" />
           </a>
           <span class="truncate">{t.name}</span>
-          <a
-            href={resolve(`/go/${t.go_id}`)}
-            class="ml-auto inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[0.6rem] transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            <Workflow class="h-3 w-3" />
-            graph
-          </a>
-          <Badge variant="muted" class="py-0 text-[0.6rem] tabular-nums">
-            {t.n_direct_genes} genes
+          <Badge variant="muted" class="ml-auto shrink-0 tabular-nums">
+            {t.n_direct_genes.toLocaleString()}
           </Badge>
         </div>
       {:else}
@@ -324,27 +307,35 @@
   </div>
 {:else}
   <div class="space-y-3">
-    <div class="flex gap-1">
+    <div class="flex flex-wrap items-center gap-1">
+      <Button variant="outline" size="sm" onclick={expandAll}>
+        <ChevronsDown class="h-3 w-3" />
+        Expand all
+      </Button>
+      <Button variant="outline" size="sm" onclick={collapseAll}>
+        <ChevronsUp class="h-3 w-3" />
+        Collapse all
+      </Button>
+      <span class="mx-1 h-4 w-px bg-border"></span>
       {#each ['BP', 'MF', 'CC'] as GoNamespace[] as ns (ns)}
-        <button
-          type="button"
+        <Button
+          variant={namespace === ns ? 'secondary' : 'outline'}
+          size="sm"
           onclick={() => (namespace = ns)}
-          class={cn(
-            'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors',
-            namespace === ns
-              ? 'bg-accent font-medium text-accent-foreground'
-              : 'text-muted-foreground hover:bg-accent/50',
-          )}
+          class="gap-2"
         >
           <span class={cn('rounded px-1.5 py-0.5 font-mono text-[0.6rem]', NS_BADGE[ns])}>
             {ns}
           </span>
           {GO_NAMESPACE_LABEL[ns]}
-        </button>
+        </Button>
       {/each}
+      {#if meta}
+        <div class="ml-auto">{@render meta()}</div>
+      {/if}
     </div>
 
-    <div class="divide-y overflow-hidden rounded-lg border bg-card">
+    <div class="divide-y rounded-lg border bg-card">
       {#each children[GO_NAMESPACE_ROOTS[namespace]] ?? [] as t (t.go_id)}
         {@render termRow(t, GO_NAMESPACE_ROOTS[namespace], 0)}
       {:else}
