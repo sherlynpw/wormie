@@ -77,8 +77,8 @@
     { key: 'cards', label: 'Cards', icon: LayoutGrid },
     { key: 'table', label: 'Table', icon: Table },
     { key: 'wormcat', label: 'WormCat', icon: FolderTree },
-    { key: 'go', label: 'GO Terms', icon: Network },
-    { key: 'neuronal', label: 'Neuronal', icon: Brain },
+    { key: 'go', label: 'GO terms', icon: Network },
+    { key: 'neuronal', label: 'Neuronal class', icon: Brain },
     { key: 'synaptogenesis', label: 'Synaptogenesis', icon: Cable },
   ] as const;
 
@@ -273,7 +273,7 @@
               )}
             >
               <Brain class="h-4 w-4 text-muted-foreground" />
-              Cell types (CeNGEN)
+              Neurons (CeNGEN)
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="about"

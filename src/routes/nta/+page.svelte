@@ -10,6 +10,8 @@
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
   import { toast } from 'svelte-sonner';
+  import { resolve } from '$app/paths';
+  import ArrowLeft from 'lucide-svelte/icons/arrow-left';
 
   let pasteText = $state('');
 
@@ -54,13 +56,18 @@
 
 <svelte:head><title>Network connectivity · wormie.rs.ht</title></svelte:head>
 
-<div class="container mx-auto max-w-5xl space-y-6 p-4">
+<div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
+  <Button variant="ghost" size="sm" href={resolve('/')} class="self-start">
+    <ArrowLeft />
+    Back
+  </Button>
+
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Network connectivity</h1>
     <p class="text-sm text-muted-foreground">Interactions among the genes in a list</p>
   </header>
 
-  <PageHint id="nta.intro" title="What is being tested">
+  <PageHint id="nta.intro" title="What this step does">
     BioGRID records pairs of genes seen to interact: physically, where the proteins bind, or
     genetically, where mutating both produces an effect neither produces alone. Picture that as a
     network, genes as dots and interactions as lines between them. This asks whether your genes are

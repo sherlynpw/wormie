@@ -18,12 +18,12 @@
   const TYPE_ROUTES: Record<DatasetType, Target[]> = {
     'gene-list': [
       { path: '/enrichment', param: 'paste', label: 'Enrichment (ORA)' },
-      { path: '/enrichment', param: 'deseq2', label: 'Enrichment (DESeq2 / volcano)' },
+      { path: '/enrichment', param: 'deseq2', label: 'Enrichment (DE table / volcano)' },
     ],
     ranked: [
       { path: '/gsea', param: 'ranked', label: 'GSEA' },
       { path: '/enrichment', param: 'ranked', label: 'Enrichment (gene list)' },
-      { path: '/enrichment', param: 'deseq2', label: 'Enrichment (DESeq2 / volcano)' },
+      { path: '/enrichment', param: 'deseq2', label: 'Enrichment (DE table / volcano)' },
     ],
     deseq2: [
       { path: '/enrichment', param: 'deseq2', label: 'Enrichment (DE subset)' },
@@ -162,7 +162,7 @@
   }
 </script>
 
-<div class="mx-auto max-w-5xl space-y-4 p-4 md:p-6">
+<div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/" class="self-start">
     <ArrowLeft />
     Back
@@ -194,7 +194,8 @@
       {:else if datasets.items.length === 0}
         <div class="text-sm text-muted-foreground">
           No saved datasets. Use the <span class="font-semibold text-foreground">Save</span> button on
-          any tool page (Enrichment, GSEA, Custom GMT, ssGSEA) to add one here.
+          any tool page (Over-representation, Preranked GSEA, Custom gene sets, Single-sample GSEA) to
+          add one here.
         </div>
       {:else}
         <div class="overflow-x-auto rounded-lg border bg-card">

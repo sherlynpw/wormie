@@ -592,7 +592,7 @@
   });
 </script>
 
-<div class="mx-auto max-w-7xl space-y-4 p-4 md:p-6">
+<div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href={resolve('/')} class="self-start">
     <ArrowLeft />
     Back
@@ -603,13 +603,13 @@
     <p class="text-sm text-muted-foreground">Genes that change between conditions</p>
   </header>
 
-  <PageHint id="de.intro" title="What the numbers mean">
+  <PageHint id="de.intro" title="What this step does">
     Give it a counts table and say which samples are which condition. It then asks, gene by gene,
     whether the difference between conditions is larger than the variation between replicates of the
     same condition. Two numbers come back per gene. The <b>log2 fold change</b> is the size and
     direction of the change: 1 means doubled, -1 means halved, 0 means no change. The
     <b>adjusted p-value</b> (padj) is the false discovery rate: because thousands of genes are tested
-    at once, some will look convincing by chance, and this correction accounts for it. padj &lt; 0.05
+    at once, some will look convincing by chance, and this correction accounts for that. padj &lt; 0.05
     is the usual cutoff, meaning roughly 5% of the genes you call changed are expected to be false. The
     engine is DESeq2, the most widely used method for this. The first run spends 15-20 s starting R; later
     runs take seconds.
@@ -659,6 +659,16 @@
         <Button variant="outline" size="sm" onclick={() => ddsInput?.click()} disabled={running}>
           Upload dds.rds (skip fit)
         </Button>
+        <ControlHint id="de-dds" title="What a dds.rds file is">
+          Fitting takes the longest part of a run. Once it finishes, the <b>dds.rds</b> download on
+          this page saves the fitted model — the counts, the design, the dispersions DESeq2
+          estimated — as a single file. Upload it here later and the page skips straight to pulling
+          contrasts out, in seconds rather than minutes.
+          <br /><br />
+          It is also an ordinary R object: <code class="break-all">readRDS("dds.rds")</code> in R gives
+          you the same DESeqDataSet, which is the way to run tests this page does not offer, such as a
+          likelihood ratio test across more than two levels.
+        </ControlHint>
         <span class="text-xs text-muted-foreground">
           {countsName || 'or paste a featureCounts-style table below'}
         </span>

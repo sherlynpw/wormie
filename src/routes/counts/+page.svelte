@@ -195,7 +195,7 @@
   });
 </script>
 
-<div class="mx-auto max-w-5xl space-y-4 p-4 md:p-6">
+<div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href={resolve('/')} class="self-start">
     <ArrowLeft />
     Back
@@ -313,16 +313,16 @@
             {bundled ? 'Or choose your own' : 'Choose annotation'}
           </Button>
           <span class="text-xs text-muted-foreground">GTF, GFF3, or SAF</span>
-          <ControlHint id="counts-gtf" title="What the annotation is, and where to get one">
+          <ControlHint id="counts-gtf" title="What the annotation is and where to get one">
             The BAM says where each read landed; the annotation says where the genes are, so the two
             together give a count per gene. The <b>Use WormBase</b> button loads the canonical gene
             models for the release this site was built from, which is the right choice unless you
             aligned to something else. Otherwise download
-            <code>c_elegans.PRJNA13758.WSxxx.canonical_geneset.gtf.gz</code> from the WormBase FTP
-            site, or the matching release from Ensembl Genomes.
+            <code class="break-all">c_elegans.PRJNA13758.WSxxx.canonical_geneset.gtf.gz</code> from
+            the WormBase FTP site, or the matching release from Ensembl Genomes.
             <br /><br />
             It must match the genome your reads were aligned to. Two mismatches cause almost all zero-count
-            results: a different assembly, and different chromosome naming, where the annotation says
+            results: a different assembly, or different chromosome naming where the annotation says
             <code>I, II, III</code>
             and the BAM says <code>chrI, chrII</code>. If every gene comes back at zero, that is the
             first thing to check.
@@ -337,7 +337,15 @@
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="grid gap-1.5">
-          <label for="threads" class="text-sm font-medium">Threads</label>
+          <label for="threads" class="inline-flex items-center gap-1.5 text-sm font-medium">
+            Threads
+            <ControlHint id="counts-threads" title="How many reads are counted at once">
+              Counting splits across this many parallel workers. More is faster up to the number of
+              cores your machine has; beyond that they queue and memory use keeps rising. The
+              default matches your browser's reported core count, which is usually the right answer.
+              Lower it if the tab becomes unresponsive on a large run.
+            </ControlHint>
+          </label>
           <Input
             id="threads"
             type="number"

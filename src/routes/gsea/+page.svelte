@@ -346,7 +346,7 @@
     <p class="text-sm text-muted-foreground">Gene sets concentrated at one end of a ranking</p>
   </header>
 
-  <PageHint id="gsea" title="When to use this instead of a gene list">
+  <PageHint id="gsea" title="What this step does">
     Over-representation needs you to draw a line: a gene is in your list or it is not. That throws
     away everything just below the line, and a real but modest response often leaves no single gene
     significant. Preranked GSEA draws no line. Order every gene by a statistic — usually the one

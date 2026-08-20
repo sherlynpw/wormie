@@ -56,15 +56,15 @@
   } = $props();
 
   const ALL_KINDS: { key: GseaKind; label: string }[] = [
-    { key: 'go', label: 'GO terms' },
+    { key: 'go', label: 'Gene Ontology' },
     { key: 'phenotype', label: 'Phenotypes' },
     { key: 'disease', label: 'Diseases' },
     { key: 'wormcat', label: 'WormCat' },
-    { key: 'neuronal', label: 'Neuronal' },
-    { key: 'tissue', label: 'Tissue' },
-    { key: 'cell-type', label: 'Cell type (CeNGEN)' },
+    { key: 'neuronal', label: 'Neuronal class' },
+    { key: 'tissue', label: 'Tissues' },
+    { key: 'cell-type', label: 'Neurons (CeNGEN)' },
     { key: 'synaptogenesis', label: 'Synaptogenesis' },
-    { key: 'pathway', label: 'KEGG pathway' },
+    { key: 'pathway', label: 'KEGG' },
   ];
   // KEGG excluded from the build drops the pathway category (license).
   const KINDS = ALL_KINDS.filter((k) => KEGG_ENABLED || k.key !== 'pathway');
