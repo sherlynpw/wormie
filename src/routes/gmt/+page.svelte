@@ -352,7 +352,7 @@
     <p class="text-sm text-muted-foreground">Annotations you supply, not the built-in ones</p>
   </header>
 
-  <PageHint id="gmt" title="When the built-in annotations are not the right ones">
+  <PageHint id="gmt" title="What this step does">
     Enrichment elsewhere on the site tests your genes against GO terms, phenotypes, WormCat
     categories and tissues. Often the grouping you actually care about is not one of those: the
     targets of a transcription factor from a recent paper, the hits of someone else's screen, genes
@@ -369,7 +369,7 @@
 
   <Card>
     <CardHeader>
-      <CardTitle class="text-xl">Custom GMT analysis</CardTitle>
+      <CardTitle class="text-xl">Custom gene sets</CardTitle>
       <div class="text-sm text-muted-foreground">
         Paste or upload a GMT collection (MSigDB / Reactome / KEGG / custom WormCat exports) and run
         enrichment or preranked GSEA against your genes. Set names work as term IDs in results. Gene

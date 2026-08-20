@@ -12,6 +12,9 @@ const LEGACY_ALL_OFF = 'wb.hints.allOff';
 type State = {
   dismissed: string[];
   allOff: boolean;
+  // Hints explicitly reopened after a hide-all, so restoring one does not
+  // resurface every hint on every page.
+  restored?: string[];
 };
 
 function loadFromStorage(): State {
@@ -22,7 +25,12 @@ function loadFromStorage(): State {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const v = JSON.parse(raw) as State;
-      if (Array.isArray(v?.dismissed)) return { dismissed: v.dismissed, allOff: Boolean(v.allOff) };
+      if (Array.isArray(v?.dismissed))
+        return {
+          dismissed: v.dismissed,
+          allOff: Boolean(v.allOff),
+          restored: Array.isArray(v.restored) ? v.restored : [],
+        };
     }
     // Migrate legacy keys, then erase them.
     const dismissed = new SvelteSet<string>();
@@ -62,6 +70,7 @@ function persist(s: State) {
 
 class HintsStore {
   dismissed = $state<Set<string>>(new Set());
+  restored = $state<Set<string>>(new Set());
   allOff = $state<boolean>(false);
   initialized = $state<boolean>(false);
 
@@ -69,30 +78,41 @@ class HintsStore {
     if (this.initialized) return;
     const loaded = loadFromStorage();
     this.dismissed = new Set(loaded.dismissed);
+    this.restored = new Set(loaded.restored ?? []);
     this.allOff = loaded.allOff;
     this.initialized = true;
   }
 
   shouldShow(id: string): boolean {
     if (!this.initialized) this.init();
+    if (this.restored.has(id)) return true;
     return !this.allOff && !this.dismissed.has(id);
   }
 
   dismiss(id: string) {
-    if (this.dismissed.has(id)) return;
     const next = new SvelteSet(this.dismissed);
     next.add(id);
     this.dismissed = next;
-    persist({ dismissed: [...next], allOff: this.allOff });
+    const stillRestored = new SvelteSet(this.restored);
+    stillRestored.delete(id);
+    this.restored = stillRestored;
+    persist({ dismissed: [...next], allOff: this.allOff, restored: [...stillRestored] });
   }
 
-  hideAll() {
-    this.allOff = true;
-    persist({ dismissed: [...this.dismissed], allOff: true });
+  /** Reopen one hint, leaving the rest hidden. */
+  restore(id: string) {
+    const stillDismissed = new SvelteSet(this.dismissed);
+    stillDismissed.delete(id);
+    this.dismissed = stillDismissed;
+    const next = new SvelteSet(this.restored);
+    next.add(id);
+    this.restored = next;
+    persist({ dismissed: [...stillDismissed], allOff: this.allOff, restored: [...next] });
   }
 
   resetAll() {
     this.dismissed = new Set();
+    this.restored = new Set();
     this.allOff = false;
     try {
       localStorage.removeItem(KEY);

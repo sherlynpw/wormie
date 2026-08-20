@@ -504,7 +504,7 @@
     </p>
   </header>
 
-  <PageHint id="enrichment" title="What over-representation asks">
+  <PageHint id="enrichment" title="What this step does">
     You have a list of genes worth explaining: the ones that changed, or hits from a screen. Genes
     carry annotations describing what they do (GO terms), what happens when they break (phenotypes),
     which tissue they act in, and which WormCat category they fall under. This asks whether any of
@@ -564,7 +564,7 @@
             : 'text-muted-foreground hover:bg-accent/50'}"
           title="Paste a DESeq2 / per-gene DE table to filter via volcano + run ORA on the DE subset"
         >
-          DESeq2 / volcano
+          DE table / volcano
         </button>
         <button
           type="button"
