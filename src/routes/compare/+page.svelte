@@ -185,7 +185,7 @@
   ];
 </script>
 
-<div class="mx-auto max-w-7xl space-y-4 p-4 md:p-6">
+<div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <div class="flex items-center justify-between gap-2">
     <Button variant="ghost" size="sm" href="/" class="self-start">
       <ArrowLeft />
@@ -193,11 +193,28 @@
     </Button>
   </div>
 
-  <PageHint id="compare" title="How to compare gene lists">
-    Paste or drop 2–6 gene lists; one per box. Each gets a label. Outputs: pairwise Jaccard heatmap,
-    UpSet plot of intersections, and per-region gene tables. Selection from anywhere else on the
-    site flows in via the selection bar at the bottom. For DE comparisons across conditions, prefer
-    the pipeline's compare-de output, but this is handy for ad-hoc lists.
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Compare genes</h1>
+    <p class="text-sm text-muted-foreground">
+      What a set of genes has in common, and what sets each one apart
+    </p>
+  </header>
+
+  <PageHint id="compare" title="What this step does">
+    You have a handful of genes and want to know what they have in common: are they annotated to the
+    same GO terms, do they give the same phenotypes, are they expressed in the same tissues, do they
+    share orthologs? Select the genes from the cards or table view and send them here. Every gene is
+    compared against every other one, annotation by annotation. With two genes you get a
+    three-column split, unique to the first / shared / unique to the second. With three or more you
+    get an UpSet plot per category showing which combinations of genes share terms, a Jaccard
+    heatmap of how similar each pair is overall, and the list of annotations common to all of them.
+    Note this compares genes to each other, not one list against another list: to ask whether two
+    separate gene lists turn up the same biology, run
+    <a href={resolve('/enrichment')} class="underline underline-offset-2">over-representation</a>
+    on each and put the results side by side in
+    <a href={resolve('/enrichment/overlap')} class="underline underline-offset-2"
+      >enrichment overlap</a
+    >.
   </PageHint>
 
   <div class="-mt-3 flex items-center justify-between gap-2">

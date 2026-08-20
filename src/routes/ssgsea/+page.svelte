@@ -5,6 +5,10 @@
   import PageHint from '$lib/components/PageHint.svelte';
   import ControlHint from '$lib/components/ControlHint.svelte';
   import { toast } from 'svelte-sonner';
+  import { getTermSets } from '$lib/queries';
+  import { resolve } from '$app/paths';
+  import { Button } from '$lib/components/ui/button';
+  import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { handoff } from '$lib/pipeline-handoff';
@@ -21,6 +25,19 @@
     toast.success('Loaded expression matrix from /de', { description: h.label });
   });
   let gmtText = $state('');
+  // Sets can come from the shipped annotations or a GMT; the maths is identical,
+  // only the definition of a set differs.
+  let setSource = $state<'builtin' | 'gmt'>('builtin');
+  let builtinKind = $state<'go' | 'wormcat' | 'phenotype' | 'tissue' | 'neuronal'>('wormcat');
+  let minSize = $state(15);
+  let maxSize = $state(500);
+  const BUILTIN_KINDS = [
+    { key: 'wormcat', label: 'WormCat' },
+    { key: 'go', label: 'Gene Ontology' },
+    { key: 'phenotype', label: 'Phenotypes' },
+    { key: 'tissue', label: 'Tissues' },
+    { key: 'neuronal', label: 'Neuronal class' },
+  ] as const;
   let alpha = $state(0.25);
   let normalize = $state(true);
   let running = $state(false);
@@ -73,16 +90,29 @@
 
   async function run() {
     const expr = parseExpr(exprText);
-    const sets = parseGmt(gmtText);
     if (!expr || expr.genes.length === 0) {
       toast.error('No expression matrix detected');
       return;
     }
-    if (sets.length === 0) {
-      toast.error('No gene sets parsed');
+    running = true;
+    let sets: CustomTermSet[];
+    try {
+      sets =
+        setSource === 'gmt'
+          ? parseGmt(gmtText)
+          : await getTermSets(builtinKind, { minSize, maxSize });
+    } catch (e) {
+      running = false;
+      toast.error('Could not build gene sets', {
+        description: e instanceof Error ? e.message : String(e),
+      });
       return;
     }
-    running = true;
+    if (sets.length === 0) {
+      running = false;
+      toast.error(setSource === 'gmt' ? 'No gene sets parsed' : 'No sets in that size range');
+      return;
+    }
     const t0 = performance.now();
     try {
       const res = await runCustomSsgsea(expr, sets, { alpha, normalize });
@@ -100,13 +130,18 @@
 
 <svelte:head><title>Single-sample GSEA · wormie.rs.ht</title></svelte:head>
 
-<div class="container mx-auto max-w-6xl space-y-6 p-4">
+<div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
+  <Button variant="ghost" size="sm" href={resolve('/')} class="self-start">
+    <ArrowLeft />
+    Back
+  </Button>
+
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Single-sample GSEA</h1>
     <p class="text-sm text-muted-foreground">One score per gene set, per sample</p>
   </header>
 
-  <PageHint id="ssgsea.intro" title="What you get, and what to do with it">
+  <PageHint id="ssgsea.intro" title="What this step does">
     Each sample is scored on its own: its genes are sorted from highest to lowest expression, and
     the score says how near the top of that sample's ranking a gene set's members sit. Positive
     means concentrated near the top, negative near the bottom. Nothing is compared, so this is the
@@ -161,23 +196,84 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
 
     <section class="space-y-2">
       <label class="block text-sm font-medium" for="gmt">
-        Gene sets (GMT)
+        Gene sets
         <ControlHint id="ssgsea-gmt" title="Where gene sets come from">
-          One set per line: its name, a description, then its genes, separated by tabs. MSigDB
-          publishes ready-made collections, or write your own in a spreadsheet and save as
-          tab-separated text. Sets much smaller than about fifteen genes give noisy scores.
+          A gene set is just a named group of genes. Use the annotations shipped with the site —
+          WormCat categories, GO terms, phenotypes, tissues — or supply your own as a GMT: one set
+          per line, its name, a description, then its genes, separated by tabs. MSigDB publishes
+          ready-made collections, and a spreadsheet saved as tab-separated text works too.
+          <br /><br />
+          Very small sets score noisily and very large ones say little about any one sample, so the size
+          range filters both ends. Nothing here changes the maths: the score always asks how near the
+          top of a sample's ranking that set's genes sit.
         </ControlHint>
       </label>
-      <textarea
-        id="gmt"
-        class="h-48 w-full rounded border bg-background p-2 font-mono text-xs"
-        placeholder="SET01&#9;Description&#9;WBGene00000001&#9;WBGene00000002&#9;...&#10;SET02&#9;..."
-        bind:value={gmtText}
-      ></textarea>
-      <button
-        class="rounded border px-2 py-1 text-xs hover:bg-accent"
-        onclick={() => pickFile('gmt')}>Upload GMT</button
-      >
+
+      <div class="inline-flex overflow-hidden rounded-md border text-xs">
+        {#each [{ key: 'builtin', label: 'Built-in annotations' }, { key: 'gmt', label: 'My own GMT' }] as opt (opt.key)}
+          <button
+            type="button"
+            onclick={() => (setSource = opt.key as typeof setSource)}
+            class={setSource === opt.key
+              ? 'bg-accent px-2 py-1 text-accent-foreground'
+              : 'bg-card px-2 py-1 text-muted-foreground hover:bg-accent/50'}
+          >
+            {opt.label}
+          </button>
+        {/each}
+      </div>
+
+      {#if setSource === 'builtin'}
+        <div class="flex flex-wrap items-end gap-2 text-xs">
+          <label class="block">
+            <span class="mb-1 block text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+              Annotation
+            </span>
+            <select
+              bind:value={builtinKind}
+              class="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            >
+              {#each BUILTIN_KINDS as k (k.key)}
+                <option value={k.key}>{k.label}</option>
+              {/each}
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+              Min genes
+            </span>
+            <input
+              type="number"
+              min="2"
+              bind:value={minSize}
+              class="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm"
+            />
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+              Max genes
+            </span>
+            <input
+              type="number"
+              min="10"
+              bind:value={maxSize}
+              class="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm"
+            />
+          </label>
+        </div>
+      {/if}
+      {#if setSource === 'gmt'}
+        <textarea
+          id="gmt"
+          class="h-48 w-full rounded border bg-background p-2 font-mono text-xs"
+          placeholder="SET01&#9;Description&#9;WBGene00000001&#9;WBGene00000002&#9;...&#10;SET02&#9;..."
+          bind:value={gmtText}
+        ></textarea>
+        <button
+          class="rounded border px-2 py-1 text-xs hover:bg-accent"
+          onclick={() => pickFile('gmt')}>Upload GMT</button
+        >
+      {/if}
     </section>
   </div>
 
