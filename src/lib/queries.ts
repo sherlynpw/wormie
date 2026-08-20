@@ -305,6 +305,8 @@ export interface BulkLookupHit {
   gene_name: string | null;
   sequence_name: string | null;
   concise_description: string | null;
+  /** WormBase gene status: Live, Dead or Suppressed. Surfaced, never filtered on. */
+  status: string | null;
 }
 
 /**
@@ -361,6 +363,7 @@ export async function bulkLookup(
       gene_name: string | null;
       sequence_name: string | null;
       concise_description: string | null;
+      status: string | null;
     };
     const WBGENE_RE = /^WBGene\d+$/i;
     const wbgeneTokens = unique.filter((t) => WBGENE_RE.test(t));
@@ -378,12 +381,13 @@ export async function bulkLookup(
         gene_name: string | null;
         sequence_name: string | null;
         concise_description: string | null;
+        status: string | null;
       }>(
         `WITH inputs(input_id) AS (
 			   SELECT value FROM json_each(?)
 			 )
 			 SELECT i.input_id,
-			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description
+			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description, a.status
 			 FROM inputs i
 			 JOIN annotations a ON a.wormbase_gene = i.input_id`,
         [JSON.stringify(canonical)],
@@ -395,6 +399,7 @@ export async function bulkLookup(
           gene_name: r.gene_name,
           sequence_name: r.sequence_name,
           concise_description: r.concise_description,
+          status: r.status,
         });
       }
     }
@@ -407,7 +412,7 @@ export async function bulkLookup(
 			   SELECT value FROM json_each(?)
 			 )
 			 SELECT i.input_lower,
-			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description
+			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description, a.status
 			 FROM inputs i
 			 JOIN annotations a
 			   ON LOWER(a.gene_name) = i.input_lower
@@ -428,6 +433,7 @@ export async function bulkLookup(
         gene_name: r.gene_name,
         sequence_name: r.sequence_name,
         concise_description: r.concise_description,
+        status: r.status,
       };
       if (!matchedByLower.has(key)) matchedByLower.set(key, []);
       matchedByLower.get(key)!.push(hit);
@@ -2900,4 +2906,47 @@ export async function getNeuronalGenes(
 		 ORDER BY a.gene_name`,
     params,
   );
+}
+
+/**
+ * Every annotation set of one kind, as gene-set input for ssGSEA or custom GSEA.
+ * Sets outside [minSize, maxSize] are dropped: tiny ones score noisily and huge
+ * ones say little about any individual sample.
+ */
+export async function getTermSets(
+  kind: 'go' | 'phenotype' | 'wormcat' | 'neuronal' | 'tissue',
+  opts: { minSize?: number; maxSize?: number } = {},
+): Promise<{ term_id: string; name: string; genes: string[] }[]> {
+  const minSize = opts.minSize ?? 15;
+  const maxSize = opts.maxSize ?? 500;
+  const SQL: Record<typeof kind, string> = {
+    go: `SELECT gg.go_id AS term_id, COALESCE(t.name, gg.go_id) AS name, gg.wormbase_gene AS gene
+         FROM gene_go gg LEFT JOIN go_terms t ON t.go_id = gg.go_id
+         WHERE COALESCE(t.is_obsolete, 0) = 0`,
+    phenotype: `SELECT gp.term_id, COALESCE(pt.name, gp.term_id) AS name, gp.wormbase_gene AS gene
+         FROM gene_phenotype gp LEFT JOIN phenotype_terms pt ON pt.term_id = gp.term_id`,
+    wormcat: `SELECT category AS term_id, category AS name, wormbase_gene AS gene FROM (
+           SELECT wormbase_gene, category_1 AS category FROM wormcat WHERE category_1 IS NOT NULL
+           UNION ALL SELECT wormbase_gene, category_2 FROM wormcat WHERE category_2 IS NOT NULL
+           UNION ALL SELECT wormbase_gene, category_3 FROM wormcat WHERE category_3 IS NOT NULL
+         )`,
+    neuronal: `SELECT category AS term_id, category AS name, wormbase_gene AS gene
+         FROM neuronal WHERE category IS NOT NULL`,
+    tissue: `SELECT ga.term_id, COALESCE(at.name, ga.term_id) AS name, ga.wormbase_gene AS gene
+         FROM gene_anatomy ga LEFT JOIN anatomy_terms at ON at.term_id = ga.term_id`,
+  };
+  const rows = await query<{ term_id: string; name: string; gene: string }>(SQL[kind]);
+  const byTerm = new Map<string, { term_id: string; name: string; genes: Set<string> }>();
+  for (const r of rows) {
+    if (!r.term_id || !r.gene) continue;
+    let e = byTerm.get(r.term_id);
+    if (!e) byTerm.set(r.term_id, (e = { term_id: r.term_id, name: r.name, genes: new Set() }));
+    e.genes.add(r.gene);
+  }
+  const out: { term_id: string; name: string; genes: string[] }[] = [];
+  for (const e of byTerm.values()) {
+    if (e.genes.size < minSize || e.genes.size > maxSize) continue;
+    out.push({ term_id: e.term_id, name: e.name, genes: [...e.genes] });
+  }
+  return out.sort((a, b) => b.genes.length - a.genes.length);
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
-  // Star + note popover for a gene. Note panel floats below the trigger (not constrained
-  // by the parent flex row); saved note renders below buttons when not editing.
+  // Star + note popover for a gene. The two are independent: a note can be written
+  // without starring, and unstarring keeps the note. Note panel floats below the
+  // trigger (not constrained by the parent flex row).
   import { onMount } from 'svelte';
   import { bookmarks } from '$lib/stores/bookmarks.svelte';
   import Star from 'lucide-svelte/icons/star';
@@ -32,7 +33,6 @@
   function toggleStar() {
     bookmarks.toggle(wormbase_gene, gene_name);
     noteValue = bookmarks.get(wormbase_gene)?.note ?? '';
-    if (!bookmarks.has(wormbase_gene)) popoverOpen = false;
   }
 
   function openPopover() {
@@ -85,22 +85,20 @@
     type="button"
     onclick={toggleStar}
     class="inline-flex items-center gap-1 rounded border bg-card px-2 py-1 text-xs transition-colors hover:bg-accent"
-    title={isStarred ? 'Remove bookmark' : 'Bookmark this gene'}
+    title={isStarred ? 'Remove the star (keeps any note)' : 'Star this gene'}
   >
     <Star class={isStarred ? 'h-3.5 w-3.5 fill-amber-400 text-amber-500' : 'h-3.5 w-3.5'} />
-    {isStarred ? 'Saved' : 'Save'}
+    {isStarred ? 'Starred' : 'Star'}
   </button>
-  {#if isStarred}
-    <button
-      type="button"
-      onclick={openPopover}
-      class="inline-flex items-center gap-1 rounded border bg-card px-2 py-1 text-xs transition-colors hover:bg-accent"
-      title="Add or edit a note (saved locally)"
-    >
-      <StickyNote class="h-3.5 w-3.5" />
-      {currentNote ? 'Edit note' : 'Add note'}
-    </button>
-  {/if}
+  <button
+    type="button"
+    onclick={openPopover}
+    class="inline-flex items-center gap-1 rounded border bg-card px-2 py-1 text-xs transition-colors hover:bg-accent"
+    title="Add or edit a note (saved locally, no need to save the gene first)"
+  >
+    <StickyNote class={currentNote ? 'h-3.5 w-3.5 text-amber-500' : 'h-3.5 w-3.5'} />
+    {currentNote ? 'Edit note' : 'Add note'}
+  </button>
 
   {#if popoverOpen}
     <div

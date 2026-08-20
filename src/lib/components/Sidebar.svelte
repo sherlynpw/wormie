@@ -15,6 +15,7 @@
   import Sigma from 'lucide-svelte/icons/sigma';
   import Clock from 'lucide-svelte/icons/clock';
   import Star from 'lucide-svelte/icons/star';
+  import GitCompare from 'lucide-svelte/icons/git-compare';
   import { bookmarks } from '$lib/stores/bookmarks.svelte';
   import { onMount } from 'svelte';
   onMount(() => bookmarks.init());
@@ -32,7 +33,7 @@
   const VIEWS: { key: ViewKey; label: string; icon: IconComponent }[] = [
     { key: 'wormcat', label: 'WormCat', icon: FolderTree },
     { key: 'go', label: 'GO terms', icon: Network },
-    { key: 'neuronal', label: 'Neuronal', icon: Brain },
+    { key: 'neuronal', label: 'Neuronal class', icon: Brain },
     { key: 'synaptogenesis', label: 'Synaptogenesis', icon: Cable },
   ];
 
@@ -67,6 +68,12 @@
           match: '/lookup',
           label: 'Gene name resolver',
           icon: FileSearch,
+        },
+        {
+          href: resolve('/compare'),
+          match: '/compare',
+          label: 'Compare genes',
+          icon: GitCompare,
         },
         {
           href: resolve('/ssgsea'),
@@ -201,7 +208,7 @@
         )}
       >
         <Star class="h-4 w-4" />
-        Starred genes
+        Marked genes
         {#if bookmarks.initialized && bookmarks.count() > 0}
           <span class="ml-auto font-mono text-[0.65rem] tabular-nums text-muted-foreground">
             {bookmarks.count()}

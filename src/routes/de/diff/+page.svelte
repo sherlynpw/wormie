@@ -12,6 +12,7 @@
   import GenePill from '$lib/components/GenePill.svelte';
   import PageHint from '$lib/components/PageHint.svelte';
   import PlotExportMenu from '$lib/components/PlotExportMenu.svelte';
+  import VennDiagram from '$lib/components/VennDiagram.svelte';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import { toast } from 'svelte-sonner';
   import { resolve } from '$app/paths';
@@ -166,6 +167,25 @@
   const sigB = $derived(joined.filter((j) => sigOf(j) === 'bOnly'));
   const sigNS = $derived(joined.filter((j) => sigOf(j) === 'ns'));
 
+  const vennA = $derived({
+    label: labelA,
+    up: sigA.filter((j) => j.lfcA > 0).length,
+    down: sigA.filter((j) => j.lfcA < 0).length,
+  });
+  const vennB = $derived({
+    label: labelB,
+    up: sigB.filter((j) => j.lfcB > 0).length,
+    down: sigB.filter((j) => j.lfcB < 0).length,
+  });
+  const vennShared = $derived({
+    up: sigBoth.filter((j) => j.lfcA > 0 && j.lfcB > 0).length,
+    down: sigBoth.filter((j) => j.lfcA < 0 && j.lfcB < 0).length,
+    discordant:
+      sigBoth.filter((j) => j.lfcA * j.lfcB < 0).length +
+      joined.filter((j) => sigOf(j) === 'flipped').length,
+  });
+  let vennSvg = $state<SVGSVGElement | null>(null);
+
   type TabKey = 'flipped' | 'both' | 'aOnly' | 'bOnly' | 'ns';
   let activeTab = $state<TabKey>('flipped');
   const tabs = $derived<
@@ -274,7 +294,7 @@
     <p class="text-sm text-muted-foreground">Two comparisons side by side</p>
   </header>
 
-  <PageHint id="de-diff" title="Reading the plot">
+  <PageHint id="de-diff" title="What this step does">
     Two comparisons from the same study — a mutant against wild type at two timepoints, say, or two
     mutants against one control — plotted against each other, one dot per gene, its fold change in
     the first comparison on one axis and in the second on the other. Genes along the diagonal behave
@@ -374,6 +394,16 @@
   </div>
 
   {#if rowsA && rowsB && joined.length > 0}
+    <Card>
+      <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+        <CardTitle class="text-base">Genes changed in each contrast</CardTitle>
+        <PlotExportMenu getSvg={() => vennSvg} baseName={`venn-${labelA}-vs-${labelB}`} />
+      </CardHeader>
+      <CardContent class="flex justify-center pt-0">
+        <VennDiagram a={vennA} b={vennB} shared={vennShared} bind:svgEl={vennSvg} />
+      </CardContent>
+    </Card>
+
     <Card>
       <CardHeader class="pb-2">
         <div class="flex flex-wrap items-baseline justify-between gap-2">

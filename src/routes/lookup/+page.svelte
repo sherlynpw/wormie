@@ -63,9 +63,11 @@
   const uniqueHits = $derived(
     Array.from(new Map(hits.map((h) => [h.wormbase_gene + ':' + h.input, h])).values()),
   );
+  // Retired identifiers still resolve; the resolver flags them rather than dropping them.
+  const retiredHits = $derived(uniqueHits.filter((h) => h.status && h.status !== 'Live'));
 </script>
 
-<div class="mx-auto max-w-5xl space-y-4 p-4 md:p-6">
+<div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/" class="self-start">
     <ArrowLeft />
     Back
@@ -76,14 +78,17 @@
     <p class="text-sm text-muted-foreground">Any gene name into a WormBase ID</p>
   </header>
 
-  <PageHint id="lookup" title="Why gene names need resolving">
+  <PageHint id="lookup" title="What this step does">
     One gene answers to several names: a common name (<code>daf-16</code>), a sequence name (<code
       >R13H8.1</code
     >), aliases from older papers, an Entrez number, and its permanent WormBase ID (<code
       >WBGene00000912</code
     >). Only the WormBase ID is stable, so every tool here keys on it. Paste any mixture of the
     rest, one per line or comma-separated, and each is matched to its WormBase ID. Anything that
-    matches several genes, or none, is listed separately rather than quietly dropped.
+    matches several genes, or none, is listed separately rather than quietly dropped. A name from an
+    older paper may belong to a gene WormBase has since merged away or withdrawn; those still
+    resolve, and are flagged <b>Dead</b> or <b>Suppressed</b> so you can decide whether to keep them,
+    rather than being silently dropped or silently carried into an analysis.
   </PageHint>
 
   <Card>
@@ -127,6 +132,11 @@
               · {misses.length} miss{misses.length === 1 ? '' : 'es'}
             </span>
           {/if}
+          {#if retiredHits.length > 0}
+            <span class="text-sm font-normal text-amber-700 dark:text-amber-500">
+              · {retiredHits.length} retired
+            </span>
+          {/if}
         </CardTitle>
         {#if hits.length > 0}
           <div class="flex gap-2">
@@ -155,6 +165,17 @@
                   {#if h.input.toLowerCase() !== (h.gene_name ?? h.wormbase_gene).toLowerCase()}
                     <Badge variant="outline" class="px-1 py-0 text-[0.55rem]">
                       {h.input}
+                    </Badge>
+                  {/if}
+                  {#if h.status && h.status !== 'Live'}
+                    <Badge
+                      variant="outline"
+                      class="border-amber-500/50 bg-amber-100 px-1 py-0 text-[0.55rem] text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                      title={h.status === 'Dead'
+                        ? 'Retired in WormBase: merged into another gene or withdrawn. The ID still resolves, but the gene is no longer current.'
+                        : 'Suppressed in WormBase: the gene model is no longer supported by evidence.'}
+                    >
+                      {h.status}
                     </Badge>
                   {/if}
                 {/snippet}
