@@ -55,6 +55,7 @@
   import AllelePhenotypeMatrix from '$lib/components/AllelePhenotypeMatrix.svelte';
   import MiniInteractionNetwork from '$lib/components/MiniInteractionNetwork.svelte';
   import PageToc, { type TocEntry, type TocLeaf } from '$lib/components/PageToc.svelte';
+  import EmptyPanel from '$lib/components/EmptyPanel.svelte';
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Badge } from '$lib/components/ui/badge';
   import { Button } from '$lib/components/ui/button';
@@ -347,51 +348,49 @@
   // Card render order below mirrors this grouping.
   const tocEntries = $derived.by<TocEntry[]>(() => {
     // Grouped by the question a reader arrives with, not by the source each panel came from.
-    const identity: TocLeaf[] = [{ id: 'overview', label: 'Overview' }];
-    if (orthologs.length > 0) {
-      identity.push({ id: 'phylo', label: 'Conservation' });
-      identity.push({ id: 'orthologs', label: 'Orthologs' });
-    }
-    if (xrefs.length > 0) identity.push({ id: 'external', label: 'External resources' });
+    // Every panel renders even with no data, so every panel is always listed.
+    const identity: TocLeaf[] = [
+      { id: 'overview', label: 'Overview' },
+      { id: 'phylo', label: 'Conservation' },
+      { id: 'orthologs', label: 'Orthologs' },
+      { id: 'external', label: 'External resources' },
+    ];
+    const perturbation: TocLeaf[] = [
+      { id: 'alleles', label: 'Alleles' },
+      { id: 'phenotypes', label: 'Phenotypes' },
+      { id: 'diseases', label: 'Diseases' },
+    ];
+    const annotation: TocLeaf[] = [
+      { id: 'go', label: 'Gene Ontology' },
+      { id: 'wormcat', label: 'WormCat' },
+      { id: 'neuronal', label: 'Neuronal class' },
+      { id: 'synaptogenesis', label: 'Synaptogenesis' },
+      { id: 'pathways', label: 'KEGG' },
+    ];
+    const expression: TocLeaf[] = [
+      { id: 'tissues', label: 'Tissues' },
+      { id: 'cengen', label: 'Neurons (CeNGEN)' },
+    ];
+    const related: TocLeaf[] = [
+      { id: 'interactions', label: 'Experimental (BioGRID)' },
+      { id: 'string-interactions', label: 'Predicted (STRING)' },
+      { id: 'similar', label: 'Annotation similarity' },
+      { id: 'cengen-coexpr', label: 'Co-expressed' },
+    ];
+    const literature: TocLeaf[] = [
+      { id: 'papers', label: 'References' },
+      { id: 'literature', label: 'All publications' },
+    ];
 
-    const perturbation: TocLeaf[] = [];
-    if (alleles.length > 0) perturbation.push({ id: 'alleles', label: 'Alleles' });
     void allelesExpanded; // alleles use <details>; flagged here for parity if that changes
-    if (phenotypes.length > 0) perturbation.push({ id: 'phenotypes', label: 'Phenotypes' });
-    if (diseases.length > 0) perturbation.push({ id: 'diseases', label: 'Diseases' });
-
-    const annotation: TocLeaf[] = [];
-    if (goAnnotations.length > 0) annotation.push({ id: 'go', label: 'Gene Ontology' });
-    if (wormcat?.category_1) annotation.push({ id: 'wormcat', label: 'WormCat' });
-    if (neuronal.length > 0) annotation.push({ id: 'neuronal', label: 'Neuronal class' });
-    if (synaptogenesis.length > 0)
-      annotation.push({ id: 'synaptogenesis', label: 'Synaptogenesis' });
-    if (pathways.length > 0) annotation.push({ id: 'pathways', label: 'KEGG' });
-
-    const expression: TocLeaf[] = [];
-    if (anatomy.length > 0) expression.push({ id: 'tissues', label: 'Tissues' });
-    if (cengen.length > 0) expression.push({ id: 'cengen', label: 'Neurons (CeNGEN)' });
-
-    const related: TocLeaf[] = [];
-    if (interactions.length > 0)
-      related.push({ id: 'interactions', label: 'Experimental (BioGRID)' });
-    if (stringInteractions.length > 0)
-      related.push({ id: 'string-interactions', label: 'Predicted (STRING)' });
-    if (cengenCoexpr.length > 0) related.push({ id: 'cengen-coexpr', label: 'Co-expressed' });
-    if (similar.length > 0) related.push({ id: 'similar', label: 'Annotation similarity' });
-
-    const literature: TocLeaf[] = [];
-    if (papers.length > 0) literature.push({ id: 'papers', label: 'References' });
-    if (literaturePapers.length > 0)
-      literature.push({ id: 'literature', label: 'All publications' });
-
-    const out: TocEntry[] = [{ label: 'Identity', children: identity }];
-    if (perturbation.length) out.push({ label: 'Perturbation', children: perturbation });
-    if (annotation.length) out.push({ label: 'Annotation', children: annotation });
-    if (expression.length) out.push({ label: 'Expression', children: expression });
-    if (related.length) out.push({ label: 'Related genes', children: related });
-    if (literature.length) out.push({ label: 'Literature', children: literature });
-    return out;
+    return [
+      { label: 'Identity', children: identity },
+      { label: 'Perturbation', children: perturbation },
+      { label: 'Annotation', children: annotation },
+      { label: 'Expression', children: expression },
+      { label: 'Related genes', children: related },
+      { label: 'Literature', children: literature },
+    ];
   });
 
   const xrefBundle = $derived.by(() => {
@@ -489,7 +488,7 @@
       {/if}
     </div>
 
-    {#if gene && bookmarks.has(gene.wormbase_gene) && bookmarks.get(gene.wormbase_gene)?.note}
+    {#if gene && bookmarks.get(gene.wormbase_gene)?.note}
       <div
         class="rounded-r-md border-l-4 border-amber-400 bg-amber-50/40 py-2 pl-3 text-sm dark:bg-amber-950/20"
       >
@@ -625,17 +624,10 @@
               <div class="text-sm italic text-muted-foreground">{gene.gene_class_description}</div>
             </Copyable>
           {/if}
+          <!-- Sequence name, gene type and status live in the summary row above; only
+               fields that row does not carry belong here. -->
           <div class="mt-2 flex flex-wrap gap-1.5">
-            {#if gene.sequence_name}
-              <Badge variant="secondary" class="font-mono">{gene.sequence_name}</Badge>
-            {/if}
-            {#if gene.gene_type}<Badge variant="secondary">{gene.gene_type}</Badge>{/if}
             {#if gene.operon}<Badge variant="secondary">operon: {gene.operon}</Badge>{/if}
-            {#if gene.status}
-              <Badge variant={gene.status.toLowerCase() === 'live' ? 'success' : 'muted'}>
-                {gene.status}
-              </Badge>
-            {/if}
             {#if gene.other_names}
               <Badge variant="outline">aka {gene.other_names}</Badge>
             {/if}
@@ -680,585 +672,6 @@
           </CardContent>
         {/if}
       </Card>
-
-      {#if xrefBundle.uniprot.length > 0 || xrefBundle.refseq.length > 0 || xrefBundle.insdc.length > 0}
-        <Card id="external">
-          <CardHeader class="pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              External resources
-              <ControlHint id="gene-external" title="External resources">
-                Cross-references from WormBase: UniProt (protein), RefSeq (NCBI transcript), INSDC
-                (sequence). Click any to jump to the canonical record.
-              </ControlHint>
-            </CardTitle>
-          </CardHeader>
-          <CardContent class="pt-0">
-            <div class="flex flex-wrap gap-2 text-sm">
-              <a
-                href="https://wormbase.org/species/c_elegans/gene/{gene.wormbase_gene}"
-                target="_blank"
-                rel="noopener"
-                class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
-              >
-                <span class="font-mono text-[0.6rem] text-muted-foreground">WB</span>
-                <span>{gene.wormbase_gene}</span>
-                <ExternalLink class="h-3 w-3 text-muted-foreground" />
-              </a>
-              <a
-                href="https://www.alliancegenome.org/gene/WB:{gene.wormbase_gene}"
-                target="_blank"
-                rel="noopener"
-                class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
-              >
-                <span class="font-mono text-[0.6rem] text-muted-foreground">Alliance</span>
-                <ExternalLink class="h-3 w-3 text-muted-foreground" />
-              </a>
-              {#each xrefBundle.uniprot.slice(0, 3) as acc (acc)}
-                <a
-                  href="https://www.uniprot.org/uniprotkb/{acc}/entry"
-                  target="_blank"
-                  rel="noopener"
-                  class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
-                >
-                  <span class="font-mono text-[0.6rem] text-muted-foreground">UniProt</span>
-                  <span class="font-mono">{acc}</span>
-                  <ExternalLink class="h-3 w-3 text-muted-foreground" />
-                </a>
-                <a
-                  href="https://alphafold.ebi.ac.uk/entry/{acc}"
-                  target="_blank"
-                  rel="noopener"
-                  class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
-                  title="Predicted 3D structure"
-                >
-                  <span class="font-mono text-[0.6rem] text-muted-foreground">AlphaFold</span>
-                  <span class="font-mono">{acc}</span>
-                  <ExternalLink class="h-3 w-3 text-muted-foreground" />
-                </a>
-              {/each}
-              {#each xrefBundle.refseq.slice(0, 2) as acc (acc)}
-                <a
-                  href="https://www.ncbi.nlm.nih.gov/protein/{acc}"
-                  target="_blank"
-                  rel="noopener"
-                  class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
-                >
-                  <span class="font-mono text-[0.6rem] text-muted-foreground">NCBI</span>
-                  <span class="font-mono">{acc}</span>
-                  <ExternalLink class="h-3 w-3 text-muted-foreground" />
-                </a>
-              {/each}
-            </div>
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if wormcat && (wormcat.category_1 || wormcat.category_2 || wormcat.category_3)}
-        <Card id="wormcat">
-          <CardHeader class="pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              WormCat
-              <ControlHint id="gene-wormcat" title="WormCat classification">
-                WormCat 2.0 functional category, three levels deep. Used by /enrichment and /gsea as
-                a coarser, worm-specific alternative to GO.
-              </ControlHint>
-            </CardTitle>
-          </CardHeader>
-          <CardContent class="pt-0">
-            <div class="flex flex-wrap items-center gap-2 text-sm">
-              {#if wormcat.category_1}
-                <Badge variant="secondary">{wormcat.category_1}</Badge>
-              {/if}
-              {#if wormcat.category_2 && wormcat.category_2 !== wormcat.category_1}
-                <span class="text-muted-foreground">›</span>
-                <Badge variant="secondary">{wormcat.category_2}</Badge>
-              {/if}
-              {#if wormcat.category_3 && wormcat.category_3 !== wormcat.category_2}
-                <span class="text-muted-foreground">›</span>
-                <Badge variant="secondary">{wormcat.category_3}</Badge>
-              {/if}
-            </div>
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if neuronal.length}
-        <Card id="neuronal">
-          <CardHeader class="pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Neuronal classification
-              <ControlHint id="gene-neuronal" title="Neuronal classification">
-                CeNGEN / Hobert-lab classification of neuronal-expressed genes by function
-                (transcription factor, neuropeptide, receptor, etc.) and by supercategory.
-              </ControlHint>
-            </CardTitle>
-          </CardHeader>
-          <CardContent class="space-y-1 pt-0">
-            {#each neuronal as n, i (i)}
-              <div class="flex items-center gap-2 text-sm">
-                {#if n.supercategory}<Badge variant="secondary">{n.supercategory}</Badge>{/if}
-                {#if n.category && n.category !== n.supercategory}
-                  <span class="text-muted-foreground">›</span>
-                  <Badge variant="secondary">{n.category}</Badge>
-                {/if}
-              </div>
-            {/each}
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if synaptogenesis.length}
-        <Card id="synaptogenesis">
-          <CardHeader class="pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Synaptogenesis panel
-              <ControlHint id="gene-synaptogenesis" title="Synaptogenesis panel">
-                Curated 215-gene panel grouped into 13 functional classes — proneural fate, terminal
-                selectors, active zone, SV release, innexins, postsynaptic, Wnt/PHR signaling, etc.
-                Source: Andrew lab pipeline. Each class links to the primary references that justify
-                its membership.
-              </ControlHint>
-            </CardTitle>
-          </CardHeader>
-          <CardContent class="space-y-2 pt-0">
-            {#each synaptogenesis as s, i (i)}
-              {@const meta = synaptoClassById(s.class)}
-              <div class="rounded-md border bg-card/50 p-2">
-                <div class="flex flex-wrap items-center gap-1.5 text-sm">
-                  <a
-                    href={resolve(`/?view=synaptogenesis&q=${encodeURIComponent(s.class)}`)}
-                    class="text-primary hover:underline"
-                  >
-                    <Badge variant="secondary">{meta?.label ?? s.class}</Badge>
-                  </a>
-                  {#if s.subclass}
-                    <span class="text-muted-foreground">›</span>
-                    <Badge variant="muted" class="text-[0.65rem]">{s.subclass}</Badge>
-                  {/if}
-                  {#if meta?.note}
-                    <Badge variant="outline" class="text-[0.6rem]">{meta.note}</Badge>
-                  {/if}
-                </div>
-                {#if s.notes}
-                  <div class="mt-1 text-xs text-muted-foreground">{s.notes}</div>
-                {/if}
-                {#if meta?.refIds && meta.refIds.length > 0}
-                  <div class="mt-1.5 flex flex-wrap gap-1">
-                    {#each meta.refIds as rid (rid)}
-                      {@const r = synaptoRefById(rid)}
-                      {#if r}
-                        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-                        <a
-                          href={synaptoDoiHref(r.doi)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
-                          class="inline-block rounded border bg-background px-1.5 py-0.5 font-mono text-[0.6rem] text-muted-foreground hover:bg-accent"
-                        >
-                          {rid}
-                        </a>
-                      {/if}
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {/each}
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if anatomy.length > 0}
-        <Card id="tissues">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Tissue expression
-              <ControlHint id="gene-tissue" title="Tissue expression">
-                From the Alliance expression atlas (modENCODE + EBI Expression Atlas aggregates),
-                mapped to WormBase Anatomy (WBbt) terms. Reflects published in-situ and RNA-seq
-                calls.
-              </ControlHint>
-            </CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">
-              {anatomy.length} tissues with reported expression
-            </span>
-          </CardHeader>
-          <CardContent class="pt-0">
-            <div class="flex flex-wrap gap-1.5">
-              {#each anatomyExpanded ? anatomy : anatomy.slice(0, CHIP_LIMIT) as t (t.term_id)}
-                <TermHover kind="tissue" id={t.term_id}>
-                  <a
-                    href="https://wormbase.org/species/all/anatomy_term/{t.term_id}"
-                    target="_blank"
-                    rel="noopener"
-                    class="inline-flex items-baseline gap-1 rounded border bg-card px-1.5 py-0.5 text-xs transition-colors hover:bg-accent"
-                    title={`${t.term_id} · ${t.n_evidence} evidence row${t.n_evidence === 1 ? '' : 's'}`}
-                  >
-                    <span>{t.name}</span>
-                    {#if t.n_evidence > 1}
-                      <span class="font-mono text-[0.6rem] text-muted-foreground"
-                        >{t.n_evidence}</span
-                      >
-                    {/if}
-                  </a>
-                </TermHover>
-              {/each}
-              <ExpandMore
-                total={anatomy.length}
-                shown={CHIP_LIMIT}
-                expanded={anatomyExpanded}
-                onToggle={(v) => (anatomyExpanded = v)}
-                label="tissues"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if cengen.length > 0 && gene}
-        <Card id="cengen">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Neuronal expression (CeNGEN L4)
-              <ControlHint id="gene-cengen" title="CeNGEN L4 expression">
-                Per-neuron-type TMM-normalized expression from the CeNGEN L4 integrated atlas
-                (Barrett et al. 2022, combines bulk + scRNA-seq). Mean across replicates of each
-                neuron type; threshold TMM &gt; 0.5. Use this for "is this gene expressed in neuron
-                X" answers; the Alliance Tissue expression card above is broader anatomy.
-              </ControlHint>
-            </CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">
-              {cengen.length} neuron type{cengen.length === 1 ? '' : 's'}
-            </span>
-          </CardHeader>
-          <CardContent class="pt-0">
-            <CengenStripPlot gene={gene.wormbase_gene} geneName={gene.gene_name} rows={cengen} />
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if goAnnotations.length}
-        <Card id="go">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              GO annotations
-              <ControlHint id="gene-go-list" title="GO annotations">
-                Direct curated GO terms (no ancestor propagation), grouped by namespace and sorted
-                by evidence-code reliability (experimental first). Hover any term for its
-                definition.
-              </ControlHint>
-            </CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">{goAnnotations.length}</span>
-          </CardHeader>
-          <CardContent class="space-y-4 pt-0">
-            <GoNamespaceDonut annotations={goAnnotations} exportName="go-namespace-donut" />
-            {#each Object.entries(goByNamespace) as [ns, items] (ns)}
-              {#if items.length}
-                <div>
-                  <div
-                    class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  >
-                    {NS_LABEL[ns] ?? ns} ({items.length})
-                  </div>
-                  <ul class="space-y-1.5 text-sm">
-                    {#each goExpanded[ns] ? items : items.slice(0, ROW_LIMIT) as a, i (i)}
-                      <li class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                        <TermHover kind="go" id={a.go_id}>
-                          <a
-                            href={resolve(`/go/${a.go_id}`)}
-                            class="font-mono text-xs text-primary hover:underline"
-                            title="View graph"
-                          >
-                            {a.go_id}
-                          </a>
-                        </TermHover>
-                        <TermHover kind="go" id={a.go_id}>
-                          <span>{a.name}</span>
-                        </TermHover>
-                        <Badge variant="outline" class="py-0 text-[0.6rem]">
-                          {a.evidence_code}
-                        </Badge>
-                        {#if a.qualifier}
-                          <span class="text-xs italic text-muted-foreground">{a.qualifier}</span>
-                        {/if}
-                      </li>
-                    {/each}
-                  </ul>
-                  {#if items.length > ROW_LIMIT}
-                    <div class="mt-2 flex">
-                      <ExpandMore
-                        total={items.length}
-                        shown={ROW_LIMIT}
-                        expanded={!!goExpanded[ns]}
-                        label="annotations"
-                        onToggle={(v) => (goExpanded = { ...goExpanded, [ns]: v })}
-                      />
-                    </div>
-                  {/if}
-                </div>
-                <Separator />
-              {/if}
-            {/each}
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if pathways.length > 0}
-        <Card id="pathways">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="text-base">KEGG pathways</CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">{pathways.length}</span>
-          </CardHeader>
-          <CardContent class="pt-0">
-            <ul class="flex flex-wrap gap-2 text-sm">
-              {#each pathways as p (p.pathway_id)}
-                <li>
-                  <a
-                    href={resolve(`/pathway/${p.pathway_id.replace(/^path:/, '')}`)}
-                    class="rounded border px-2 py-0.5 hover:bg-accent"
-                  >
-                    <span>{p.name}</span>
-                    <span class="ml-1 font-mono text-xs text-muted-foreground">
-                      {p.pathway_id.replace(/^path:/, '')}
-                    </span>
-                  </a>
-                </li>
-              {/each}
-            </ul>
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if phenotypes.length > 0}
-        <Card id="phenotypes">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Phenotypes
-              <ControlHint id="gene-pheno" title="Phenotypes">
-                Phenotypes observed when this gene is perturbed (RNAi or allele). Grouped by
-                phenotype ontology term; numbers indicate distinct alleles/experiments. Hover any
-                term for the WBPhenotype definition.
-              </ControlHint>
-            </CardTitle>
-            {@const rnaiOnlyCount = phenotypes.filter((p) => p.n_alleles === 0).length}
-            <span class="font-mono text-xs text-muted-foreground">
-              {phenotypes.length} terms · {alleles.length} alleles{rnaiOnlyCount > 0
-                ? ` · ${rnaiOnlyCount} RNAi-only`
-                : ''}
-            </span>
-          </CardHeader>
-          <CardContent class="space-y-4 pt-0">
-            {#if phenotypeCategories.length > 0}
-              <PhenotypeCategoryHeatmap categories={phenotypeCategories} />
-            {/if}
-            {#if gene && phenotypes.length > 0}
-              <MiniPhenotypeGraph {phenotypes} focalGene={gene.wormbase_gene} />
-            {/if}
-            <div class="flex flex-wrap gap-1">
-              {#each phenotypesExpanded ? phenotypes : phenotypes.slice(0, CHIP_LIMIT) as p (p.term_id)}
-                {@const rnaiOnly = p.n_alleles === 0 && p.n_evidence > 0}
-                {@const ev = rnaiByPhenotype.get(p.term_id)}
-                <TermHover kind="phenotype" id={p.term_id}>
-                  {#snippet footer()}
-                    {#if ev}
-                      <div class="space-y-1">
-                        <div class="text-[0.65rem] text-muted-foreground">
-                          Scored by {ev.reagents.length} RNAi experiment{ev.reagents.length === 1
-                            ? ''
-                            : 's'}{ev.papers.size > 0
-                            ? ` across ${ev.papers.size} paper${ev.papers.size === 1 ? '' : 's'}`
-                            : ''}
-                        </div>
-                        <div class="flex flex-wrap gap-1">
-                          <!-- eslint-disable svelte/no-navigation-without-resolve -->
-                          {#each ev.reagents.slice(0, 8) as id (id)}
-                            <a
-                              href={`https://wormbase.org/species/c_elegans/rnai/${id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="rounded border bg-card px-1 py-0.5 font-mono text-[0.55rem] text-muted-foreground hover:bg-accent hover:text-foreground"
-                              title="Clone and library on WormBase"
-                            >
-                              {id.replace('WBRNAi', '')}
-                            </a>
-                          {/each}
-                          <!-- eslint-enable svelte/no-navigation-without-resolve -->
-                          {#if ev.reagents.length > 8}
-                            <span class="text-[0.55rem] text-muted-foreground"
-                              >+{ev.reagents.length - 8}</span
-                            >
-                          {/if}
-                        </div>
-                      </div>
-                    {/if}
-                  {/snippet}
-                  <a
-                    href={resolve(`/phenotype/${p.term_id}`)}
-                    class="inline-flex items-baseline gap-1 rounded border bg-card px-1.5 py-0.5 text-xs transition-colors hover:bg-accent"
-                    title={rnaiOnly
-                      ? `${p.term_id} · scored by ${ev ? ev.reagents.length : p.n_evidence} RNAi experiment${(ev ? ev.reagents.length : p.n_evidence) === 1 ? '' : 's'}${ev && ev.papers.size > 0 ? ` across ${ev.papers.size} paper${ev.papers.size === 1 ? '' : 's'}` : ''}${ev ? `: ${ev.reagents.slice(0, 6).join(', ')}${ev.reagents.length > 6 ? ' ...' : ''}` : ''}`
-                      : `${p.term_id} · ${p.n_alleles} allele${p.n_alleles === 1 ? '' : 's'}${p.n_evidence > p.n_alleles ? ` + ${p.n_evidence - p.n_alleles} other evidence` : ''}`}
-                  >
-                    <span>{p.name}</span>
-                    {#if rnaiOnly}
-                      <span
-                        class="font-mono text-[0.55rem] uppercase tracking-wider text-amber-700 dark:text-amber-400"
-                        >RNAi</span
-                      >
-                      <span class="font-mono text-[0.6rem] text-muted-foreground"
-                        >{ev ? ev.reagents.length : p.n_evidence}</span
-                      >
-                    {:else}
-                      <span class="font-mono text-[0.6rem] text-muted-foreground"
-                        >{p.n_alleles}</span
-                      >
-                    {/if}
-                  </a>
-                </TermHover>
-              {/each}
-              <ExpandMore
-                total={phenotypes.length}
-                shown={CHIP_LIMIT}
-                expanded={phenotypesExpanded}
-                onToggle={(v) => (phenotypesExpanded = v)}
-                label="phenotypes"
-              />
-            </div>
-
-            {@const matrixPhenotypes = phenotypes.filter((p) => p.n_alleles > 0)}
-            {#if alleles.length >= 2 && matrixPhenotypes.length >= 2}
-              <div>
-                <div
-                  class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                >
-                  Allele × phenotype matrix
-                </div>
-                <AllelePhenotypeMatrix {alleles} phenotypes={matrixPhenotypes} />
-              </div>
-            {/if}
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if alleles.length > 0}
-        <Card id="alleles">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Alleles
-              <ControlHint id="gene-alleles" title="Alleles">
-                Reported variants for this gene with their molecular nature (point mutation,
-                deletion, knockout etc) and any associated phenotypes. Drawn from WormBase variation
-                records.
-              </ControlHint>
-            </CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">
-              {alleles.length} with phenotype data
-            </span>
-          </CardHeader>
-          <CardContent class="space-y-3 pt-0">
-            <div>
-              <div
-                class="mb-1.5 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-              >
-                Phenotype coverage per allele
-              </div>
-              <AllelePhenotypeBar {alleles} />
-            </div>
-            <details class="text-sm">
-              <summary class="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
-                Show full phenotype list per allele
-              </summary>
-              <div class="mt-2 max-h-72 overflow-x-auto overflow-y-auto rounded-md border bg-card">
-                <table class="w-full text-sm">
-                  <thead class="sticky top-0 border-b bg-card">
-                    <tr>
-                      <th
-                        class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                      >
-                        Allele
-                      </th>
-                      <th
-                        class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                      >
-                        Phenotypes
-                      </th>
-                      <th
-                        class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                      >
-                        Phenotype list (truncated)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {#each alleles as a (a.allele_id)}
-                      <tr class="border-b last:border-b-0 hover:bg-muted/30">
-                        <td class="px-3 py-1.5 align-top">
-                          <a
-                            href="https://wormbase.org/species/c_elegans/variation/{a.allele_id}"
-                            target="_blank"
-                            rel="noopener"
-                            class="font-mono text-[0.65rem] text-primary hover:underline"
-                          >
-                            {a.allele_id}
-                          </a>
-                        </td>
-                        <td class="px-3 py-1.5 text-right font-mono text-xs tabular-nums"
-                          >{a.n_phenotypes}</td
-                        >
-                        <td class="max-w-[40ch] truncate px-3 py-1.5 text-xs text-muted-foreground">
-                          {a.phenotype_names.split(',').slice(0, 4).join(', ')}{a.n_phenotypes > 4
-                            ? '...'
-                            : ''}
-                        </td>
-                      </tr>
-                    {/each}
-                  </tbody>
-                </table>
-              </div>
-            </details>
-          </CardContent>
-        </Card>
-      {/if}
-
-      {#if diseases.length > 0}
-        <Card id="diseases">
-          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Human diseases
-              <ControlHint id="gene-diseases" title="Disease associations">
-                Disease Ontology (DOID) terms linked to this gene by the Alliance of Genome
-                Resources, inferred via human ortholog or assigned directly by WB curators. Number
-                is the count of supporting evidence rows.
-              </ControlHint>
-            </CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">
-              {diseases.length} term{diseases.length === 1 ? '' : 's'}
-            </span>
-          </CardHeader>
-          <CardContent class="pt-0">
-            <div class="flex flex-wrap gap-1.5">
-              {#each diseasesExpanded ? diseases : diseases.slice(0, CHIP_LIMIT) as d (d.do_id)}
-                <a
-                  href={resolve(`/disease/${d.do_id}`)}
-                  class="inline-flex items-baseline gap-1.5 rounded border bg-card px-1.5 py-0.5 text-xs transition-colors hover:bg-accent"
-                  title={`${d.do_id} · ${d.association_type ?? ''}${d.with_ortholog ? ' · via ' + d.with_ortholog : ''}`}
-                >
-                  <span>{d.do_name}</span>
-                  <span class="font-mono text-[0.6rem] text-muted-foreground"
-                    >{d.evidence_count}</span
-                  >
-                </a>
-              {/each}
-              <ExpandMore
-                total={diseases.length}
-                shown={CHIP_LIMIT}
-                expanded={diseasesExpanded}
-                onToggle={(v) => (diseasesExpanded = v)}
-                label="diseases"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      {/if}
 
       {#if orthologs.length > 0}
         <Card id="phylo">
@@ -1388,6 +801,662 @@
             </div>
           </CardContent>
         </Card>
+      {:else}
+        <EmptyPanel
+          id="phylo"
+          title="Phylogenetic footprint"
+          message="No orthologs found, so there is no conservation profile to draw."
+        />
+        <EmptyPanel
+          id="orthologs"
+          title="Orthologs"
+          message="No orthologs for this gene in the Alliance orthology set."
+        />
+      {/if}
+
+      {#if xrefBundle.uniprot.length > 0 || xrefBundle.refseq.length > 0 || xrefBundle.insdc.length > 0}
+        <Card id="external">
+          <CardHeader class="pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              External resources
+              <ControlHint id="gene-external" title="External resources">
+                Cross-references from WormBase: UniProt (protein), RefSeq (NCBI transcript), INSDC
+                (sequence). Click any to jump to the canonical record.
+              </ControlHint>
+            </CardTitle>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <div class="flex flex-wrap gap-2 text-sm">
+              <a
+                href="https://wormbase.org/species/c_elegans/gene/{gene.wormbase_gene}"
+                target="_blank"
+                rel="noopener"
+                class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
+              >
+                <span class="font-mono text-[0.6rem] text-muted-foreground">WB</span>
+                <span>{gene.wormbase_gene}</span>
+                <ExternalLink class="h-3 w-3 text-muted-foreground" />
+              </a>
+              <a
+                href="https://www.alliancegenome.org/gene/WB:{gene.wormbase_gene}"
+                target="_blank"
+                rel="noopener"
+                class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
+              >
+                <span class="font-mono text-[0.6rem] text-muted-foreground">Alliance</span>
+                <ExternalLink class="h-3 w-3 text-muted-foreground" />
+              </a>
+              {#each xrefBundle.uniprot.slice(0, 3) as acc (acc)}
+                <a
+                  href="https://www.uniprot.org/uniprotkb/{acc}/entry"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
+                >
+                  <span class="font-mono text-[0.6rem] text-muted-foreground">UniProt</span>
+                  <span class="font-mono">{acc}</span>
+                  <ExternalLink class="h-3 w-3 text-muted-foreground" />
+                </a>
+                <a
+                  href="https://alphafold.ebi.ac.uk/entry/{acc}"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
+                  title="Predicted 3D structure"
+                >
+                  <span class="font-mono text-[0.6rem] text-muted-foreground">AlphaFold</span>
+                  <span class="font-mono">{acc}</span>
+                  <ExternalLink class="h-3 w-3 text-muted-foreground" />
+                </a>
+              {/each}
+              {#each xrefBundle.refseq.slice(0, 2) as acc (acc)}
+                <a
+                  href="https://www.ncbi.nlm.nih.gov/protein/{acc}"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 transition-colors hover:bg-accent"
+                >
+                  <span class="font-mono text-[0.6rem] text-muted-foreground">NCBI</span>
+                  <span class="font-mono">{acc}</span>
+                  <ExternalLink class="h-3 w-3 text-muted-foreground" />
+                </a>
+              {/each}
+            </div>
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="external"
+          title="External resources"
+          message="No UniProt, RefSeq or INSDC cross-references in WormBase for this gene."
+        />
+      {/if}
+
+      {#if alleles.length > 0}
+        <Card id="alleles">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Alleles
+              <ControlHint id="gene-alleles" title="Alleles">
+                Reported variants for this gene with their molecular nature (point mutation,
+                deletion, knockout etc) and any associated phenotypes. Drawn from WormBase variation
+                records.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">
+              {alleles.length} with phenotype data
+            </span>
+          </CardHeader>
+          <CardContent class="space-y-3 pt-0">
+            <div>
+              <div
+                class="mb-1.5 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                Phenotype coverage per allele
+              </div>
+              <AllelePhenotypeBar {alleles} />
+            </div>
+            <details class="text-sm">
+              <summary class="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+                Show full phenotype list per allele
+              </summary>
+              <div class="mt-2 max-h-72 overflow-x-auto overflow-y-auto rounded-md border bg-card">
+                <table class="w-full text-sm">
+                  <thead class="sticky top-0 border-b bg-card">
+                    <tr>
+                      <th
+                        class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                      >
+                        Allele
+                      </th>
+                      <th
+                        class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                      >
+                        Phenotypes
+                      </th>
+                      <th
+                        class="px-3 py-2 text-left text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                      >
+                        Phenotype list (truncated)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each alleles as a (a.allele_id)}
+                      <tr class="border-b last:border-b-0 hover:bg-muted/30">
+                        <td class="px-3 py-1.5 align-top">
+                          <a
+                            href="https://wormbase.org/species/c_elegans/variation/{a.allele_id}"
+                            target="_blank"
+                            rel="noopener"
+                            class="font-mono text-[0.65rem] text-primary hover:underline"
+                          >
+                            {a.allele_id}
+                          </a>
+                        </td>
+                        <td class="px-3 py-1.5 text-right font-mono text-xs tabular-nums"
+                          >{a.n_phenotypes}</td
+                        >
+                        <td class="max-w-[40ch] truncate px-3 py-1.5 text-xs text-muted-foreground">
+                          {a.phenotype_names.split(',').slice(0, 4).join(', ')}{a.n_phenotypes > 4
+                            ? '...'
+                            : ''}
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="alleles"
+          title="Alleles"
+          message="No alleles or variants recorded in WormBase for this gene."
+        />
+      {/if}
+
+      {#if phenotypes.length > 0}
+        <Card id="phenotypes">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Phenotypes
+              <ControlHint id="gene-pheno" title="Phenotypes">
+                Phenotypes observed when this gene is perturbed (RNAi or allele). Grouped by
+                phenotype ontology term; numbers indicate distinct alleles/experiments. Hover any
+                term for the WBPhenotype definition.
+              </ControlHint>
+            </CardTitle>
+            {@const rnaiOnlyCount = phenotypes.filter((p) => p.n_alleles === 0).length}
+            <span class="font-mono text-xs text-muted-foreground">
+              {phenotypes.length} terms · {alleles.length} alleles{rnaiOnlyCount > 0
+                ? ` · ${rnaiOnlyCount} RNAi-only`
+                : ''}
+            </span>
+          </CardHeader>
+          <CardContent class="space-y-4 pt-0">
+            {#if phenotypeCategories.length > 0}
+              <PhenotypeCategoryHeatmap categories={phenotypeCategories} />
+            {/if}
+            {#if gene && phenotypes.length > 0}
+              <MiniPhenotypeGraph {phenotypes} focalGene={gene.wormbase_gene} />
+            {/if}
+            <div class="flex flex-wrap gap-1">
+              {#each phenotypesExpanded ? phenotypes : phenotypes.slice(0, CHIP_LIMIT) as p (p.term_id)}
+                {@const rnaiOnly = p.n_alleles === 0 && p.n_evidence > 0}
+                {@const ev = rnaiByPhenotype.get(p.term_id)}
+                <TermHover kind="phenotype" id={p.term_id}>
+                  {#snippet footer()}
+                    {#if ev}
+                      <div class="space-y-1">
+                        <div class="text-[0.65rem] text-muted-foreground">
+                          Scored by {ev.reagents.length} RNAi experiment{ev.reagents.length === 1
+                            ? ''
+                            : 's'}{ev.papers.size > 0
+                            ? ` across ${ev.papers.size} paper${ev.papers.size === 1 ? '' : 's'}`
+                            : ''}
+                        </div>
+                        <div class="flex flex-wrap gap-1">
+                          <!-- eslint-disable svelte/no-navigation-without-resolve -->
+                          {#each ev.reagents.slice(0, 8) as id (id)}
+                            <a
+                              href={`https://wormbase.org/species/c_elegans/rnai/${id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="rounded border bg-card px-1 py-0.5 font-mono text-[0.55rem] text-muted-foreground hover:bg-accent hover:text-foreground"
+                              title="Clone and library on WormBase"
+                            >
+                              {id.replace('WBRNAi', '')}
+                            </a>
+                          {/each}
+                          <!-- eslint-enable svelte/no-navigation-without-resolve -->
+                          {#if ev.reagents.length > 8}
+                            <span class="text-[0.55rem] text-muted-foreground"
+                              >+{ev.reagents.length - 8}</span
+                            >
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+                  {/snippet}
+                  <a
+                    href={resolve(`/phenotype/${p.term_id}`)}
+                    class="inline-flex items-baseline gap-1 rounded border bg-card px-1.5 py-0.5 text-xs transition-colors hover:bg-accent"
+                    title={rnaiOnly
+                      ? `${p.term_id} · scored by ${ev ? ev.reagents.length : p.n_evidence} RNAi experiment${(ev ? ev.reagents.length : p.n_evidence) === 1 ? '' : 's'}${ev && ev.papers.size > 0 ? ` across ${ev.papers.size} paper${ev.papers.size === 1 ? '' : 's'}` : ''}${ev ? `: ${ev.reagents.slice(0, 6).join(', ')}${ev.reagents.length > 6 ? ' ...' : ''}` : ''}`
+                      : `${p.term_id} · ${p.n_alleles} allele${p.n_alleles === 1 ? '' : 's'}${p.n_evidence > p.n_alleles ? ` + ${p.n_evidence - p.n_alleles} other evidence` : ''}`}
+                  >
+                    <span>{p.name}</span>
+                    {#if rnaiOnly}
+                      <span
+                        class="font-mono text-[0.55rem] uppercase tracking-wider text-amber-700 dark:text-amber-400"
+                        >RNAi</span
+                      >
+                      <span class="font-mono text-[0.6rem] text-muted-foreground"
+                        >{ev ? ev.reagents.length : p.n_evidence}</span
+                      >
+                    {:else}
+                      <span class="font-mono text-[0.6rem] text-muted-foreground"
+                        >{p.n_alleles}</span
+                      >
+                    {/if}
+                  </a>
+                </TermHover>
+              {/each}
+              <ExpandMore
+                total={phenotypes.length}
+                shown={CHIP_LIMIT}
+                expanded={phenotypesExpanded}
+                onToggle={(v) => (phenotypesExpanded = v)}
+                label="phenotypes"
+              />
+            </div>
+
+            {@const matrixPhenotypes = phenotypes.filter((p) => p.n_alleles > 0)}
+            {#if alleles.length >= 2 && matrixPhenotypes.length >= 2}
+              <div>
+                <div
+                  class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  Allele × phenotype matrix
+                </div>
+                <AllelePhenotypeMatrix {alleles} phenotypes={matrixPhenotypes} />
+              </div>
+            {/if}
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="phenotypes"
+          title="Phenotypes"
+          message="No phenotypes reported for this gene from RNAi or allele studies."
+        />
+      {/if}
+
+      {#if diseases.length > 0}
+        <Card id="diseases">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Human diseases
+              <ControlHint id="gene-diseases" title="Disease associations">
+                Disease Ontology (DOID) terms linked to this gene by the Alliance of Genome
+                Resources, inferred via human ortholog or assigned directly by WB curators. Number
+                is the count of supporting evidence rows.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">
+              {diseases.length} term{diseases.length === 1 ? '' : 's'}
+            </span>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <div class="flex flex-wrap gap-1.5">
+              {#each diseasesExpanded ? diseases : diseases.slice(0, CHIP_LIMIT) as d (d.do_id)}
+                <a
+                  href={resolve(`/disease/${d.do_id}`)}
+                  class="inline-flex items-baseline gap-1.5 rounded border bg-card px-1.5 py-0.5 text-xs transition-colors hover:bg-accent"
+                  title={`${d.do_id} · ${d.association_type ?? ''}${d.with_ortholog ? ' · via ' + d.with_ortholog : ''}`}
+                >
+                  <span>{d.do_name}</span>
+                  <span class="font-mono text-[0.6rem] text-muted-foreground"
+                    >{d.evidence_count}</span
+                  >
+                </a>
+              {/each}
+              <ExpandMore
+                total={diseases.length}
+                shown={CHIP_LIMIT}
+                expanded={diseasesExpanded}
+                onToggle={(v) => (diseasesExpanded = v)}
+                label="diseases"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="diseases"
+          title="Human diseases"
+          message="No human disease associations from the Alliance for this gene."
+        />
+      {/if}
+
+      {#if goAnnotations.length}
+        <Card id="go">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              GO annotations
+              <ControlHint id="gene-go-list" title="GO annotations">
+                Direct curated GO terms (no ancestor propagation), grouped by namespace and sorted
+                by evidence-code reliability (experimental first). Hover any term for its
+                definition.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">{goAnnotations.length}</span>
+          </CardHeader>
+          <CardContent class="space-y-4 pt-0">
+            <GoNamespaceDonut annotations={goAnnotations} exportName="go-namespace-donut" />
+            {#each Object.entries(goByNamespace) as [ns, items] (ns)}
+              {#if items.length}
+                <div>
+                  <div
+                    class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    {NS_LABEL[ns] ?? ns} ({items.length})
+                  </div>
+                  <ul class="space-y-1.5 text-sm">
+                    {#each goExpanded[ns] ? items : items.slice(0, ROW_LIMIT) as a, i (i)}
+                      <li class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <TermHover kind="go" id={a.go_id}>
+                          <a
+                            href={resolve(`/go/${a.go_id}`)}
+                            class="font-mono text-xs text-primary hover:underline"
+                            title="View graph"
+                          >
+                            {a.go_id}
+                          </a>
+                        </TermHover>
+                        <TermHover kind="go" id={a.go_id}>
+                          <span>{a.name}</span>
+                        </TermHover>
+                        <Badge variant="outline" class="py-0 text-[0.6rem]">
+                          {a.evidence_code}
+                        </Badge>
+                        {#if a.qualifier}
+                          <span class="text-xs italic text-muted-foreground">{a.qualifier}</span>
+                        {/if}
+                      </li>
+                    {/each}
+                  </ul>
+                  {#if items.length > ROW_LIMIT}
+                    <div class="mt-2 flex">
+                      <ExpandMore
+                        total={items.length}
+                        shown={ROW_LIMIT}
+                        expanded={!!goExpanded[ns]}
+                        label="annotations"
+                        onToggle={(v) => (goExpanded = { ...goExpanded, [ns]: v })}
+                      />
+                    </div>
+                  {/if}
+                </div>
+                <Separator />
+              {/if}
+            {/each}
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="go"
+          title="GO annotations"
+          message="No GO annotations curated by WormBase for this gene."
+        />
+      {/if}
+
+      {#if wormcat && (wormcat.category_1 || wormcat.category_2 || wormcat.category_3)}
+        <Card id="wormcat">
+          <CardHeader class="pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              WormCat
+              <ControlHint id="gene-wormcat" title="WormCat classification">
+                WormCat 2.0 functional category, three levels deep. Used by /enrichment and /gsea as
+                a coarser, worm-specific alternative to GO.
+              </ControlHint>
+            </CardTitle>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <div class="flex flex-wrap items-center gap-2 text-sm">
+              {#if wormcat.category_1}
+                <Badge variant="secondary">{wormcat.category_1}</Badge>
+              {/if}
+              {#if wormcat.category_2 && wormcat.category_2 !== wormcat.category_1}
+                <span class="text-muted-foreground">›</span>
+                <Badge variant="secondary">{wormcat.category_2}</Badge>
+              {/if}
+              {#if wormcat.category_3 && wormcat.category_3 !== wormcat.category_2}
+                <span class="text-muted-foreground">›</span>
+                <Badge variant="secondary">{wormcat.category_3}</Badge>
+              {/if}
+            </div>
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="wormcat"
+          title="WormCat"
+          message="This gene is not assigned to a WormCat category."
+        />
+      {/if}
+
+      {#if neuronal.length}
+        <Card id="neuronal">
+          <CardHeader class="pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Neuronal classification
+              <ControlHint id="gene-neuronal" title="Neuronal classification">
+                CeNGEN / Hobert-lab classification of neuronal-expressed genes by function
+                (transcription factor, neuropeptide, receptor, etc.) and by supercategory.
+              </ControlHint>
+            </CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-1 pt-0">
+            {#each neuronal as n, i (i)}
+              <div class="flex items-center gap-2 text-sm">
+                {#if n.supercategory}<Badge variant="secondary">{n.supercategory}</Badge>{/if}
+                {#if n.category && n.category !== n.supercategory}
+                  <span class="text-muted-foreground">›</span>
+                  <Badge variant="secondary">{n.category}</Badge>
+                {/if}
+              </div>
+            {/each}
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="neuronal"
+          title="Neuronal classification"
+          message="This gene is not in Hobert's survey of neuronal gene classes."
+        />
+      {/if}
+
+      {#if synaptogenesis.length}
+        <Card id="synaptogenesis">
+          <CardHeader class="pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Synaptogenesis panel
+              <ControlHint id="gene-synaptogenesis" title="Synaptogenesis panel">
+                Curated 215-gene panel grouped into 13 functional classes — proneural fate, terminal
+                selectors, active zone, SV release, innexins, postsynaptic, Wnt/PHR signaling, etc.
+                Source: Andrew lab pipeline. Each class links to the primary references that justify
+                its membership.
+              </ControlHint>
+            </CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-2 pt-0">
+            {#each synaptogenesis as s, i (i)}
+              {@const meta = synaptoClassById(s.class)}
+              <div class="rounded-md border bg-card/50 p-2">
+                <div class="flex flex-wrap items-center gap-1.5 text-sm">
+                  <a
+                    href={resolve(`/?view=synaptogenesis&q=${encodeURIComponent(s.class)}`)}
+                    class="text-primary hover:underline"
+                  >
+                    <Badge variant="secondary">{meta?.label ?? s.class}</Badge>
+                  </a>
+                  {#if s.subclass}
+                    <span class="text-muted-foreground">›</span>
+                    <Badge variant="muted" class="text-[0.65rem]">{s.subclass}</Badge>
+                  {/if}
+                  {#if meta?.note}
+                    <Badge variant="outline" class="text-[0.6rem]">{meta.note}</Badge>
+                  {/if}
+                </div>
+                {#if s.notes}
+                  <div class="mt-1 text-xs text-muted-foreground">{s.notes}</div>
+                {/if}
+                {#if meta?.refIds && meta.refIds.length > 0}
+                  <div class="mt-1.5 flex flex-wrap gap-1">
+                    {#each meta.refIds as rid (rid)}
+                      {@const r = synaptoRefById(rid)}
+                      {#if r}
+                        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+                        <a
+                          href={synaptoDoiHref(r.doi)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
+                          class="inline-block rounded border bg-background px-1.5 py-0.5 font-mono text-[0.6rem] text-muted-foreground hover:bg-accent"
+                        >
+                          {rid}
+                        </a>
+                      {/if}
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/each}
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="synaptogenesis"
+          title="Synaptogenesis panel"
+          message="This gene is not in the curated synaptogenesis panel."
+        />
+      {/if}
+
+      {#if pathways.length > 0}
+        <Card id="pathways">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="text-base">KEGG pathways</CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">{pathways.length}</span>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <ul class="flex flex-wrap gap-2 text-sm">
+              {#each pathways as p (p.pathway_id)}
+                <li>
+                  <a
+                    href={resolve(`/pathway/${p.pathway_id.replace(/^path:/, '')}`)}
+                    class="rounded border px-2 py-0.5 hover:bg-accent"
+                  >
+                    <span>{p.name}</span>
+                    <span class="ml-1 font-mono text-xs text-muted-foreground">
+                      {p.pathway_id.replace(/^path:/, '')}
+                    </span>
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="pathways"
+          title="KEGG pathways"
+          message="This gene is not a member of any KEGG pathway."
+        />
+      {/if}
+
+      {#if anatomy.length > 0}
+        <Card id="tissues">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Tissue expression
+              <ControlHint id="gene-tissue" title="Tissue expression">
+                From the Alliance expression atlas (modENCODE + EBI Expression Atlas aggregates),
+                mapped to WormBase Anatomy (WBbt) terms. Reflects published in-situ and RNA-seq
+                calls.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">
+              {anatomy.length} tissues with reported expression
+            </span>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <div class="flex flex-wrap gap-1.5">
+              {#each anatomyExpanded ? anatomy : anatomy.slice(0, CHIP_LIMIT) as t (t.term_id)}
+                <TermHover kind="tissue" id={t.term_id}>
+                  <a
+                    href="https://wormbase.org/species/all/anatomy_term/{t.term_id}"
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-flex items-baseline gap-1 rounded border bg-card px-1.5 py-0.5 text-xs transition-colors hover:bg-accent"
+                    title={`${t.term_id} · ${t.n_evidence} evidence row${t.n_evidence === 1 ? '' : 's'}`}
+                  >
+                    <span>{t.name}</span>
+                    {#if t.n_evidence > 1}
+                      <span class="font-mono text-[0.6rem] text-muted-foreground"
+                        >{t.n_evidence}</span
+                      >
+                    {/if}
+                  </a>
+                </TermHover>
+              {/each}
+              <ExpandMore
+                total={anatomy.length}
+                shown={CHIP_LIMIT}
+                expanded={anatomyExpanded}
+                onToggle={(v) => (anatomyExpanded = v)}
+                label="tissues"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="tissues"
+          title="Tissue expression"
+          message="No tissue expression reported for this gene in the Alliance expression atlas."
+        />
+      {/if}
+
+      {#if cengen.length > 0 && gene}
+        <Card id="cengen">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Neuronal expression (CeNGEN L4)
+              <ControlHint id="gene-cengen" title="CeNGEN L4 expression">
+                Per-neuron-type TMM-normalized expression from the CeNGEN L4 integrated atlas
+                (Barrett et al. 2022, combines bulk + scRNA-seq). Mean across replicates of each
+                neuron type; threshold TMM &gt; 0.5. Use this for "is this gene expressed in neuron
+                X" answers; the Alliance Tissue expression card above is broader anatomy.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">
+              {cengen.length} neuron type{cengen.length === 1 ? '' : 's'}
+            </span>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <CengenStripPlot gene={gene.wormbase_gene} geneName={gene.gene_name} rows={cengen} />
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="cengen"
+          title="Neuronal expression (CeNGEN L4)"
+          message="This gene was not detected in the CeNGEN L4 single-cell atlas."
+        />
       {/if}
 
       {#if interactions.length > 0}
@@ -1459,6 +1528,12 @@
             </div>
           </CardContent>
         </Card>
+      {:else}
+        <EmptyPanel
+          id="interactions"
+          title="Interactions"
+          message="No physical or genetic interactions reported for this gene in BioGRID."
+        />
       {/if}
 
       {#if stringInteractions.length > 0}
@@ -1473,6 +1548,109 @@
             <StringInteractionsCard interactions={stringInteractions} />
           </CardContent>
         </Card>
+      {:else}
+        <EmptyPanel
+          id="string-interactions"
+          title="STRING predictions"
+          message="No predicted functional partners for this gene in STRING."
+        />
+      {/if}
+
+      {#if similar.length > 0}
+        <Card id="similar">
+          <CardHeader class="flex flex-row flex-wrap items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Similar genes
+              <ControlHint id="gene-similar" title="Similar genes">
+                Ranked by shared GO and WormCat annotations, both IDF-weighted so a rare category
+                counts for more than a broad one, plus shared neuronal categories and interaction
+                partners. Direct annotations only — propagated GO ancestors aren't used so
+                similarity isn't dominated by trivial parents.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">
+              showing {Math.min(similarShown, similar.length)} of top {similar.length} ranked
+            </span>
+            <div class="text-xs text-muted-foreground">
+              Ranked by IDF-weighted shared GO terms (with is_a ancestors) and WormCat categories,
+              plus shared neuronal categories and interaction partners.
+            </div>
+          </CardHeader>
+          <CardContent class="space-y-2 pt-0">
+            {#each similar.slice(0, similarShown) as s (s.wormbase_gene)}
+              <div class="border-b pb-2 last:border-b-0 last:pb-0">
+                <div class="flex items-baseline gap-2 text-sm">
+                  <GenePill id={s.wormbase_gene} name={s.gene_name} variant="inline" />
+                  {#if s.concise_description}
+                    <span class="flex-1 truncate text-xs text-muted-foreground">
+                      {s.concise_description}
+                    </span>
+                  {/if}
+                  <div class="flex shrink-0 gap-1">
+                    {#if s.shared_go > 0}
+                      <Badge
+                        variant="muted"
+                        class="px-1 py-0 text-[0.55rem] tabular-nums"
+                        title="Direct GO terms shared (IDF-weighted score: {s.shared_go_score.toFixed(
+                          1,
+                        )})"
+                      >
+                        {s.shared_go} GO
+                      </Badge>
+                    {/if}
+                    {#if s.shared_wormcat > 0}
+                      <Badge variant="muted" class="px-1 py-0 text-[0.55rem]"
+                        >{s.shared_wormcat} wc</Badge
+                      >
+                    {/if}
+                    {#if s.shared_neuronal > 0}
+                      <Badge variant="muted" class="px-1 py-0 text-[0.55rem]"
+                        >{s.shared_neuronal} neu</Badge
+                      >
+                    {/if}
+                    {#if s.shared_partners > 0}
+                      <Badge variant="muted" class="px-1 py-0 text-[0.55rem]">
+                        {s.shared_partners} ix
+                      </Badge>
+                    {/if}
+                  </div>
+                </div>
+                {#if s.top_shared.length > 0}
+                  <div class="mt-1 pl-2 text-[0.65rem] leading-snug text-muted-foreground">
+                    <span class="mr-1">Shares:</span
+                    >{#each s.top_shared as t, i (t.go_id)}{#if i > 0},
+                      {/if}<TermHover kind="go" id={t.go_id}
+                        ><a
+                          href={resolve(`/go/${t.go_id}`)}
+                          class="hover:text-primary"
+                          title={t.go_id}>{t.name}</a
+                        ></TermHover
+                      >{/each}
+                  </div>
+                {/if}
+              </div>
+            {/each}
+            <div class="flex">
+              <ExpandMore
+                total={similar.length}
+                shown={similarShown}
+                expanded={similarShown > ROW_LIMIT}
+                step={ROW_LIMIT}
+                onToggle={(more) =>
+                  (similarShown = more
+                    ? Math.min(similar.length, similarShown + ROW_LIMIT)
+                    : ROW_LIMIT)}
+                label="similar genes"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="similar"
+          title="Similar genes"
+          message="No other gene shares enough annotations with this one to rank as similar."
+        />
       {/if}
 
       {#if cengenCoexpr.length > 0 && gene}
@@ -1599,97 +1777,12 @@
             {/if}
           </CardContent>
         </Card>
-      {/if}
-
-      {#if similar.length > 0}
-        <Card id="similar">
-          <CardHeader class="flex flex-row flex-wrap items-baseline justify-between pb-3">
-            <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Similar genes
-              <ControlHint id="gene-similar" title="Similar genes">
-                Ranked by shared GO and WormCat annotations, both IDF-weighted so a rare category
-                counts for more than a broad one, plus shared neuronal categories and interaction
-                partners. Direct annotations only — propagated GO ancestors aren't used so
-                similarity isn't dominated by trivial parents.
-              </ControlHint>
-            </CardTitle>
-            <span class="font-mono text-xs text-muted-foreground">
-              showing {Math.min(similarShown, similar.length)} of top {similar.length} ranked
-            </span>
-            <div class="text-xs text-muted-foreground">
-              Ranked by IDF-weighted shared GO terms (with is_a ancestors) and WormCat categories,
-              plus shared neuronal categories and interaction partners.
-            </div>
-          </CardHeader>
-          <CardContent class="space-y-2 pt-0">
-            {#each similar.slice(0, similarShown) as s (s.wormbase_gene)}
-              <div class="border-b pb-2 last:border-b-0 last:pb-0">
-                <div class="flex items-baseline gap-2 text-sm">
-                  <GenePill id={s.wormbase_gene} name={s.gene_name} variant="inline" />
-                  {#if s.concise_description}
-                    <span class="flex-1 truncate text-xs text-muted-foreground">
-                      {s.concise_description}
-                    </span>
-                  {/if}
-                  <div class="flex shrink-0 gap-1">
-                    {#if s.shared_go > 0}
-                      <Badge
-                        variant="muted"
-                        class="px-1 py-0 text-[0.55rem] tabular-nums"
-                        title="Direct GO terms shared (IDF-weighted score: {s.shared_go_score.toFixed(
-                          1,
-                        )})"
-                      >
-                        {s.shared_go} GO
-                      </Badge>
-                    {/if}
-                    {#if s.shared_wormcat > 0}
-                      <Badge variant="muted" class="px-1 py-0 text-[0.55rem]"
-                        >{s.shared_wormcat} wc</Badge
-                      >
-                    {/if}
-                    {#if s.shared_neuronal > 0}
-                      <Badge variant="muted" class="px-1 py-0 text-[0.55rem]"
-                        >{s.shared_neuronal} neu</Badge
-                      >
-                    {/if}
-                    {#if s.shared_partners > 0}
-                      <Badge variant="muted" class="px-1 py-0 text-[0.55rem]">
-                        {s.shared_partners} ix
-                      </Badge>
-                    {/if}
-                  </div>
-                </div>
-                {#if s.top_shared.length > 0}
-                  <div class="mt-1 pl-2 text-[0.65rem] leading-snug text-muted-foreground">
-                    <span class="mr-1">Shares:</span
-                    >{#each s.top_shared as t, i (t.go_id)}{#if i > 0},
-                      {/if}<TermHover kind="go" id={t.go_id}
-                        ><a
-                          href={resolve(`/go/${t.go_id}`)}
-                          class="hover:text-primary"
-                          title={t.go_id}>{t.name}</a
-                        ></TermHover
-                      >{/each}
-                  </div>
-                {/if}
-              </div>
-            {/each}
-            <div class="flex">
-              <ExpandMore
-                total={similar.length}
-                shown={similarShown}
-                expanded={similarShown > ROW_LIMIT}
-                step={ROW_LIMIT}
-                onToggle={(more) =>
-                  (similarShown = more
-                    ? Math.min(similar.length, similarShown + ROW_LIMIT)
-                    : ROW_LIMIT)}
-                label="similar genes"
-              />
-            </div>
-          </CardContent>
-        </Card>
+      {:else}
+        <EmptyPanel
+          id="cengen-coexpr"
+          title="Co-expressed in CeNGEN neurons"
+          message="No co-expression neighbors, since this gene was not detected in the CeNGEN atlas."
+        />
       {/if}
 
       {#if papers.length > 0}
@@ -1749,6 +1842,12 @@
             </div>
           </CardContent>
         </Card>
+      {:else}
+        <EmptyPanel
+          id="papers"
+          title="References"
+          message="No curated WormBase references for this gene."
+        />
       {/if}
 
       {#if literaturePapers.length > 0}
@@ -1804,6 +1903,12 @@
             </div>
           </CardContent>
         </Card>
+      {:else}
+        <EmptyPanel
+          id="literature"
+          title="All literature"
+          message="No publications linked to this gene in NCBI gene2pubmed."
+        />
       {/if}
     {/if}
   </div>
