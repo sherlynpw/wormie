@@ -35,39 +35,56 @@ async function run(req: Req) {
     return;
   }
 
-  // Stale versions occupy SAH slots; reclaim them before importing.
-  for (const f of names) {
-    if (f.startsWith('/wormie-') && f.endsWith('.sqlite')) {
-      try {
-        pool.unlink(f);
-      } catch {
-        // ignore
-      }
-    }
-  }
+  const stale = names.filter((f) => f.startsWith('/wormie-') && f.endsWith('.sqlite'));
+
+  // Stale versions are reclaimed only AFTER the new one lands. Unlinking first
+  // is cheaper on disk but destroys the user's working database whenever the
+  // import cannot finish, which is exactly the offline case the whole OPFS
+  // copy exists to serve.
+  if (pool.getCapacity() - pool.getFileCount() < 1) pool.addCapacity(1);
 
   post({ type: 'status', message: 'Downloading gene database...' });
-  const { reader, totalCompressed } = await openGzipReader(req.dbUrl);
 
-  let received = 0;
-  // importDb uses importDbChunked when passed a callback (returns Uint8Array or
-  // undefined when done). Forwarding chunks one at a time keeps peak WASM growth
-  // at ~64 KB per chunk rather than 512 MB.
-  let chunkSeen = 0;
-  await pool.importDb(req.dbFile, async () => {
-    const { done, value } = await reader.read();
-    if (done) return undefined;
-    received += value.length;
-    chunkSeen++;
-    if (chunkSeen % 16 === 0) {
-      post({
-        type: 'progress',
-        received,
-        total: totalCompressed > 0 ? totalCompressed * 6 : 0,
-      });
+  try {
+    const { reader, totalCompressed } = await openGzipReader(req.dbUrl);
+
+    let received = 0;
+    // importDb uses importDbChunked when passed a callback (returns Uint8Array or
+    // undefined when done). Forwarding chunks one at a time keeps peak WASM growth
+    // at ~64 KB per chunk rather than 512 MB.
+    let chunkSeen = 0;
+    await pool.importDb(req.dbFile, async () => {
+      const { done, value } = await reader.read();
+      if (done) return undefined;
+      received += value.length;
+      chunkSeen++;
+      if (chunkSeen % 16 === 0) {
+        post({
+          type: 'progress',
+          received,
+          total: totalCompressed > 0 ? totalCompressed * 6 : 0,
+        });
+      }
+      return value;
+    });
+  } catch (err) {
+    // A half-written slot would be indistinguishable from a good one on the
+    // next boot, so drop it and leave the previous version in place.
+    try {
+      pool.unlink(req.dbFile);
+    } catch {
+      // ignore
     }
-    return value;
-  });
+    throw err;
+  }
+
+  for (const f of stale) {
+    try {
+      pool.unlink(f);
+    } catch {
+      // ignore
+    }
+  }
 
   // Same caveat: no removeVfs(). Parent terminates; SAHs released at OS level,
   // slot file remains in `.wormie-pool/` for the main worker.

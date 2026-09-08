@@ -44,6 +44,18 @@ function loadModuleFactory(base = DEFAULT_BASE): Promise<FCFactory> {
   return factoryPromise;
 }
 
+/**
+ * Warm the service worker cache with the featureCounts WASM so /counts keeps
+ * working offline. The module itself is only instantiated on the first run, so
+ * without this nothing fetches these files until the user is already counting.
+ */
+export async function prefetchFeatureCounts(opts?: { baseUrl?: string }): Promise<void> {
+  const base = opts?.baseUrl ?? DEFAULT_BASE;
+  await Promise.all(
+    ['featureCounts.js', 'featureCounts.wasm'].map((f) => fetch(base + f).catch(() => undefined)),
+  );
+}
+
 function parseCountsMatrix(tsv: string): FeatureCountsResult['matrix'] {
   const lines = tsv.split('\n').filter((l) => l && !l.startsWith('#'));
   if (lines.length === 0) return { genes: [], samples: [], counts: [] };

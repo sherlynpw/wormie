@@ -12,6 +12,11 @@ export default {
       precompress: false,
       strict: false,
     }),
+    // The service worker precaches the prerendered `/` document and serves it
+    // as the SPA navigation fallback. Relative asset paths in that document
+    // resolve against the requested URL, so a two-segment route like
+    // /gene/<id> would request /gene/_app/... and render a blank page.
+    paths: { relative: false },
     prerender: {
       handleUnseenRoutes: 'ignore',
     },

@@ -138,6 +138,24 @@ export default defineConfig({
             },
           },
           {
+            // WebR runtime + featureCounts WASM, both same-origin via the R2
+            // proxy and versioned in the path, so they are safe to serve from
+            // cache forever. Without this /de and /counts need the network on
+            // every visit. Fetched lazily, so a user who never opens those
+            // pages never pays the ~20 MB. deseq2-bundle.* is deliberately
+            // excluded: webr-instance.ts already persists it in OPFS, and
+            // caching it here too would double a 100+ MB download on disk.
+            urlPattern:
+              /\/wasm-cran\/(webr-pthread\/|featurecounts\/|deseq2-bundle\.manifest\.json)/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'wormie-wasm-runtime',
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+              rangeRequests: true,
+            },
+          },
+          {
             urlPattern: /\/data\/version\.json(\?|$)/,
             handler: 'NetworkFirst',
             options: {

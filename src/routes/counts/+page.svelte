@@ -15,7 +15,7 @@
   import { goto } from '$app/navigation';
   import { toast } from 'svelte-sonner';
   import { onDestroy } from 'svelte';
-  import { createFeatureCountsClient } from '$lib/featurecounts/client';
+  import { createFeatureCountsClient, prefetchFeatureCounts } from '$lib/featurecounts/client';
   import type { FeatureCountsResult } from '$lib/featurecounts/types';
   import { handoff } from '$lib/pipeline-handoff';
   import { parseFeatureCountsTsv } from '$lib/qc';
@@ -90,6 +90,7 @@
   let bundledLoading = $state(false);
 
   onMount(async () => {
+    void prefetchFeatureCounts();
     try {
       const r = await fetch('/data/version.json', { cache: 'no-cache' });
       if (!r.ok) return;
@@ -194,6 +195,8 @@
     return { samples, rows };
   });
 </script>
+
+<svelte:head><title>Read counting · wormie.rs.ht</title></svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href={resolve('/')} class="self-start">
