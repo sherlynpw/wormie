@@ -27,7 +27,6 @@
   import Trash from 'lucide-svelte/icons/trash';
   import GitCompare from 'lucide-svelte/icons/git-compare';
   import BarChart from 'lucide-svelte/icons/bar-chart-3';
-  import TrendingUp from 'lucide-svelte/icons/trending-up';
   import FileSearch from 'lucide-svelte/icons/file-search';
   import Sigma from 'lucide-svelte/icons/sigma';
   import SelectionSummary from '$lib/components/SelectionSummary.svelte';
@@ -59,11 +58,6 @@
   async function gotoCompare() {
     const q = await buildIdsQuery(selection.ids);
     goto(resolve(`/compare?${q}`));
-  }
-
-  async function gotoGsea() {
-    const q = await buildIdsQuery(selection.ids);
-    goto(resolve(`/gsea?${q}`));
   }
 
   async function gotoNta() {
@@ -288,7 +282,7 @@
           onclick={gotoCompare}
         >
           <GitCompare class="h-3 w-3" />
-          Compare
+          Annotation overlap
         </Button>
         <Button
           variant="outline"
@@ -297,15 +291,11 @@
           onclick={gotoEnrich}
         >
           <BarChart class="h-3 w-3" />
-          Enrich
-        </Button>
-        <Button variant="outline" size="sm" disabled={selection.ids.length < 2} onclick={gotoGsea}>
-          <TrendingUp class="h-3 w-3" />
-          GSEA
+          Over-representation
         </Button>
         <Button variant="outline" size="sm" disabled={selection.ids.length < 2} onclick={gotoNta}>
           <Network class="h-3 w-3" />
-          Network
+          Network connectivity
         </Button>
         <Button
           variant="outline"
@@ -314,7 +304,7 @@
           onclick={gotoLookup}
         >
           <FileSearch class="h-3 w-3" />
-          Lookup
+          Gene name resolver
         </Button>
         <Button
           variant="outline"

@@ -39,6 +39,29 @@
 
   type ToolLink = { href: string; match: string; label: string; icon: IconComponent };
 
+  // Rendered above the separator: exploration, with the annotation views.
+  // The analysis groups below the line are TOOL_GROUPS.
+  const EXPLORE_TOOLS: ToolLink[] = [
+    {
+      href: resolve('/lookup'),
+      match: '/lookup',
+      label: 'Gene name resolver',
+      icon: FileSearch,
+    },
+    {
+      href: resolve('/compare/lists'),
+      match: '/compare/lists',
+      label: 'Gene overlap',
+      icon: GitCompare,
+    },
+    {
+      href: resolve('/compare'),
+      match: '/compare',
+      label: 'Annotation overlap',
+      icon: GitCompare,
+    },
+  ];
+
   const TOOL_GROUPS: { heading: string; items: ToolLink[] }[] = [
     {
       heading: 'From reads to results',
@@ -46,39 +69,38 @@
         { href: resolve('/counts'), match: '/counts', label: 'Read counting', icon: Sigma },
         { href: resolve('/de'), match: '/de', label: 'Differential expression', icon: TrendingUp },
         {
+          href: resolve('/de/diff'),
+          match: '/de/diff',
+          label: 'Contrast comparison',
+          icon: TrendingUp,
+        },
+        {
           href: resolve('/enrichment'),
           match: '/enrichment',
           label: 'Over-representation',
           icon: BarChart,
         },
         {
-          href: resolve('/de/diff'),
-          match: '/de/diff',
-          label: 'Compare contrasts',
-          icon: TrendingUp,
-        },
-        { href: resolve('/gsea'), match: '/gsea', label: 'Preranked GSEA', icon: TrendingUp },
-      ],
-    },
-    {
-      heading: 'Start from a gene list',
-      items: [
-        {
-          href: resolve('/lookup'),
-          match: '/lookup',
-          label: 'Gene name resolver',
-          icon: FileSearch,
-        },
-        {
-          href: resolve('/compare'),
-          match: '/compare',
-          label: 'Compare genes',
+          href: resolve('/enrichment/overlap'),
+          match: '/enrichment/overlap',
+          label: 'Enrichment overlap',
           icon: GitCompare,
         },
         {
+          href: resolve('/gsea'),
+          match: '/gsea',
+          label: 'Ranked-list enrichment',
+          icon: TrendingUp,
+        },
+      ],
+    },
+    {
+      heading: 'Standalone analyses',
+      items: [
+        {
           href: resolve('/ssgsea'),
           match: '/ssgsea',
-          label: 'Single-sample GSEA',
+          label: 'Per-sample set scores',
           icon: TrendingUp,
         },
         { href: resolve('/gmt'), match: '/gmt', label: 'Custom gene sets', icon: TrendingUp },
@@ -115,6 +137,26 @@
   }
 </script>
 
+{#snippet toolNav(items: ToolLink[])}
+  <nav class="flex flex-col gap-0.5">
+    {#each items as t (t.match)}
+      {@const Icon = t.icon}
+      <a
+        href={t.href}
+        class={cn(
+          'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+          page.url.pathname === t.match
+            ? 'bg-accent font-medium text-accent-foreground'
+            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+        )}
+      >
+        <Icon class="h-4 w-4" />
+        {t.label}
+      </a>
+    {/each}
+  </nav>
+{/snippet}
+
 <aside
   class={mobile
     ? 'flex h-full min-h-0 w-full flex-col overflow-y-auto px-3 py-4'
@@ -144,6 +186,13 @@
         </a>
       {/each}
     </nav>
+
+    <div
+      class="mb-1 mt-4 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+    >
+      Explore a gene list
+    </div>
+    {@render toolNav(EXPLORE_TOOLS)}
   </div>
 
   <Separator />
@@ -158,23 +207,7 @@
       >
         {g.heading}
       </div>
-      <nav class="flex flex-col gap-0.5">
-        {#each g.items as t (t.match)}
-          {@const Icon = t.icon}
-          <a
-            href={t.href}
-            class={cn(
-              'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-              page.url.pathname === t.match
-                ? 'bg-accent font-medium text-accent-foreground'
-                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-            )}
-          >
-            <Icon class="h-4 w-4" />
-            {t.label}
-          </a>
-        {/each}
-      </nav>
+      {@render toolNav(g.items)}
     {/each}
 
     <div

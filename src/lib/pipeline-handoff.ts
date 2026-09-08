@@ -33,6 +33,8 @@ export const handoff = {
   ssgsea: slot<{ tsv: string; label: string }>(),
   /** Two contrasts handed off from /de to /de/diff. */
   deseqDiff: slot<{ a: { name: string; tsv: string }; b: { name: string; tsv: string } }>(),
+  /** Current enrichment result table (as clusterProfiler CSV) handed off from /enrichment to /enrichment/overlap. */
+  enrichmentOverlap: slot<{ name: string; csv: string }>(),
 };
 
 // Expose to window in dev for Playwright to seed handoffs without a hard reload.

@@ -24,6 +24,8 @@
   });
 </script>
 
+<svelte:head><title>Neuron types · wormie.rs.ht</title></svelte:head>
+
 <div class="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/" class="self-start">
     <ArrowLeft />

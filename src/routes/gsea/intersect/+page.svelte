@@ -9,6 +9,8 @@
   import X from 'lucide-svelte/icons/x';
   import PageHint from '$lib/components/PageHint.svelte';
   import ControlHint from '$lib/components/ControlHint.svelte';
+  import { onMount } from 'svelte';
+  import { page } from '$app/state';
 
   type BundleTerm = {
     term_id: string;
@@ -57,6 +59,16 @@
   async function ingestFile(f: File) {
     ingestText(await f.text(), f.name.replace(/\.bundle\.json$/, ''));
   }
+
+  // The datasets page sends "Open in -> GSEA intersect" as ?load=bundle&id=.
+  onMount(async () => {
+    const params = page.url.searchParams;
+    const id = params.get('id');
+    if (params.get('load') !== 'bundle' || !id) return;
+    const { datasets } = await import('$lib/stores/datasets.svelte');
+    const ds = await datasets.getById(id);
+    if (ds) ingestText(ds.body, ds.name);
+  });
 
   async function onPick(e: Event) {
     const input = e.target as HTMLInputElement;
@@ -173,6 +185,11 @@
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">GSEA intersect</h1>
+    <p class="text-sm text-muted-foreground">Terms that recur across saved GSEA runs</p>
+  </header>
+
   <PageHint id="gsea-intersect" title="Find biology that holds across comparisons">
     Combine 2+ GSEA runs: save a bundle from any run (the <b>Save</b> button on its results) and
     load it here, or drop <code>.bundle.json</code> files exported with <b>JSON</b>. Output: terms

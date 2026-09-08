@@ -204,11 +204,18 @@
   const nonEmptySlots = $derived(slots.filter((s) => s.body.trim().length > 0).length);
 </script>
 
+<svelte:head><title>Leading-edge overlap · wormie.rs.ht</title></svelte:head>
+
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/gsea" class="self-start">
     <ArrowLeft />
-    Back to GSEA
+    Back to Ranked-list enrichment
   </Button>
+
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Leading-edge overlap</h1>
+    <p class="text-sm text-muted-foreground">Driver genes shared across GSEA runs</p>
+  </header>
 
   <PageHint id="gsea-overlap" title="GSEA leading-edge overlap (UpSet)">
     Paste 2+ GSEA result TSVs (the wormie.rs.ht export format with a

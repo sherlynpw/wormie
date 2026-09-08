@@ -14,12 +14,23 @@
   import BarChart from 'lucide-svelte/icons/bar-chart-3';
   import PageHint from '$lib/components/PageHint.svelte';
   import { parseGeneList } from '$lib/gene-parse';
+  import { readIdsFromUrl } from '$lib/share';
+  import { page } from '$app/state';
+  import { onMount } from 'svelte';
 
   let input = $state('');
   let hits = $state<BulkLookupHit[]>([]);
   let misses = $state<string[]>([]);
   let elapsedMs = $state(0);
   let busy = $state(false);
+
+  // The home page and the selection bar both send ?ids=/?gz= here.
+  onMount(async () => {
+    const ids = await readIdsFromUrl(page.url);
+    if (ids.length === 0) return;
+    input = ids.join('\n');
+    await run();
+  });
 
   async function run() {
     const tokens = parseGeneList(input);
@@ -66,6 +77,8 @@
   // Retired identifiers still resolve; the resolver flags them rather than dropping them.
   const retiredHits = $derived(uniqueHits.filter((h) => h.status && h.status !== 'Live'));
 </script>
+
+<svelte:head><title>Gene name resolver · wormie.rs.ht</title></svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/" class="self-start">

@@ -448,6 +448,11 @@
   };
 </script>
 
+<svelte:head
+  ><title>{gene ? (gene.gene_name ?? gene.wormbase_gene) : 'Gene'} · wormie.rs.ht</title
+  ></svelte:head
+>
+
 <div
   class="mx-auto max-w-4xl p-4 md:p-6 xl:grid xl:max-w-6xl xl:grid-cols-[minmax(0,1fr)_192px] xl:gap-6"
 >
@@ -1658,7 +1663,7 @@
         <Card id="cengen-coexpr">
           <CardHeader class="flex flex-row items-baseline justify-between pb-3">
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Co-expressed in CeNGEN neurons
+              Co-expressions across neuron types
               <ControlHint id="gene-cengen-coexpr" title="CeNGEN co-expression">
                 Genes whose expression pattern across CeNGEN's 41 bulk-covered neuron types most
                 closely matches this gene (Pearson on log1p TMM, computed at build time). A pair is
@@ -1780,7 +1785,7 @@
       {:else}
         <EmptyPanel
           id="cengen-coexpr"
-          title="Co-expressed in CeNGEN neurons"
+          title="Co-expressions across neuron types"
           message="No co-expression neighbors, since this gene was not detected in the CeNGEN atlas."
         />
       {/if}

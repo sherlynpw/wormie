@@ -175,7 +175,7 @@ export async function buildGeneReport(input: GeneReportInput): Promise<string> {
   }
 
   if (input.cengenCoexpr.length > 0) {
-    out.push('## Co-expressed in CeNGEN neurons');
+    out.push('## Co-expressions across neuron types');
     out.push('| Pearson | Gene | Description |');
     out.push('|---:|---|---|');
     for (const n of input.cengenCoexpr) {

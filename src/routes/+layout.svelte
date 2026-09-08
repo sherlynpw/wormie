@@ -178,7 +178,8 @@
   <div class="flex flex-1">
     <Sidebar />
 
-    <main class="min-w-0 flex-1">
+    <!-- Bottom padding clears the fixed selection bar so page-end controls stay reachable. -->
+    <main class="min-w-0 flex-1 {selection.ids.length > 0 ? 'pb-24' : ''}">
       {#if db.phase === 'loading'}
         <div class="mx-auto max-w-2xl p-6">
           <Card>

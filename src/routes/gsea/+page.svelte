@@ -330,33 +330,45 @@
   }
 </script>
 
+<svelte:head><title>Ranked-list enrichment · wormie.rs.ht</title></svelte:head>
+
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <div class="flex items-center justify-between">
     <Button variant="ghost" size="sm" href="/" class="self-start">
       <ArrowLeft />
       Back
     </Button>
-    <Button variant="outline" size="sm" href={resolve('/gsea/overlap')}>
-      Leading-edge overlap (UpSet)
-    </Button>
+    <div class="flex gap-2">
+      <Button variant="outline" size="sm" href={resolve('/gsea/overlap')}>
+        Leading-edge overlap (UpSet)
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        href={resolve('/gsea/intersect')}
+        title="Terms recurring across saved GSEA runs (bundles)"
+      >
+        GSEA intersect
+      </Button>
+    </div>
   </div>
 
   <header class="space-y-1">
-    <h1 class="text-2xl font-semibold">Preranked GSEA</h1>
+    <h1 class="text-2xl font-semibold">Ranked-list enrichment</h1>
     <p class="text-sm text-muted-foreground">Gene sets concentrated at one end of a ranking</p>
   </header>
 
   <PageHint id="gsea" title="What this step does">
     Over-representation needs you to draw a line: a gene is in your list or it is not. That throws
     away everything just below the line, and a real but modest response often leaves no single gene
-    significant. Preranked GSEA draws no line. Order every gene by a statistic — usually the one
-    from a differential expression run, where the largest positive values are the most convincingly
-    up and the largest negative the most convincingly down — then, for each gene set, ask whether
-    its members cluster near one end of that ordering or are scattered through it. A set whose genes
-    all shift a little together will show up here and not in an over-representation test. Each set
-    gets a <b>NES</b> (positive means shifted toward the top of your ranking, negative toward the bottom)
-    and a q-value; for GSEA q ≤ 0.25 is the conventional cutoff, deliberately looser than the 0.05 used
-    elsewhere. Click any set to see where its genes fell.
+    significant. Ranked-list enrichment (preranked GSEA) draws no line. Order every gene by a
+    statistic — usually the one from a differential expression run, where the largest positive
+    values are the most convincingly up and the largest negative the most convincingly down — then,
+    for each gene set, ask whether its members cluster near one end of that ordering or are
+    scattered through it. A set whose genes all shift a little together will show up here and not in
+    an over-representation test. Each set gets a <b>NES</b> (positive means shifted toward the top of
+    your ranking, negative toward the bottom) and a q-value; for GSEA q ≤ 0.25 is the conventional cutoff,
+    deliberately looser than the 0.05 used elsewhere. Click any set to see where its genes fell.
   </PageHint>
 
   <Card>

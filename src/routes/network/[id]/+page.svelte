@@ -572,6 +572,11 @@
   }
 </script>
 
+<svelte:head
+  ><title>{center ? (center.gene_name ?? center.wormbase_gene) : id} · network · wormie.rs.ht</title
+  ></svelte:head
+>
+
 <div class="mx-auto max-w-7xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/gene/{id}" class="self-start">
     <ArrowLeft />
@@ -581,7 +586,6 @@
   <PageHint id="network" title="Interaction neighborhood">
     BioGRID-derived interactions for this gene. Click any neighbor to recenter the network on that
     gene. Edges are weighted by evidence count; only direct interactions are shown (no propagation).
-    Genes already in your selection are highlighted.
   </PageHint>
 
   {#if loading}

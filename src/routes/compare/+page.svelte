@@ -185,6 +185,8 @@
   ];
 </script>
 
+<svelte:head><title>Annotation overlap · wormie.rs.ht</title></svelte:head>
+
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <div class="flex items-center justify-between gap-2">
     <Button variant="ghost" size="sm" href="/" class="self-start">
@@ -194,7 +196,7 @@
   </div>
 
   <header class="space-y-1">
-    <h1 class="text-2xl font-semibold">Compare genes</h1>
+    <h1 class="text-2xl font-semibold">Annotation overlap</h1>
     <p class="text-sm text-muted-foreground">
       What a set of genes has in common, and what sets each one apart
     </p>
@@ -208,8 +210,10 @@
     three-column split, unique to the first / shared / unique to the second. With three or more you
     get an UpSet plot per category showing which combinations of genes share terms, a Jaccard
     heatmap of how similar each pair is overall, and the list of annotations common to all of them.
-    Note this compares genes to each other, not one list against another list: to ask whether two
-    separate gene lists turn up the same biology, run
+    Note this compares genes to each other, not one list against another list: to see which genes
+    two lists share, use
+    <a href={resolve('/compare/lists')} class="underline underline-offset-2">Gene overlap</a>; to
+    ask whether two separate gene lists turn up the same biology, run
     <a href={resolve('/enrichment')} class="underline underline-offset-2">over-representation</a>
     on each and put the results side by side in
     <a href={resolve('/enrichment/overlap')} class="underline underline-offset-2"

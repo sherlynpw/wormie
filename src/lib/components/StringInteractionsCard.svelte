@@ -19,13 +19,48 @@
   // fixed; height proportional to channel score (0-1000). Hover shows the
   // numeric per-channel breakdown.
   const CHANNELS = [
-    { key: 'neighborhood', label: 'Nb', color: 'hsl(120 50% 45%)' },
-    { key: 'fusion', label: 'Fu', color: 'hsl(0 60% 55%)' },
-    { key: 'cooccurrence', label: 'Co', color: 'hsl(190 60% 45%)' },
-    { key: 'coexpression', label: 'Ex', color: 'hsl(280 50% 55%)' },
-    { key: 'experimental', label: 'Lab', color: 'hsl(40 80% 50%)' },
-    { key: 'database', label: 'DB', color: 'hsl(210 60% 50%)' },
-    { key: 'textmining', label: 'Txt', color: 'hsl(160 35% 45%)' },
+    {
+      key: 'neighborhood',
+      name: 'genomic neighborhood',
+      desc: 'Genes repeatedly found near each other on genomes',
+      color: 'hsl(120 50% 45%)',
+    },
+    {
+      key: 'fusion',
+      name: 'gene fusion',
+      desc: 'Fused into a single gene in some other species',
+      color: 'hsl(0 60% 55%)',
+    },
+    {
+      key: 'cooccurrence',
+      name: 'co-occurrence',
+      desc: 'Present or absent together across species',
+      color: 'hsl(190 60% 45%)',
+    },
+    {
+      key: 'coexpression',
+      name: 'co-expression',
+      desc: 'Expression levels correlated across experiments',
+      color: 'hsl(280 50% 55%)',
+    },
+    {
+      key: 'experimental',
+      name: 'experimental',
+      desc: 'Direct interaction evidence from lab experiments',
+      color: 'hsl(40 80% 50%)',
+    },
+    {
+      key: 'database',
+      name: 'curated databases',
+      desc: 'Association curated into pathway or complex databases',
+      color: 'hsl(210 60% 50%)',
+    },
+    {
+      key: 'textmining',
+      name: 'text mining',
+      desc: 'Co-mentioned in the scientific literature',
+      color: 'hsl(160 35% 45%)',
+    },
   ] as const;
 </script>
 
@@ -46,7 +81,17 @@
     <label class="inline-flex items-center gap-1">
       <input type="checkbox" bind:checked={onlyExperimental} /> experimental evidence only
     </label>
-    <span class="text-muted-foreground">channels: Nb · Fu · Co · Ex · Lab · DB · Txt</span>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.65rem] text-muted-foreground">
+    <span>Evidence channels, left to right:</span>
+    {#each CHANNELS as ch (ch.key)}
+      <span class="inline-flex cursor-help items-center gap-1" title={ch.desc}>
+        <span class="inline-block h-2.5 w-2.5 rounded-[2px]" style="background-color: {ch.color}"
+        ></span>
+        {ch.name}
+      </span>
+    {/each}
   </div>
 
   <div class="grid gap-1 text-xs">
@@ -73,7 +118,7 @@
               fill={ch.color}
               opacity={score > 0 ? 1 : 0.15}
             >
-              <title>{ch.label}: {score}</title>
+              <title>{ch.name}: {score}</title>
             </rect>
           {/each}
         </svg>

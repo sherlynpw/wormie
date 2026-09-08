@@ -21,9 +21,20 @@
   import { datasets } from '$lib/stores/datasets.svelte';
   import { decodeSession } from '$lib/session';
   import { enrichmentResultsToCsv } from '$lib/results-to-paste';
+  import { handoff } from '$lib/pipeline-handoff';
   import { onMount } from 'svelte';
 
-  onMount(() => datasets.init());
+  onMount(() => {
+    datasets.init();
+    const h = handoff.enrichmentOverlap.consume();
+    if (h) {
+      const slot = slots.find((s) => !s.body.trim()) ?? slots[0];
+      slot.name = h.name;
+      slot.body = h.csv;
+      recompute();
+      toast.success('Results loaded from Over-representation', { description: h.name });
+    }
+  });
 
   // Sessions with a results blob; re-derived at render time so the dropdown reflects new saves.
   const enrichmentSessions = $derived(
@@ -166,16 +177,26 @@
   const nonEmptySlots = $derived(slots.filter((s) => s.body.trim().length > 0).length);
 </script>
 
+<svelte:head><title>Enrichment overlap · wormie.rs.ht</title></svelte:head>
+
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/enrichment" class="self-start">
     <ArrowLeft />
-    Back to Enrichment
+    Back to Over-representation
   </Button>
 
+  <header class="space-y-1">
+    <h1 class="text-2xl font-semibold">Enrichment overlap</h1>
+    <p class="text-sm text-muted-foreground">Enrichment result tables compared term by term</p>
+  </header>
+
   <PageHint id="overlap" title="Enrichment overlap (UpSet)">
-    Paste 2+ enrichment result tables (clusterProfiler / topGO / GSEApy CSV format) and compare
-    which terms are significant in which contrasts. Choose a q-value cutoff. The UpSet plot shows
-    intersection sizes; click any bar to list the terms in that exact combination.
+    This is how two gene lists are compared: run over-representation on each list, then put the
+    result tables side by side here. Paste 2+ enrichment result tables (clusterProfiler / topGO /
+    GSEApy CSV format) and compare which terms are significant in which contrasts. Choose a q-value
+    cutoff. The UpSet plot shows intersection sizes; click any bar to list the terms in that exact
+    combination. A result computed on the Over-representation page can be sent here directly with
+    its &ldquo;Send results to overlap&rdquo; button.
   </PageHint>
 
   <Card>

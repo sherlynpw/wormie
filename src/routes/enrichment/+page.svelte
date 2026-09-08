@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { resolve } from '$app/paths';
+  import { goto } from '$app/navigation';
   import { untrack } from 'svelte';
   import { selection } from '$lib/stores/selection.svelte';
   import { handoff } from '$lib/pipeline-handoff';
@@ -471,6 +472,24 @@
     });
   });
 
+  // Results in hand travel with the navigation so the overlap page starts with a
+  // slot filled, instead of asking the user to copy the table out and paste it back.
+  const overlapPayload = $derived(
+    (importedResults && Object.keys(importedResults).length > 0 ? importedResults : null) ??
+      (Object.keys(latestResults).length > 0 ? latestResults : null),
+  );
+
+  async function goToOverlap() {
+    if (overlapPayload) {
+      const { enrichmentResultsToCsv } = await import('$lib/results-to-paste');
+      handoff.enrichmentOverlap.set({
+        name: 'This over-representation run',
+        csv: enrichmentResultsToCsv(overlapPayload),
+      });
+    }
+    goto(resolve('/enrichment/overlap'));
+  }
+
   async function copyShareLink() {
     if (ids.length === 0) return;
     const query = await buildIdsQuery(ids);
@@ -486,14 +505,23 @@
   }
 </script>
 
+<svelte:head><title>Over-representation · wormie.rs.ht</title></svelte:head>
+
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <div class="flex items-center justify-between">
     <Button variant="ghost" size="sm" href="/" class="self-start">
       <ArrowLeft />
       Back
     </Button>
-    <Button variant="outline" size="sm" href={resolve('/enrichment/overlap')}>
-      Compare overlaps (UpSet)
+    <Button
+      variant="outline"
+      size="sm"
+      onclick={goToOverlap}
+      title={overlapPayload
+        ? 'Open Enrichment overlap with the current result table already in a slot'
+        : 'Compare which terms are significant across several enrichment runs'}
+    >
+      {overlapPayload ? 'Send results to overlap' : 'Compare overlaps (UpSet)'}
     </Button>
   </div>
 
@@ -513,8 +541,8 @@
     and a <b>q-value</b>, the false discovery rate across all labels tested; q ≤ 0.05 is the usual
     cutoff. Paste gene names, or a differential expression table from DESeq2, edgeR or limma and
     choose which genes to test. If nothing in your list passes a significance cutoff, try
-    <a href={resolve('/gsea')} class="text-primary hover:underline">preranked GSEA</a>, which needs
-    no cutoff.
+    <a href={resolve('/gsea')} class="text-primary hover:underline">ranked-list enrichment</a>,
+    which needs no cutoff.
   </PageHint>
 
   <Card>
@@ -890,7 +918,7 @@
                 </ControlHint>
               </div>
               <div class="text-[0.7rem] text-muted-foreground">
-                For preranked GSEA on the Wald stat (uses all rows, no threshold), go to <a
+                For ranked-list enrichment on the Wald stat (uses all rows, no threshold), go to <a
                   href={resolve('/gsea')}
                   class="text-primary hover:underline">/gsea</a
                 >.
