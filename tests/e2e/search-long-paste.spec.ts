@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage } from './helpers';
 
 // Verifies the long-paste fallback: when the search box receives a very long

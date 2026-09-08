@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Page } from './fixtures';
 
 // Clear IndexedDB + localStorage between tests so saved-dataset state from a
 // prior test doesn't bleed in. The datasets store is `wb-rs-ht`; lastInputs

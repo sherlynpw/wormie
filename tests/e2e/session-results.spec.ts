@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage, saveSession } from './helpers';
 
 // Verifies the session-result-blob round trip:

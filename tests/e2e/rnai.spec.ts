@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage } from './helpers';
 
 // Requires the SQLite DB; uses daf-16 (a heavily-RNAi'd gene) so we know the

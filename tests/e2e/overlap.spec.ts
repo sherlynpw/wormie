@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage } from './helpers';
 
 // Two-input UpSet smoke test: paste the same clusterProfiler-style table into

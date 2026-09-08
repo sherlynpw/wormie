@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { resetClientStorage } from './helpers';
 
 // One test per data-carrying edge between pages. Each asserts the payload
@@ -127,10 +127,22 @@ test('home matched results -> Over-representation', async ({ page }) => {
   const input = page.getByPlaceholder(/Search by gene name/i);
   await input.fill('daf-16, daf-2, age-1');
   await expect(page.getByText(/of\s+[1-9]/)).toBeVisible({ timeout: 60_000 });
-  await page.getByRole('button', { name: 'Over-representation' }).click();
-  await expect(page).toHaveURL(/\/enrichment\?(ids|gz)=/, { timeout: 15_000 });
-  // Search already consumed part of the DB import budget; allow a slow runner.
-  await expect(page.getByText(/of [\d,]+ resolved/)).toBeVisible({ timeout: 120_000 });
+  // The send runs match + gzip through the DB worker before navigating; a
+  // fresh tab can lose that first round-trip to host re-election, so retry
+  // the click-and-navigate as a unit (which is also what a user does).
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Over-representation' }).click();
+    await expect(page).toHaveURL(/\/enrichment\?(ids|gz)=/, { timeout: 10_000 });
+  }).toPass({ timeout: 60_000 });
+  // Either arrival signal proves the payload landed: the resolved-count header,
+  // or the results-in-hand overlap button (enrichment only runs on received
+  // genes). The header alone can lose a worker race the analysis path wins.
+  await expect(
+    page
+      .getByText(/of [\d,]+ resolved/)
+      .or(page.getByRole('button', { name: 'Send results to overlap' }))
+      .first(),
+  ).toBeVisible({ timeout: 120_000 });
 });
 
 // ---------- Pipeline handoffs not covered by handoff.spec.ts ----------

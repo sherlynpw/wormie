@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage } from './helpers';
 
 // Requires the SQLite DB. Uses lin-32 (WBGene00003028) which is in the

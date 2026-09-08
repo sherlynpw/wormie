@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import { resetClientStorage } from './helpers';
 
 // Comprehensive search-bar coverage. The bar is the app's front door and

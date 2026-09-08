@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage, saveSession } from './helpers';
 
 // These tests exercise the session save/restore round-trip without depending
