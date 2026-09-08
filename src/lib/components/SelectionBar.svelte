@@ -29,12 +29,41 @@
   import BarChart from 'lucide-svelte/icons/bar-chart-3';
   import FileSearch from 'lucide-svelte/icons/file-search';
   import Sigma from 'lucide-svelte/icons/sigma';
+  import Send from 'lucide-svelte/icons/send';
+  import ChevronUp from 'lucide-svelte/icons/chevron-up';
   import SelectionSummary from '$lib/components/SelectionSummary.svelte';
 
   let busy = $state(false);
   let summaryOpen = $state(false);
   let presetUiOpen = $state(false);
   let presetName = $state('');
+  let sendOpen = $state(false);
+  let copyOpen = $state(false);
+  let barRef: HTMLDivElement | null = $state(null);
+
+  // One outside-click listener closes whichever menu is open; the bar is a
+  // single island, so containment against the wrapper covers both menus.
+  $effect(() => {
+    if (!sendOpen && !copyOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (barRef && !barRef.contains(e.target as Node)) {
+        sendOpen = false;
+        copyOpen = false;
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        sendOpen = false;
+        copyOpen = false;
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  });
 
   async function run(label: string, fn: () => Promise<void> | void) {
     busy = true;
@@ -50,26 +79,6 @@
     }
   }
 
-  async function gotoEnrich() {
-    const q = await buildIdsQuery(selection.ids);
-    goto(resolve(`/enrichment?${q}`));
-  }
-
-  async function gotoCompare() {
-    const q = await buildIdsQuery(selection.ids);
-    goto(resolve(`/compare?${q}`));
-  }
-
-  async function gotoNta() {
-    const q = await buildIdsQuery(selection.ids);
-    goto(resolve(`/nta?${q}`));
-  }
-
-  async function gotoLookup() {
-    const q = await buildIdsQuery(selection.ids);
-    goto(resolve(`/lookup?${q}`));
-  }
-
   async function copy(label: string, fn: () => Promise<number>) {
     busy = true;
     try {
@@ -82,6 +91,22 @@
     } finally {
       busy = false;
     }
+  }
+
+  async function sendTo(path: string) {
+    sendOpen = false;
+    const q = await buildIdsQuery(selection.ids);
+    goto(resolve(`${path}?${q}` as '/'));
+  }
+
+  function copyItem(label: string, fn: () => Promise<number>) {
+    copyOpen = false;
+    void copy(label, fn);
+  }
+
+  function exportItem(label: string, fn: () => Promise<void> | void) {
+    copyOpen = false;
+    void run(label, fn);
   }
 
   function savePreset() {
@@ -114,11 +139,19 @@
     presets.remove(id);
     toast.success('Preset deleted', { description: name });
   }
+
+  const tooFew = $derived(selection.ids.length < 2);
+
+  const menuItem =
+    'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50';
+  const menuHeading =
+    'px-2 pb-1 pt-1.5 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground';
 </script>
 
 {#if selection.ids.length > 0 || presetUiOpen}
   <div class="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-4">
     <div
+      bind:this={barRef}
       class="pointer-events-auto flex w-fit max-w-5xl flex-col rounded-lg border bg-card shadow-lg"
     >
       {#if presetUiOpen}
@@ -180,153 +213,209 @@
         </div>
       {/if}
       <div class="flex flex-wrap items-center gap-2 px-3 py-2">
-        <div class="text-sm">
+        <button
+          type="button"
+          onclick={() => (summaryOpen = true)}
+          class="rounded px-1.5 py-0.5 text-sm transition-colors hover:bg-muted/50"
+          title="What is in this selection? Top WormCat, GO, phenotypes, diseases, tissues"
+        >
           <span class="font-semibold tabular-nums">{selection.ids.length}</span>
           <span class="text-muted-foreground"> selected</span>
-        </div>
-        <div class="mx-1 h-5 w-px bg-border"></div>
-
-        <!-- Clipboard actions -->
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onclick={() => copy('WBGene IDs', () => clipboardWBList(selection.ids))}
-        >
-          <Copy class="h-3 w-3" />
-          IDs
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onclick={() => copy('Gene names', () => clipboardGeneNames(selection.ids))}
-        >
-          <Copy class="h-3 w-3" />
-          Names
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onclick={() => copy('TSV', () => clipboardTsv(selection.ids))}
-        >
-          <Copy class="h-3 w-3" />
-          TSV
-        </Button>
-
-        <div class="mx-1 h-5 w-px bg-border"></div>
-
-        <!-- File exports -->
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onclick={() => run('TSV', () => exportTsv(selection.ids))}
-        >
-          <Download class="h-3 w-3" />
-          TSV
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onclick={() => run('CSV', () => exportCsv(selection.ids))}
-        >
-          <Download class="h-3 w-3" />
-          CSV
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onclick={() => run('JSON', () => exportJson(selection.ids))}
-        >
-          <Download class="h-3 w-3" />
-          JSON
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onclick={() => run('GMT', () => exportGmt(selection.ids))}
-        >
-          <Download class="h-3 w-3" />
-          GMT
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onclick={() => run('WBGene list', () => exportWBList(selection.ids))}
-        >
-          <Download class="h-3 w-3" />
-          List
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onclick={() => run('Gene names', () => exportGeneNames(selection.ids))}
-        >
-          <Download class="h-3 w-3" />
-          Names
-        </Button>
-
+        </button>
         <div class="mx-1 h-5 w-px bg-border"></div>
 
         <Button
           variant="outline"
           size="sm"
-          disabled={selection.ids.length < 2}
-          onclick={gotoCompare}
-        >
-          <GitCompare class="h-3 w-3" />
-          Annotation overlap
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={selection.ids.length < 2}
-          onclick={gotoEnrich}
+          disabled={tooFew}
+          title={tooFew ? 'Needs at least 2 genes' : 'Test this selection for enriched annotations'}
+          onclick={() => sendTo('/enrichment')}
         >
           <BarChart class="h-3 w-3" />
           Over-representation
         </Button>
-        <Button variant="outline" size="sm" disabled={selection.ids.length < 2} onclick={gotoNta}>
-          <Network class="h-3 w-3" />
-          Network connectivity
-        </Button>
+
+        <div class="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            onclick={() => {
+              copyOpen = false;
+              sendOpen = !sendOpen;
+            }}
+          >
+            <Send class="h-3 w-3" />
+            Send to
+            <ChevronUp class="h-3 w-3 text-muted-foreground" />
+          </Button>
+          {#if sendOpen}
+            <div
+              role="menu"
+              class="absolute bottom-full left-0 z-50 mb-1 w-56 rounded-md border bg-popover p-1 shadow-md"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                disabled={tooFew}
+                title={tooFew ? 'Needs at least 2 genes' : undefined}
+                onclick={() => sendTo('/compare')}
+              >
+                <GitCompare class="h-3.5 w-3.5 text-muted-foreground" />
+                Annotation overlap
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                disabled={tooFew}
+                title={tooFew ? 'Needs at least 2 genes' : undefined}
+                onclick={() => sendTo('/nta')}
+              >
+                <Network class="h-3.5 w-3.5 text-muted-foreground" />
+                Network connectivity
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => sendTo('/lookup')}
+              >
+                <FileSearch class="h-3.5 w-3.5 text-muted-foreground" />
+                Gene name resolver
+              </button>
+            </div>
+          {/if}
+        </div>
+
+        <div class="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onclick={() => {
+              sendOpen = false;
+              copyOpen = !copyOpen;
+            }}
+          >
+            <Copy class="h-3 w-3" />
+            Copy
+            <ChevronUp class="h-3 w-3 text-muted-foreground" />
+          </Button>
+          {#if copyOpen}
+            <div
+              role="menu"
+              class="absolute bottom-full left-0 z-50 mb-1 w-56 rounded-md border bg-popover p-1 shadow-md"
+            >
+              <div class={menuHeading}>Copy to clipboard</div>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => copyItem('WBGene IDs', () => clipboardWBList(selection.ids))}
+              >
+                <Copy class="h-3.5 w-3.5 text-muted-foreground" />
+                Gene IDs
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => copyItem('Gene names', () => clipboardGeneNames(selection.ids))}
+              >
+                <Copy class="h-3.5 w-3.5 text-muted-foreground" />
+                Gene names
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => copyItem('TSV', () => clipboardTsv(selection.ids))}
+              >
+                <Copy class="h-3.5 w-3.5 text-muted-foreground" />
+                Annotated TSV
+              </button>
+              <div class="my-1 h-px bg-border"></div>
+              <div class={menuHeading}>Download as file</div>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => exportItem('TSV', () => exportTsv(selection.ids))}
+              >
+                <Download class="h-3.5 w-3.5 text-muted-foreground" />
+                TSV table
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => exportItem('CSV', () => exportCsv(selection.ids))}
+              >
+                <Download class="h-3.5 w-3.5 text-muted-foreground" />
+                CSV table
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => exportItem('JSON', () => exportJson(selection.ids))}
+              >
+                <Download class="h-3.5 w-3.5 text-muted-foreground" />
+                JSON
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => exportItem('GMT', () => exportGmt(selection.ids))}
+              >
+                <Download class="h-3.5 w-3.5 text-muted-foreground" />
+                GMT gene set
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => exportItem('WBGene list', () => exportWBList(selection.ids))}
+              >
+                <Download class="h-3.5 w-3.5 text-muted-foreground" />
+                Gene ID list
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                class={menuItem}
+                onclick={() => exportItem('Gene names', () => exportGeneNames(selection.ids))}
+              >
+                <Download class="h-3.5 w-3.5 text-muted-foreground" />
+                Gene name list
+              </button>
+            </div>
+          {/if}
+        </div>
+
         <Button
           variant="outline"
           size="sm"
-          disabled={selection.ids.length < 1}
-          onclick={gotoLookup}
-        >
-          <FileSearch class="h-3 w-3" />
-          Gene name resolver
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={selection.ids.length < 1}
           onclick={() => (summaryOpen = true)}
           title="Quick aggregate stats: top WormCat, GO, phenotypes, diseases, tissues for this selection"
         >
           <Sigma class="h-3 w-3" />
-          Summary
         </Button>
         <Button
           variant={presetUiOpen ? 'default' : 'outline'}
           size="sm"
           onclick={() => (presetUiOpen = !presetUiOpen)}
+          title="Saved selections"
         >
           <Folder class="h-3 w-3" />
-          {presets.items.length > 0 ? `Presets (${presets.items.length})` : 'Presets'}
+          {#if presets.items.length > 0}
+            <span class="text-[0.65rem] tabular-nums">{presets.items.length}</span>
+          {/if}
         </Button>
-        <Button variant="ghost" size="sm" onclick={() => selection.clear()}>
+        <Button variant="ghost" size="sm" onclick={() => selection.clear()} title="Clear selection">
           <X class="h-3 w-3" />
-          Clear
         </Button>
       </div>
     </div>

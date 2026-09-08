@@ -95,14 +95,16 @@ test('selection bar -> Over-representation carries the selection', async ({ page
 
 test('selection bar -> Annotation overlap loads the genes', async ({ page }) => {
   await seedSelection(page, GENES);
-  await page.getByRole('button', { name: 'Annotation overlap' }).click();
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'Annotation overlap' }).click();
   await expect(page).toHaveURL(/\/compare\?(ids|gz)=/);
   await expect(page.getByText('daf-16').first()).toBeVisible({ timeout: 60_000 });
 });
 
 test('selection bar -> Network connectivity pre-fills the paste box', async ({ page }) => {
   await seedSelection(page, GENES);
-  await page.getByRole('button', { name: 'Network connectivity' }).click();
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'Network connectivity' }).click();
   await expect(page).toHaveURL(/\/nta\?(ids|gz)=/);
   await expect(page.locator('textarea').first()).toHaveValue(/WBGene00000898/, {
     timeout: 15_000,
@@ -111,7 +113,8 @@ test('selection bar -> Network connectivity pre-fills the paste box', async ({ p
 
 test('selection bar -> Gene name resolver pre-fills and resolves', async ({ page }) => {
   await seedSelection(page, GENES);
-  await page.getByRole('button', { name: 'Gene name resolver' }).click();
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'Gene name resolver' }).click();
   await expect(page).toHaveURL(/\/lookup\?(ids|gz)=/);
   await expect(page.locator('textarea').first()).toHaveValue(/WBGene00000898/, {
     timeout: 15_000,
