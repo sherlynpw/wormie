@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 import { resetClientStorage } from './helpers';
 
 // Requires the SQLite DB; uses daf-16 (a heavily-RNAi'd gene) so we know the
-// reagent table will be populated.
+// evidence will be populated. The standalone "RNAi reagents" card was merged
+// into the Phenotypes panel during the gene-page regrouping; RNAi evidence now
+// shows as a per-phenotype count and an "N RNAi-only" tally in that panel.
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -17,18 +19,9 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('gene page renders RNAi reagents section', async ({ page }) => {
+test('gene page phenotype panel carries RNAi evidence', async ({ page }) => {
   // WBGene00000912 is daf-16, one of the most-studied C. elegans genes.
   await page.goto('/gene/WBGene00000912');
-  // Wait for the RNAi card to appear (gene page loads many sections in parallel).
-  await expect(page.getByRole('heading', { name: 'RNAi reagents' })).toBeVisible({
-    timeout: 60_000,
-  });
-  // At least one WBRNAi link should be present and external.
-  const firstRnaiLink = page
-    .locator('a[href^="https://wormbase.org/species/c_elegans/rnai/"]')
-    .first();
-  await expect(firstRnaiLink).toBeVisible();
-  const href = await firstRnaiLink.getAttribute('href');
-  expect(href).toMatch(/WBRNAi\d+$/);
+  // The panel header counts phenotypes seen only in RNAi experiments.
+  await expect(page.getByText(/\d+ RNAi-only/).first()).toBeVisible({ timeout: 120_000 });
 });

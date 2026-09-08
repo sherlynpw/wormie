@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { existsSync } from 'node:fs';
 
 // Uses the system chromium (matches the existing scripts/smoke-*.mjs pattern)
 // so we don't need to download Playwright-managed browsers. Tests target the
@@ -8,10 +9,18 @@ const PORT = Number(process.env.E2E_PORT ?? 5173);
 // Use `localhost` (not 127.0.0.1) because vite dev binds to ::1 by default in
 // some Linux setups; localhost resolves dual-stack and works in both.
 const BASE_URL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
-const CHROMIUM = process.env.CHROMIUM_PATH ?? '/usr/sbin/chromium';
+// Precedence: explicit CHROMIUM_PATH, then the system chromium, then the
+// Playwright-managed browser (undefined) for hosts with neither, e.g. GitHub
+// runners after `playwright install chromium`.
+const CHROMIUM =
+  process.env.CHROMIUM_PATH ??
+  (existsSync('/usr/sbin/chromium') ? '/usr/sbin/chromium' : undefined);
 
 export default defineConfig({
   testDir: 'tests/e2e',
+  // The in-browser DB import can exceed a minute on a cold OPFS, so the
+  // 30s Playwright default starves any test that waits on it.
+  timeout: 180_000,
   fullyParallel: false,
   // Single worker: all tests share one vite dev server and one DB OPFS slot.
   // Parallel workers race on resetClientStorage and produced flaky failures.

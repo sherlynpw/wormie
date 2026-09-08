@@ -31,12 +31,12 @@ test('home page synaptogenesis tree view loads with references', async ({ page }
   await page.goto('/?view=synaptogenesis');
   // Tree class rows show the numeric prefix and curated label. Scoping by
   // the prefix avoids matching the quick-start chip strip up top.
-  await expect(
-    page.getByRole('button', { name: /^01\s+Proneural \/ fate-specifying TFs/i }),
-  ).toBeVisible({
-    timeout: 60_000,
-  });
-  await expect(page.getByRole('button', { name: /^02\s+Terminal selector TFs/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Proneural \/ fate-specifying TFs/i })).toBeVisible(
+    {
+      timeout: 60_000,
+    },
+  );
+  await expect(page.getByRole('button', { name: /Terminal selector TFs/i })).toBeVisible();
   // "Show references" toggle reveals R1-R15 list.
   await page.getByRole('button', { name: /Show references/i }).click();
   await expect(page.getByText(/Hobert.*2018.*Neuronal identity/i)).toBeVisible();

@@ -228,8 +228,9 @@ test('hybrid: gene-list pre-filter + op', async ({ page }) => {
 // ---------- View interaction ----------
 
 test('view=wormcat survives a search', async ({ page }) => {
-  await page.goto('/?view=wormcat');
-  await search(page, 'cat:Chaperone');
+  // The browse views hide the search bar until a query exists, so start with one.
+  await page.goto('/?view=wormcat&q=cat:Chaperone');
+  await search(page, 'cat:Ribosome');
   // The URL should retain view=wormcat after the search.
   expect(new URL(page.url()).searchParams.get('view')).toBe('wormcat');
 });

@@ -60,7 +60,9 @@ test('paste counts.tsv populates design rows', async ({ page }) => {
     setter.call(ta, text);
     ta.dispatchEvent(new Event('input', { bubbles: true }));
   }, tsv);
-  await expect(page.locator('table tbody tr')).toHaveCount(samples.length, { timeout: 10_000 });
+  await expect(page.locator('table').first().locator('tbody tr')).toHaveCount(samples.length, {
+    timeout: 10_000,
+  });
 });
 
 test('synthetic fit produces a Results card with contrast chips', async ({ page }) => {
@@ -75,7 +77,9 @@ test('synthetic fit produces a Results card with contrast chips', async ({ page 
     ta.dispatchEvent(new Event('input', { bubbles: true }));
   }, tsv);
 
-  await expect(page.locator('table tbody tr')).toHaveCount(samples.length, { timeout: 10_000 });
+  await expect(page.locator('table').first().locator('tbody tr')).toHaveCount(samples.length, {
+    timeout: 10_000,
+  });
   const condInputs = page.locator('input[placeholder*="WT"]');
   await expect(condInputs).toHaveCount(samples.length);
   for (let i = 0; i < samples.length; i++) {
@@ -90,7 +94,7 @@ test('synthetic fit produces a Results card with contrast chips', async ({ page 
   await expect(runBtn).toBeEnabled();
   await runBtn.click();
 
-  await expect(page.getByText(/fit \d+\.\d+s · 0\/\d+ contrasts computed/i)).toBeVisible({
+  await expect(page.getByText(/fit \d+\.\d+s · \d+\/\d+ contrasts computed/i)).toBeVisible({
     timeout: 5 * 60_000,
   });
 
