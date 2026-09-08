@@ -129,7 +129,8 @@ test('home matched results -> Over-representation', async ({ page }) => {
   await expect(page.getByText(/of\s+[1-9]/)).toBeVisible({ timeout: 60_000 });
   await page.getByRole('button', { name: 'Over-representation' }).click();
   await expect(page).toHaveURL(/\/enrichment\?(ids|gz)=/, { timeout: 15_000 });
-  await expect(page.getByText(/of [\d,]+ resolved/)).toBeVisible({ timeout: 60_000 });
+  // Search already consumed part of the DB import budget; allow a slow runner.
+  await expect(page.getByText(/of [\d,]+ resolved/)).toBeVisible({ timeout: 120_000 });
 });
 
 // ---------- Pipeline handoffs not covered by handoff.spec.ts ----------

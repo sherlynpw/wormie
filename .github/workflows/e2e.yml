@@ -47,11 +47,8 @@ jobs:
         id: wasm-cache
         uses: actions/cache@v4
         with:
-          path: |
-            scripts/wasm-cran/webr-pthread
-            scripts/wasm-cran/deseq2-bundle.data
-            scripts/wasm-cran/deseq2-bundle.js.metadata
-          key: e2e-wasm-${{ hashFiles('scripts/wasm-build/sync-webr-runtime.sh', 'scripts/wasm-cran/deseq2-bundle.manifest.json') }}
+          path: scripts/wasm-cran
+          key: e2e-wasm-${{ hashFiles('scripts/wasm-build/sync-webr-runtime.sh') }}
 
       - name: Sync WebR runtime and DESeq2 bundle
         if: ${{ steps.wasm-cache.outputs.cache-hit != 'true' }}

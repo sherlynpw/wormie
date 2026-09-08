@@ -21,6 +21,10 @@ export default defineConfig({
   // The in-browser DB import can exceed a minute on a cold OPFS, so the
   // 30s Playwright default starves any test that waits on it.
   timeout: 180_000,
+  // Every fresh context re-imports the DB in a worker; on a 2-core CI runner
+  // that decompression starves the main thread, so even DB-free interactions
+  // (a save toast, a page shell) can exceed the 5s default.
+  expect: { timeout: 15_000 },
   fullyParallel: false,
   // Single worker: all tests share one vite dev server and one DB OPFS slot.
   // Parallel workers race on resetClientStorage and produced flaky failures.

@@ -47,7 +47,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('page renders without inputs and design card is hidden', async ({ page }) => {
-  await expect(page.getByRole('button', { name: /upload counts/i })).toBeVisible();
+  // The page shell sits behind the DB download gate; allow a cold CI import.
+  await expect(page.getByRole('button', { name: /upload counts/i })).toBeVisible({
+    timeout: 120_000,
+  });
   await expect(page.getByRole('button', { name: /run deseq2/i })).toHaveCount(0);
 });
 
