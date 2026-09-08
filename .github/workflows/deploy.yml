@@ -80,6 +80,7 @@ jobs:
           path: |
             static/data/wormie.sqlite.gz
             static/data/version.json
+            static/data/unresolved-symbols.txt
           key: db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-kegg${{ env.DISABLE_KEGG || 'on' }}-${{ hashFiles('scripts/build-db.sh', 'data/**') }}
           restore-keys: |
             db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-kegg${{ env.DISABLE_KEGG || 'on' }}-
@@ -103,6 +104,7 @@ jobs:
           mv static/data/wormie.sqlite.gz deploy-data/
           mv static/data/version.json deploy-data/
           [ -f static/data/annotation.saf.gz ] && mv static/data/annotation.saf.gz deploy-data/ || true
+          [ -f static/data/unresolved-symbols.txt ] && mv static/data/unresolved-symbols.txt deploy-data/ || true
           ls -lh deploy-data/
 
       - name: Build SvelteKit
@@ -196,6 +198,12 @@ jobs:
           if [ -f deploy-data/annotation.saf.gz ]; then
             aws s3 cp deploy-data/annotation.saf.gz "s3://wormie-data/annotation.saf.gz" \
               --endpoint-url "$R2_ENDPOINT" --content-type application/gzip
+          fi
+          # Item 19: the full unresolved-panel-symbol list must survive the build
+          # and be inspectable next to the database it describes.
+          if [ -f deploy-data/unresolved-symbols.txt ]; then
+            aws s3 cp deploy-data/unresolved-symbols.txt "s3://wormie-data/unresolved-symbols.txt" \
+              --endpoint-url "$R2_ENDPOINT" --content-type "text/plain; charset=utf-8"
           fi
 
       - name: Deploy to Cloudflare Workers

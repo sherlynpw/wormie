@@ -149,7 +149,7 @@ if ! "${PY[@]}" -c 'import numpy' >/dev/null 2>&1; then
   exit 1
 fi
 
-"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" <<'PY'
+"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" "$DEST_DIR" <<'PY'
 import csv, gzip, json, math, re, sqlite3, sys
 from pathlib import Path
 
@@ -158,7 +158,7 @@ from pathlib import Path
  bgi_json_gz, gene_ids_path, func_desc_path, xrefs_path, wb_pheno_gz,
  cengen_tsv, cengen_t1, cengen_t2, cengen_t3, cengen_t4, disease_tsv,
  rnai_pheno_gz, synapto_tsv, reference_json_gz, gene2pubmed_ce,
- paper_cache_dir) = sys.argv[1:28]
+ paper_cache_dir, dest_dir) = sys.argv[1:29]
 
 conn = sqlite3.connect(db_path)
 conn.executescript('PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL;')
@@ -325,11 +325,14 @@ CREATE INDEX idx_neuronal_sc ON neuronal(supercategory);
 CREATE INDEX idx_neuronal_cat ON neuronal(category);
 """)
 n_rows = []
+neuronal_skipped = []
 if Path(neuronal_csv).is_file():
     with open(neuronal_csv, newline='') as f:
         for row in csv.DictReader(f):
             wb = (row.get('wormbase_id') or '').strip()
-            if not wb: continue
+            if not wb:
+                neuronal_skipped.append((row.get('gene_name') or '').strip() or '<blank row>')
+                continue
             n_rows.append((
                 wb,
                 (row.get('gene_name') or '').strip() or None,
@@ -337,7 +340,10 @@ if Path(neuronal_csv).is_file():
                 (row.get('supercategory') or '').strip() or None,
             ))
     cur.executemany('INSERT OR REPLACE INTO neuronal VALUES (?,?,?,?)', n_rows)
-    print(f'neuronal: {len(n_rows)} rows', file=sys.stderr)
+    msg = f'neuronal: {len(n_rows)} rows'
+    if neuronal_skipped:
+        msg += f' ({len(neuronal_skipped)} rows skipped: blank wormbase_id)'
+    print(msg, file=sys.stderr)
 
 # ---------- Synaptogenesis panel ----------
 cur.executescript("""
@@ -390,6 +396,18 @@ if Path(synapto_tsv).is_file():
         if len(syn_unresolved) > 8: msg += ', ...'
         msg += ')'
     print(msg, file=sys.stderr)
+
+# Every panel row skipped during ingest, in full, written next to the database so
+# a lab substituting its own panel can inspect the misses after the build. The
+# stderr summaries above truncate; this file does not.
+with open(Path(dest_dir) / 'unresolved-symbols.txt', 'w', encoding='utf-8') as rf:
+    rf.write('# Curated panel rows skipped by this build.\n')
+    rf.write('# synaptogenesis: symbol did not resolve against WormBase gene names.\n')
+    rf.write('# neuronal: row had a blank wormbase_id.\n')
+    for s in syn_unresolved:
+        rf.write(f'synaptogenesis\t{s}\n')
+    for s in neuronal_skipped:
+        rf.write(f'neuronal\t{s}\n')
 
 # ---------- GO ontology ----------
 cur.executescript("""
@@ -509,9 +527,16 @@ def collect_ancestors(t, seen):
 for t in list(parents):
     collect_ancestors(t, set())
 
-seen_pair = set((g, go) for g, go, *_ in gaf_rows)
+# NOT-qualified annotations must not seed propagation: a negation applies to the
+# term and its descendants, not its ancestors (gaudet2017). The rows stay in
+# gene_go for display; enrichment/GSEA exclude them query-side.
+def go_negated(qual):
+    return bool(qual) and 'NOT' in qual.split('|')
+
+seen_pair = set((g, go) for g, go, qual, *_ in gaf_rows if not go_negated(qual))
 prop_rows = []
-for g, direct_go, *_ in gaf_rows:
+for g, direct_go, qual, *_ in gaf_rows:
+    if go_negated(qual): continue
     canon = alt_to_canon.get(direct_go, direct_go)
     for anc in ancestors.get(canon, ()):
         key = (g, anc)
@@ -1565,9 +1590,12 @@ except Exception as e:
 cur.executescript("""
 CREATE TABLE go_term_freq (go_id TEXT PRIMARY KEY, df INTEGER NOT NULL, idf REAL NOT NULL);
 """)
-N_total = cur.execute('SELECT COUNT(DISTINCT wormbase_gene) FROM gene_go').fetchone()[0] or 1
+# NOT-qualified rows are display-only and must not count toward the frequencies
+# the enrichment background and rarity weights are built from.
+GO_POSITIVE = "qualifier IS NULL OR instr('|' || qualifier || '|', '|NOT|') = 0"
+N_total = cur.execute(f'SELECT COUNT(DISTINCT wormbase_gene) FROM gene_go WHERE {GO_POSITIVE}').fetchone()[0] or 1
 idf_rows = []
-for go_id, df in cur.execute('SELECT go_id, COUNT(DISTINCT wormbase_gene) FROM gene_go GROUP BY go_id'):
+for go_id, df in cur.execute(f'SELECT go_id, COUNT(DISTINCT wormbase_gene) FROM gene_go WHERE {GO_POSITIVE} GROUP BY go_id'):
     if df > 0:
         idf_rows.append((go_id, df, max(math.log(N_total / df), 0.0)))
 cur.executemany('INSERT INTO go_term_freq VALUES (?,?,?)', idf_rows)
