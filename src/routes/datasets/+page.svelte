@@ -12,13 +12,23 @@
   import { parseGeneList } from '$lib/gene-parse';
   import { decodeSession, sessionToolLabel, sessionToolPath } from '$lib/session';
 
-  type Param = 'paste' | 'gmt' | 'ranked' | 'deseq2' | 'results' | 'counts' | 'session' | 'bundle';
+  type Param =
+    | 'paste'
+    | 'gmt'
+    | 'ranked'
+    | 'deseq2'
+    | 'results'
+    | 'counts'
+    | 'session'
+    | 'bundle'
+    | 'list';
   type Target = { path: string; param: Param; label: string };
   // First entry is the default target; rest appear in "Open in ..." submenu.
   const TYPE_ROUTES: Record<DatasetType, Target[]> = {
     'gene-list': [
       { path: '/enrichment', param: 'paste', label: 'Enrichment (ORA)' },
       { path: '/enrichment', param: 'deseq2', label: 'Enrichment (DE table / volcano)' },
+      { path: '/compare/lists', param: 'list', label: 'Gene overlap' },
     ],
     ranked: [
       { path: '/gsea', param: 'ranked', label: 'GSEA' },

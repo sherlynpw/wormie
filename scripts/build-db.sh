@@ -266,11 +266,17 @@ CREATE TABLE wb_to_entrez (wormbase_gene TEXT PRIMARY KEY, entrez_id TEXT NOT NU
 with gzip.open(bgi_json_gz, 'rt', encoding='utf-8') as f:
     bgi = json.load(f)
 e_rows = []
+gene_synonyms = {}
 for g in bgi.get('data', []):
-    wb_raw = (g.get('basicGeneticEntity', {}) or {}).get('primaryId') or ''
+    be = g.get('basicGeneticEntity', {}) or {}
+    wb_raw = be.get('primaryId') or ''
     if not wb_raw.startswith('WB:WBGene'): continue
     wb = wb_raw[3:]
-    for x in (g.get('basicGeneticEntity', {}) or {}).get('crossReferences', []) or []:
+    # CELE_* entries duplicate the sequence name; the rest are the literature
+    # aliases (nca-1 for unc-77, snap-25 for ric-4) users actually search for.
+    syns = [s for s in (be.get('synonyms') or []) if s and not s.startswith('CELE_')]
+    if syns: gene_synonyms[wb] = syns
+    for x in be.get('crossReferences', []) or []:
         xid = x.get('id', '')
         if xid.startswith('NCBI_Gene:'):
             e_rows.append((xid.split(':', 1)[1], wb))
@@ -278,6 +284,28 @@ for g in bgi.get('data', []):
 cur.executemany('INSERT OR REPLACE INTO entrez_to_wb VALUES (?,?)', e_rows)
 cur.executemany('INSERT OR REPLACE INTO wb_to_entrez VALUES (?,?)', [(wb, eid) for eid, wb in e_rows])
 print(f'entrez_to_wb: {len(e_rows)} mappings', file=sys.stderr)
+
+# annotations.other_names was schema-only until now: it is FTS-indexed and
+# shown on the gene page, but nothing filled it, so alias searches found
+# nothing. Fill it from the Alliance synonyms.
+cur.executemany(
+    'UPDATE annotations SET other_names = ? WHERE wormbase_gene = ?',
+    [(' | '.join(v), k) for k, v in gene_synonyms.items()],
+)
+print(f'other_names: synonyms for {len(gene_synonyms)} genes', file=sys.stderr)
+
+# Symbol resolver for the curated panels, shared by the neuronal and
+# synaptogenesis ingests below. Canonical WormBase names claim a symbol first;
+# Alliance synonyms fill the gaps, so a curated row naming nca-1 lands on
+# unc-77 instead of being dropped.
+sym_to_wb = {}
+for wb, name in cur.execute(
+    'SELECT wormbase_gene, gene_name FROM annotations WHERE gene_name IS NOT NULL'
+).fetchall():
+    sym_to_wb.setdefault(name.lower(), wb)
+for wb, syns in gene_synonyms.items():
+    for s in syns:
+        sym_to_wb.setdefault(s.lower(), wb)
 
 # ---------- WormCat ----------
 cur.executescript("""
@@ -330,8 +358,13 @@ if Path(neuronal_csv).is_file():
     with open(neuronal_csv, newline='') as f:
         for row in csv.DictReader(f):
             wb = (row.get('wormbase_id') or '').strip()
+            name = (row.get('gene_name') or '').strip()
+            if not wb and name:
+                # The curation uses literature aliases for some rows; resolve
+                # like the synaptogenesis panel instead of dropping them.
+                wb = sym_to_wb.get(name.lower()) or ''
             if not wb:
-                neuronal_skipped.append((row.get('gene_name') or '').strip() or '<blank row>')
+                neuronal_skipped.append(name or '<blank row>')
                 continue
             n_rows.append((
                 wb,
@@ -358,13 +391,8 @@ CREATE TABLE synaptogenesis (
 CREATE INDEX idx_synapto_class ON synaptogenesis(class);
 CREATE INDEX idx_synapto_subclass ON synaptogenesis(subclass);
 """)
-# Build a symbol → wormbase_gene resolver from annotations. Lower-cased so we
-# survive case differences between curated lists and WormBase canonical names.
-sym_to_wb = {}
-for wb, name in cur.execute(
-    'SELECT wormbase_gene, gene_name FROM annotations WHERE gene_name IS NOT NULL'
-).fetchall():
-    sym_to_wb.setdefault(name.lower(), wb)
+# Resolved against the shared sym_to_wb built after the BGI ingest above
+# (canonical names first, Alliance synonyms as fallback).
 syn_rows = []
 syn_unresolved = []
 if Path(synapto_tsv).is_file():
@@ -402,8 +430,8 @@ if Path(synapto_tsv).is_file():
 # stderr summaries above truncate; this file does not.
 with open(Path(dest_dir) / 'unresolved-symbols.txt', 'w', encoding='utf-8') as rf:
     rf.write('# Curated panel rows skipped by this build.\n')
-    rf.write('# synaptogenesis: symbol did not resolve against WormBase gene names.\n')
-    rf.write('# neuronal: row had a blank wormbase_id.\n')
+    rf.write('# synaptogenesis: symbol resolved against neither WormBase names nor Alliance synonyms.\n')
+    rf.write('# neuronal: blank wormbase_id and the gene name resolved against neither source.\n')
     for s in syn_unresolved:
         rf.write(f'synaptogenesis\t{s}\n')
     for s in neuronal_skipped:

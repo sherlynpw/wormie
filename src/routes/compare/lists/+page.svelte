@@ -12,6 +12,7 @@
   import UpSetPlot from '$lib/components/UpSetPlot.svelte';
   import JaccardHeatmap from '$lib/components/JaccardHeatmap.svelte';
   import GenePill from '$lib/components/GenePill.svelte';
+  import LoadDatasetPicker from '$lib/components/LoadDatasetPicker.svelte';
   import { toast } from 'svelte-sonner';
   import { bulkLookup } from '$lib/queries';
   import { parseGeneList } from '$lib/gene-parse';
@@ -20,6 +21,8 @@
   import { buildIdsQuery } from '$lib/share';
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
+  import { page } from '$app/state';
+  import { onMount } from 'svelte';
 
   type Slot = { id: number; name: string; body: string; dragOver: boolean };
 
@@ -28,6 +31,23 @@
     { id: 1, name: 'List A', body: '', dragOver: false },
     { id: 2, name: 'List B', body: '', dragOver: false },
   ]);
+
+  // The datasets page sends "Open in -> Gene overlap" as ?load=list&id=,
+  // landing the saved list in the first empty slot. Open-in is a full reload,
+  // so the second saved list arrives via each slot's own From dataset picker.
+  onMount(async () => {
+    const params = page.url.searchParams;
+    const id = params.get('id');
+    if (params.get('load') !== 'list' || !id) return;
+    const { datasets } = await import('$lib/stores/datasets.svelte');
+    const ds = await datasets.getById(id);
+    if (!ds) return;
+    const slot = slots.find((s) => !s.body.trim()) ?? slots[0];
+    slot.name = ds.name;
+    slot.body = ds.body;
+    stale = true;
+    toast.success('Loaded', { description: ds.name });
+  });
 
   type Resolved = { slotId: number; name: string; ids: string[]; misses: string[] };
   let resolved = $state<Resolved[]>([]);
@@ -182,6 +202,15 @@
                 From selection ({selection.ids.length})
               </Button>
             {/if}
+            <LoadDatasetPicker
+              type="gene-list"
+              label="From dataset"
+              onload={(ds) => {
+                slot.name = ds.name;
+                slot.body = ds.body;
+                stale = true;
+              }}
+            />
             {#if slots.length > 2}
               <Button
                 variant="ghost"

@@ -17,7 +17,8 @@ export type GseaKind =
   | 'tissue'
   | 'disease'
   | 'cell-type'
-  | 'synaptogenesis';
+  | 'synaptogenesis'
+  | 'pathway';
 
 // Mirror enrichment-worker's CeNGEN threshold: medium (>=2) FACS-calibrated
 // calls, same default as the CeNGEN web app.
@@ -262,6 +263,34 @@ function loadTermSets(db: any, kind: GseaKind): TermSet[] {
     }
     return [...sets.values()];
   }
+  if (kind === 'pathway') {
+    // Mirrors enrichment-worker's pathway sets; empty on DISABLE_KEGG builds,
+    // where the UI hides the tab anyway.
+    let prows: { term_id: string; name: string; wormbase_gene: string }[] = [];
+    try {
+      prows = execAll<{ term_id: string; name: string; wormbase_gene: string }>(
+        db,
+        `SELECT DISTINCT gkp.pathway_id AS term_id,
+                COALESCE(p.name, gkp.pathway_id) AS name,
+                gkp.wormbase_gene
+         FROM gene_kegg_pathway gkp
+         LEFT JOIN kegg_pathway p ON p.pathway_id = gkp.pathway_id`,
+      );
+    } catch {
+      // KEGG tables not ingested (DISABLE_KEGG build)
+    }
+    const sets = new Map<string, TermSet>();
+    for (const r of prows) {
+      let s = sets.get(r.term_id);
+      if (!s) {
+        s = { term_id: r.term_id, name: r.name, genes: [] };
+        sets.set(r.term_id, s);
+      }
+      s.genes.push(r.wormbase_gene);
+    }
+    return [...sets.values()];
+  }
+
   if (kind === 'cell-type') {
     let crows: { term_id: string; wormbase_gene: string }[] = [];
     try {
