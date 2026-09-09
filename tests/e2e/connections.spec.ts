@@ -303,6 +303,22 @@ test('datasets Open in -> ssGSEA loads a counts matrix', async ({ page }) => {
   });
 });
 
+test('datasets Open in -> Gene overlap fills a slot', async ({ page }) => {
+  await seedDataset(page, {
+    id: 'conn-list',
+    name: 'conn list',
+    type: 'gene-list',
+    createdAt: Date.now(),
+    body: 'daf-2\ndaf-16\nage-1',
+  });
+  await page.goto('/datasets');
+  await expect(page.getByText('conn list')).toBeVisible({ timeout: 15_000 });
+  await page.getByTitle('Open in Gene overlap').click();
+  await expect(page).toHaveURL(/\/compare\/lists\?load=list/, { timeout: 15_000 });
+  await expect(page.locator('textarea').first()).toHaveValue(/daf-2/, { timeout: 15_000 });
+  await expect(page.getByPlaceholder('List name').first()).toHaveValue('conn list');
+});
+
 test('datasets Open in -> GSEA intersect loads a bundle', async ({ page }) => {
   const bundle = {
     format: 'wb.gsea.bundle.v1',
