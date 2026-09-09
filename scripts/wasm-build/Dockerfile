@@ -13,7 +13,10 @@ ENV R_WASM_LIB=${WEBR_ROOT}/wasm/R-${R_VERSION}/lib/R/library
 ENV PATH=/opt/emsdk/upstream/emscripten:${PATH}
 
 # Tools we need for the build harness itself: download + repo packaging.
+# The base image ships a rig.r-pkg.org apt source whose signing key rots and
+# then fails every apt-get update; we install nothing from it, so drop it.
 RUN ${R_HOST_EXE} -e 'install.packages(c("desc","jsonlite"), repos="https://cloud.r-project.org")' \
+ && rm -f /etc/apt/sources.list.d/*rig* \
  && apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 

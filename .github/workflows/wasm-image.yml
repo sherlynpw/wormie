@@ -1,0 +1,137 @@
+name: WASM images
+
+# PR-only smoke check: build the Docker images that produce the WASM artifacts
+# and stop there. No package build, no bake, no R2 upload. Catches a broken
+# Dockerfile (or a base image whose apt sources rotted) before it lands on
+# trunk, where build-wasm.yml is currently the first thing to notice.
+on:
+  pull_request:
+    paths:
+      - "scripts/wasm-build/**"
+      - ".github/workflows/build-wasm.yml"
+      - ".github/workflows/wasm-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: wasm-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      deseq2: ${{ steps.decide.outputs.deseq2 }}
+      featurecounts: ${{ steps.decide.outputs.featurecounts }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            deseq2:
+              - 'scripts/wasm-build/**'
+              - '!scripts/wasm-build/featurecounts-wasm/**'
+              - '.github/workflows/build-wasm.yml'
+              - '.github/workflows/wasm-image.yml'
+            featurecounts:
+              - 'scripts/wasm-build/featurecounts-wasm/**'
+              - '.github/workflows/build-wasm.yml'
+              - '.github/workflows/wasm-image.yml'
+      - id: decide
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "deseq2=true" >> "$GITHUB_OUTPUT"
+            echo "featurecounts=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deseq2=${{ steps.filter.outputs.deseq2 }}" >> "$GITHUB_OUTPUT"
+            echo "featurecounts=${{ steps.filter.outputs.featurecounts }}" >> "$GITHUB_OUTPUT"
+          fi
+
+  deseq2-image:
+    needs: changes
+    if: needs.changes.outputs.deseq2 == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android \
+            /usr/local/share/boost "${AGENT_TOOLSDIRECTORY:-}" || true
+          sudo docker image prune --all --force || true
+          df -h /
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Read-only: trunk's build-wasm.yml owns this cache, a PR only reuses it.
+      - name: Restore wormie-wasm-build layer cache
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/.buildx-cache-deseq
+          key: deseq-bundle-v0.5.9-${{ hashFiles('scripts/wasm-build/Dockerfile', 'scripts/wasm-build/build-pkgs.sh', 'scripts/wasm-build/bake-bundle.sh', 'scripts/wasm-build/webr-vars-augment.mk', 'scripts/wasm-build/blas-wasm/**', 'scripts/wasm-build/sync-webr-runtime.sh') }}
+          restore-keys: |
+            deseq-bundle-v0.5.9-
+
+      - name: Build wormie-wasm-build image
+        uses: docker/build-push-action@v6
+        with:
+          context: scripts/wasm-build
+          tags: wormie-wasm-build:v0.5.9
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache-deseq
+
+      - name: Smoke the image entrypoints
+        run: |
+          docker run --rm --entrypoint bash wormie-wasm-build:v0.5.9 -c '
+            set -euo pipefail
+            "${R_HOST_EXE}" --version | head -1
+            "${RSCRIPT}" -e "library(desc); library(jsonlite); cat(\"host R deps ok\n\")"
+            emcc --version | head -1
+            test -x /usr/local/bin/build-pkgs
+            test -x /usr/local/bin/bake-bundle
+          '
+
+  featurecounts-image:
+    needs: changes
+    if: needs.changes.outputs.featurecounts == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUBREAD_VER: "2.0.6"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android \
+            /usr/local/share/boost "${AGENT_TOOLSDIRECTORY:-}" || true
+          sudo docker image prune --all --force || true
+          df -h /
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Restore featureCounts layer cache
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/.buildx-cache-fc
+          key: featurecounts-${{ env.SUBREAD_VER }}-${{ hashFiles('scripts/wasm-build/featurecounts-wasm/Dockerfile', 'scripts/wasm-build/featurecounts-wasm/Makefile.emscripten') }}
+          restore-keys: |
+            featurecounts-${{ env.SUBREAD_VER }}-
+
+      - name: Build featureCounts WASM image
+        uses: docker/build-push-action@v6
+        with:
+          context: scripts/wasm-build/featurecounts-wasm
+          tags: wormie-featurecounts:${{ env.SUBREAD_VER }}
+          build-args: |
+            SUBREAD_VER=${{ env.SUBREAD_VER }}
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache-fc
