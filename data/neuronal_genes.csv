@@ -87,13 +87,13 @@ ncs-8,,Candidate auxiliary subunits for various types of ion channels,Ion channe
 ncs-9,,Candidate auxiliary subunits for various types of ion channels,Ion channels
 dpf-1,WBGene00001054,Candidate auxiliary subunits for various types of ion channels,Ion channels
 dpf-2,WBGene00001055,Candidate auxiliary subunits for various types of ion channels,Ion channels
-dfp-3,,Candidate auxiliary subunits for various types of ion channels,Ion channels
+dpf-3,WBGene00001056,Candidate auxiliary subunits for various types of ion channels,Ion channels
 dpf-4,WBGene00001057,Candidate auxiliary subunits for various types of ion channels,Ion channels
 dpf-5,WBGene00001058,Candidate auxiliary subunits for various types of ion channels,Ion channels
 dpf-6,WBGene00001059,Candidate auxiliary subunits for various types of ion channels,Ion channels
 dpf-7,WBGene00001060,Candidate auxiliary subunits for various types of ion channels,Ion channels
 mec-14,WBGene00003176,Candidate auxiliary subunits for various types of ion channels,Ion channels
-ctf-1,,Candidate auxiliary subunits for various types of ion channels,Ion channels
+cft-1,WBGene00000477,Candidate auxiliary subunits for various types of ion channels,Ion channels
 mrp-1,WBGene00003407,Candidate auxiliary subunits for various types of ion channels,Ion channels
 mrp-2,WBGene00003408,Candidate auxiliary subunits for various types of ion channels,Ion channels
 mrp-3,WBGene00003409,Candidate auxiliary subunits for various types of ion channels,Ion channels
@@ -492,7 +492,7 @@ comt-3,WBGene00021487,Neurotransmitter synthesis and degradation,Neurotransmitte
 comt-4,WBGene00021491,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
 comt-5,WBGene00021492,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
 gta-1,WBGene00001794,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
-adh-7,,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+alh-7,WBGene00000113,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
 daf-28,WBGene00000920,Neuropeptide-encoding genes,Neuropeptides
 ins-1,WBGene00002084,Neuropeptide-encoding genes,Neuropeptides
 ins-39,WBGene00017668,Neuropeptide-encoding genes,Neuropeptides
@@ -616,7 +616,7 @@ nep-26,WBGene00014171,Metabolism of neuropeptides,Neuropeptides
 nep-27,,Metabolism of neuropeptides,Neuropeptides
 dpf-1,WBGene00001054,Metabolism of neuropeptides,Neuropeptides
 dpf-2,WBGene00001055,Metabolism of neuropeptides,Neuropeptides
-dfp-3,,Metabolism of neuropeptides,Neuropeptides
+dpf-3,WBGene00001056,Metabolism of neuropeptides,Neuropeptides
 dpf-4,WBGene00001057,Metabolism of neuropeptides,Neuropeptides
 dpf-5,WBGene00001058,Metabolism of neuropeptides,Neuropeptides
 dpf-6,WBGene00001059,Metabolism of neuropeptides,Neuropeptides
