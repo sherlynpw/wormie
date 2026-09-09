@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -61,7 +61,9 @@ test('counts → /de handoff fills the design table', async ({ page }) => {
       '/de?from=counts',
     );
   });
-  await expect(page.locator('table tbody tr')).toHaveCount(samples.length, { timeout: 15_000 });
+  await expect(page.locator('table').first().locator('tbody tr')).toHaveCount(samples.length, {
+    timeout: 15_000,
+  });
 });
 
 test('de → /gsea handoff seeds the paste textarea with stat-ranked rows', async ({ page }) => {

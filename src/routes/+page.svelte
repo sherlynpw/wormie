@@ -32,7 +32,6 @@
   import { toast } from 'svelte-sonner';
   import Download from 'lucide-svelte/icons/download';
   import BarChart from 'lucide-svelte/icons/bar-chart-3';
-  import TrendingUp from 'lucide-svelte/icons/trending-up';
   import FileSearch from 'lucide-svelte/icons/file-search';
   import GitCompare from 'lucide-svelte/icons/git-compare';
 
@@ -312,7 +311,7 @@
       exporting = false;
     }
   }
-  async function sendMatchedTo(tool: 'compare' | 'enrichment' | 'gsea' | 'lookup') {
+  async function sendMatchedTo(tool: 'compare' | 'enrichment' | 'lookup') {
     if (sending) return;
     sending = true;
     try {
@@ -484,17 +483,7 @@
         onclick={() => sendMatchedTo('enrichment')}
       >
         <BarChart class="h-3 w-3" />
-        Enrichment
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={sending || (facets?.n_genes ?? 0) < 2}
-        onclick={() => sendMatchedTo('gsea')}
-      >
-        <TrendingUp class="h-3 w-3" />
-        GSEA
+        Over-representation
       </Button>
       <Button
         type="button"
@@ -504,7 +493,7 @@
         onclick={() => sendMatchedTo('lookup')}
       >
         <FileSearch class="h-3 w-3" />
-        Lookup
+        Gene name resolver
       </Button>
       <Button
         type="button"
@@ -514,7 +503,7 @@
         onclick={() => sendMatchedTo('compare')}
       >
         <GitCompare class="h-3 w-3" />
-        Compare
+        Annotation overlap
       </Button>
       <span class="mx-1 h-4 w-px bg-border"></span>
       <Button

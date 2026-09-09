@@ -280,7 +280,7 @@
 </script>
 
 <svelte:head>
-  <title>Compare contrasts · wormie.rs.ht</title>
+  <title>Contrast comparison · wormie.rs.ht</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
@@ -290,8 +290,10 @@
   </Button>
 
   <header class="space-y-1">
-    <h1 class="text-2xl font-semibold">Compare contrasts</h1>
-    <p class="text-sm text-muted-foreground">Two comparisons side by side</p>
+    <h1 class="text-2xl font-semibold">Contrast comparison</h1>
+    <p class="text-sm text-muted-foreground">
+      Two differential expression outputs compared against each other
+    </p>
   </header>
 
   <PageHint id="de-diff" title="What this step does">

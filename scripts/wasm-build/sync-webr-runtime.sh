@@ -67,5 +67,25 @@ else
   echo "  !! no SIMD libRblas.so at ${LOCAL_BLAS} (run blas-wasm/build.sh first)"
 fi
 
+# The DESeq2 bundle is baked in CI and lives only in R2; without it /de loads
+# WebR and then fails on library(DESeq2). Mirror the deployed copy for dev.
+BUNDLE_DIR="${REPO_DIR}/scripts/wasm-cran"
+SITE="https://wormie.rs.ht/wasm-cran"
+echo "==> fetching deseq2 bundle from ${SITE}"
+for f in deseq2-bundle.data deseq2-bundle.js.metadata deseq2-bundle.manifest.json; do
+  echo "  -> ${f}"
+  curl -fsSL -o "${BUNDLE_DIR}/${f}.new" "${SITE}/${f}"
+  mv "${BUNDLE_DIR}/${f}.new" "${BUNDLE_DIR}/${f}"
+done
+
+echo "==> fetching featureCounts module from ${SITE}"
+mkdir -p "${BUNDLE_DIR}/featurecounts"
+for f in featureCounts.js featureCounts.wasm; do
+  echo "  -> featurecounts/${f}"
+  curl -fsSL -o "${BUNDLE_DIR}/featurecounts/${f}.new" "${SITE}/featurecounts/${f}"
+  mv "${BUNDLE_DIR}/featurecounts/${f}.new" "${BUNDLE_DIR}/featurecounts/${f}"
+done
+
 echo "==> done. Listing:"
 ls -lh "${DEST}"
+ls -lh "${BUNDLE_DIR}"/deseq2-bundle.*

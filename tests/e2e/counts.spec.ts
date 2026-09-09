@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -29,7 +29,11 @@ function fakeGtf(): { name: string; mimeType: string; buffer: Buffer } {
 test('page renders and shows BAM picker', async ({ page }) => {
   await expect(page.getByRole('region', { name: /inputs/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /choose bam file/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /choose annotation/i })).toBeVisible();
+  // "Choose annotation" without a bundled GTF; "Or choose your own" when
+  // version.json advertises the shipped WormBase annotation.
+  await expect(
+    page.getByRole('button', { name: /choose annotation|choose your own/i }),
+  ).toBeVisible();
 });
 
 test('adds BAMs cumulatively and supports remove + clear', async ({ page }) => {

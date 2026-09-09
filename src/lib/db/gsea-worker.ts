@@ -5,6 +5,7 @@
 
 import { multilevelP } from './fgsea-multilevel';
 import { bhFdr } from './stats';
+import { GO_POSITIVE } from './enrichment-worker';
 // Permutation strategy: gene-set permutation (random samples of size |S| from
 // the ranked background), standard for preranked GSEA without sample labels.
 
@@ -150,7 +151,7 @@ function loadTermSets(db: any, kind: GseaKind): TermSet[] {
       `SELECT DISTINCT t.go_id, t.name, t.namespace, gg.wormbase_gene
 			 FROM gene_go gg
 			 JOIN go_terms t ON t.go_id = gg.go_id
-			 WHERE t.is_obsolete = 0
+			 WHERE t.is_obsolete = 0 AND ${GO_POSITIVE}
 			 ORDER BY t.go_id`,
     );
     const sets = new Map<string, TermSet>();

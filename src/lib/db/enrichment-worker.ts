@@ -19,6 +19,11 @@ export type EnrichmentKind =
 // the most-confident expression calls.
 const CENGEN_MIN_THRESHOLD = 2;
 
+// NOT-qualified GO annotations are stored for the gene page but must not count
+// as positive evidence in enrichment (GAF qualifiers are pipe-separated, e.g.
+// NOT|involved_in; propagated rows carry NULL).
+export const GO_POSITIVE = "(qualifier IS NULL OR instr('|' || qualifier || '|', '|NOT|') = 0)";
+
 export interface EnrichmentResult {
   term_id: string;
   name: string;
@@ -65,7 +70,10 @@ function loadBackground(db: any, kind: EnrichmentKind): BgInfo {
 			 FROM go_term_freq f JOIN go_terms t ON t.go_id = f.go_id
 			 WHERE t.is_obsolete = 0`,
     );
-    N = execAll<{ n: number }>(db, 'SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_go')[0].n;
+    N = execAll<{ n: number }>(
+      db,
+      `SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_go WHERE ${GO_POSITIVE}`,
+    )[0].n;
   } else if (kind === 'phenotype') {
     counts = execAll<{ term_id: string; df: number; name: string }>(
       db,
@@ -209,7 +217,7 @@ function loadAnnotationIndex(db: any, kind: EnrichmentKind): Map<string, string[
   if (kind === 'go') {
     rows = execAll<{ wormbase_gene: string; term_id: string }>(
       db,
-      'SELECT DISTINCT wormbase_gene, go_id AS term_id FROM gene_go',
+      `SELECT DISTINCT wormbase_gene, go_id AS term_id FROM gene_go WHERE ${GO_POSITIVE}`,
     );
   } else if (kind === 'phenotype') {
     rows = execAll<{ wormbase_gene: string; term_id: string }>(

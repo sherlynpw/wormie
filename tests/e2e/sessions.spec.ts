@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage, saveSession } from './helpers';
 
 // These tests exercise the session save/restore round-trip without depending
@@ -34,10 +34,7 @@ test('enrichment paste-mode session round-trip', async ({ page }) => {
 
   await page.goto('/datasets');
   await expect(page.getByText('enrich-test')).toBeVisible();
-  await page
-    .getByRole('button', { name: /enrichment/i })
-    .first()
-    .click();
+  await page.getByRole('button', { name: 'Over-representation' }).first().click();
 
   await expect(page).toHaveURL(/\/enrichment\?load=session/);
   await expect(page.locator('textarea').first()).toHaveValue('daf-16\ndaf-2\nage-1');
@@ -53,10 +50,7 @@ test('gsea session round-trip', async ({ page }) => {
 
   await page.goto('/datasets');
   await expect(page.getByText('gsea-test')).toBeVisible();
-  await page
-    .getByRole('button', { name: /^gsea$/i })
-    .first()
-    .click();
+  await page.getByRole('button', { name: 'Ranked-list enrichment' }).first().click();
 
   await expect(page).toHaveURL(/\/gsea\?load=session/);
   await expect(page.locator('textarea').first()).toHaveValue(
@@ -74,10 +68,7 @@ test('gmt session round-trip', async ({ page }) => {
 
   await page.goto('/datasets');
   await expect(page.getByText('gmt-test')).toBeVisible();
-  await page
-    .getByRole('button', { name: /custom gmt/i })
-    .first()
-    .click();
+  await page.getByRole('button', { name: 'Custom gene sets' }).first().click();
 
   await expect(page).toHaveURL(/\/gmt\?load=session/);
   await expect(page.locator('textarea').first()).toHaveValue(
@@ -98,10 +89,7 @@ test('gsea session restores geneCol and scoreCol', async ({ page }) => {
   await expect(page.getByText(/session saved/i)).toBeVisible();
 
   await page.goto('/datasets');
-  await page
-    .getByRole('button', { name: /^gsea$/i })
-    .first()
-    .click();
+  await page.getByRole('button', { name: 'Ranked-list enrichment' }).first().click();
   await expect(page).toHaveURL(/\/gsea\?load=session/);
 
   await expect(page.locator('input[type="number"]').nth(0)).toHaveValue('3');
@@ -124,10 +112,7 @@ test('gmt session restores mode and nperm', async ({ page }) => {
   await expect(page.getByText(/session saved/i)).toBeVisible();
 
   await page.goto('/datasets');
-  await page
-    .getByRole('button', { name: /custom gmt/i })
-    .first()
-    .click();
+  await page.getByRole('button', { name: 'Custom gene sets' }).first().click();
   await expect(page).toHaveURL(/\/gmt\?load=session/);
 
   // The GSEA tab should be active again, and nperm should be 2500.
@@ -145,7 +130,7 @@ test('enrichment deseq2 mode restores padj and lfc filters', async ({ page }) =>
   ].join('\n');
 
   await page.goto('/enrichment');
-  await page.getByRole('button', { name: 'DESeq2 / volcano' }).click();
+  await page.getByRole('button', { name: 'DE table / volcano' }).click();
   await page.locator('textarea').first().fill(csv);
   await page.getByRole('button', { name: 'Render' }).click();
 
@@ -160,10 +145,7 @@ test('enrichment deseq2 mode restores padj and lfc filters', async ({ page }) =>
   await expect(page.getByText(/session saved/i)).toBeVisible();
 
   await page.goto('/datasets');
-  await page
-    .getByRole('button', { name: /^enrichment$/i })
-    .first()
-    .click();
+  await page.getByRole('button', { name: 'Over-representation' }).first().click();
   await expect(page).toHaveURL(/\/enrichment\?load=session/);
 
   // After restore, importText is populated; click Render to surface DE inputs.

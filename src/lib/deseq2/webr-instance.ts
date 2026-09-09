@@ -1,4 +1,9 @@
-const WEBR_URL = 'https://webr.r-wasm.org/v0.5.9/webr.mjs';
+// The WebR runtime is mirrored into R2 by scripts/wasm-build/sync-webr-runtime.sh
+// and served same-origin, so nothing here reaches webr.r-wasm.org at runtime.
+// Same-origin also lets the service worker cache it, which is what makes /de
+// and /counts work offline.
+const WEBR_BASE_URL = '/wasm-cran/webr-pthread/v0.5.9/';
+const WEBR_URL = `${WEBR_BASE_URL}webr.mjs`;
 const BUNDLE_BASE = '/wasm-cran/';
 // Fallback for bundles baked before the manifest existed; the live key is the
 // manifest's bundleVersion, so a rebake invalidates OPFS on its own.
@@ -87,7 +92,6 @@ export interface RObject {
 }
 
 type WebRCtor = new (opts: { interactive?: boolean; baseUrl?: string }) => WebRInstance;
-const WEBR_BASE_URL = '/wasm-cran/webr-pthread/v0.5.9/';
 
 async function opfsHandle(): Promise<FileSystemDirectoryHandle | null> {
   if (typeof navigator === 'undefined' || !navigator.storage?.getDirectory) return null;

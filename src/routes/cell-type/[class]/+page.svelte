@@ -46,10 +46,12 @@
     }
     const ids = rows.map((r) => r.wormbase_gene);
     buildIdsQuery(ids).then((qs) => {
-      enrichmentHref = resolve('/enrichment') + qs;
+      enrichmentHref = resolve('/enrichment') + '?' + qs;
     });
   });
 </script>
+
+<svelte:head><title>{data.neuronClass} · neuron type · wormie.rs.ht</title></svelte:head>
 
 <div class="mx-auto max-w-5xl space-y-4 p-4 md:p-6">
   <div class="flex flex-wrap items-center gap-2">

@@ -487,7 +487,8 @@ function runImportWorker(
 }
 
 // Returns any valid cached OPFS DB (any version), for offline fallback when the requested version is missing.
-async function openAnyCachedOpfs(sqlite3: any): Promise<any | null> {
+// The version is reported back so the UI can label the build it actually got.
+async function openAnyCachedOpfs(sqlite3: any): Promise<{ db: any; version: string } | null> {
   try {
     if (!pool) pool = await sqlite3.installOpfsSAHPoolVfs({ name: POOL_NAME });
     const files = (pool.getFileNames() as string[]).filter((f) => /\/wormie-.*\.sqlite$/.test(f));
@@ -499,7 +500,7 @@ async function openAnyCachedOpfs(sqlite3: any): Promise<any | null> {
           cand,
           "SELECT name FROM sqlite_master WHERE type='table' AND name='annotations' LIMIT 1",
         );
-        if (ok.length > 0) return cand;
+        if (ok.length > 0) return { db: cand, version: f.replace(/^\/wormie-|\.sqlite$/g, '') };
         cand.close?.();
       } catch {
         // try the next cached file
@@ -513,6 +514,7 @@ async function openAnyCachedOpfs(sqlite3: any): Promise<any | null> {
 
 async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string) {
   const dbFile = dbFileFor(version);
+  openedVersion = version;
 
   // Step 1: one-shot import worker streams gzip to OPFS (if missing), then releases the VFS.
   // Bounding peak WASM heap to the import window instead of the tab lifetime.
@@ -523,7 +525,8 @@ async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string) {
     // Import failed (often offline with no versioned cache). Try any cached OPFS DB before memory fallback.
     const cached = await openAnyCachedOpfs(sqlite3);
     if (cached) {
-      db = cached;
+      db = cached.db;
+      openedVersion = cached.version;
       broadcast({ type: 'status', message: 'Offline: opened the cached local database.' });
       applyRuntimePragmas(db);
       return;
@@ -616,6 +619,10 @@ function runQuery(sql: string, params: unknown[] = []) {
   return execAll<Record<string, unknown>>(db, sql, params);
 }
 
+// Build actually opened, which differs from the requested one when the offline
+// fallback picks up a cached DB under another version.
+let openedVersion = '';
+
 // Shared in-flight init promise; subsequent calls coalesce onto it (or resolve immediately if already loaded).
 let dbInitPromise: Promise<void> | null = null;
 function ensureDbOnce(dbUrl: string, version: string): Promise<void> {
@@ -647,7 +654,7 @@ type ReportFn = (phase: string, current?: number, total?: number) => void;
 async function executeRequest(msg: Req, report: ReportFn): Promise<unknown> {
   if (msg.type === 'init') {
     await ensureDbOnce(msg.dbUrl, msg.version);
-    return {};
+    return { version: openedVersion || msg.version };
   }
   if (msg.type === 'query') {
     if (!db) throw new Error('Database not initialized');
@@ -705,8 +712,9 @@ function handleMessage(msg: Req) {
     try {
       if (msg.type === 'init') {
         // Drives election + local-or-guest setup; sets `mode` for subsequent routing.
+        // Deliberately bypasses executeRequest so a guest does not proxy its own init.
         await ensureDbOnce(msg.dbUrl, msg.version);
-        send({ ok: true });
+        send({ ok: true, version: openedVersion || msg.version });
         return;
       }
       if (mode === 'guest') {

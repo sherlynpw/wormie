@@ -16,13 +16,26 @@
   let exprText = $state('');
   let exprSource = $state('');
 
-  onMount(() => {
-    if (page.url.searchParams.get('from') !== 'de') return;
-    const h = handoff.ssgsea.consume();
-    if (!h) return;
-    exprText = h.tsv;
-    exprSource = h.label;
-    toast.success('Loaded expression matrix from /de', { description: h.label });
+  onMount(async () => {
+    const params = page.url.searchParams;
+    if (params.get('from') === 'de') {
+      const h = handoff.ssgsea.consume();
+      if (!h) return;
+      exprText = h.tsv;
+      exprSource = h.label;
+      toast.success('Loaded expression matrix from /de', { description: h.label });
+      return;
+    }
+    const id = params.get('id');
+    if (params.get('load') === 'counts' && id) {
+      const { datasets } = await import('$lib/stores/datasets.svelte');
+      const ds = await datasets.getById(id);
+      if (ds) {
+        exprText = ds.body;
+        exprSource = ds.name;
+        toast.success('Loaded', { description: ds.name });
+      }
+    }
   });
   let gmtText = $state('');
   // Sets can come from the shipped annotations or a GMT; the maths is identical,
@@ -128,7 +141,7 @@
   }
 </script>
 
-<svelte:head><title>Single-sample GSEA · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Per-sample set scores · wormie.rs.ht</title></svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href={resolve('/')} class="self-start">
@@ -137,11 +150,12 @@
   </Button>
 
   <header class="space-y-1">
-    <h1 class="text-2xl font-semibold">Single-sample GSEA</h1>
+    <h1 class="text-2xl font-semibold">Per-sample set scores</h1>
     <p class="text-sm text-muted-foreground">One score per gene set, per sample</p>
   </header>
 
   <PageHint id="ssgsea.intro" title="What this step does">
+    The method is single-sample GSEA (ssGSEA), which is the name the buttons and exports here keep.
     Each sample is scored on its own: its genes are sorted from highest to lowest expression, and
     the score says how near the top of that sample's ranking a gene set's members sit. Positive
     means concentrated near the top, negative near the bottom. Nothing is compared, so this is the

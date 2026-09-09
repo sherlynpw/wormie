@@ -32,6 +32,19 @@ async function pinnedBuildCached(url: string): Promise<boolean> {
   }
 }
 
+// null means the live version could not be resolved, which must stay
+// distinguishable from a real build id.
+async function fetchLatestVersion(): Promise<string | null> {
+  try {
+    const res = await fetch('/data/version.json', { cache: 'no-store' });
+    if (!res.ok) return null;
+    const v = (await res.json()) as { version?: string };
+    return v?.version ?? null;
+  } catch {
+    return null;
+  }
+}
+
 class DbStore {
   phase = $state<Phase>('idle');
   status = $state<string>('Starting up...');
@@ -59,6 +72,10 @@ class DbStore {
     this.pinExpired = '';
   }
 
+  /**
+   * `fallbackVersion` is only a placeholder for naming the request when the live
+   * version cannot be resolved; the worker corrects it from the build on disk.
+   */
   async ensure(dbUrl: string, fallbackVersion: string): Promise<void> {
     if (this.phase === 'ready') return;
     if (this.phase === 'loading') return; // dedup: init promise is memoized in client
@@ -67,35 +84,31 @@ class DbStore {
     // Best-effort storage persistence (iOS only grants this to installed PWAs).
     void navigator.storage?.persist?.().catch(() => {});
 
-    // Resolve live DB version from /data/version.json so pipeline rebuilds
-    // trigger a worker-side refetch without code changes.
-    let latest = fallbackVersion;
-    try {
-      const res = await fetch('/data/version.json', { cache: 'no-store' });
-      if (res.ok) {
-        const v = (await res.json()) as { version?: string };
-        if (v?.version) latest = v.version;
-      }
-    } catch {
-      // noop: fall back to the hardcoded version
-    }
-
-    // Stay on the loaded build so an analysis in progress isn't re-based; the
-    // newer one is offered instead of applied.
-    let version = latest;
     const pinned = readPin();
-    if (pinned && pinned !== latest) {
-      if (await pinnedBuildCached(`${dbUrl}?v=${encodeURIComponent(pinned)}`)) {
-        version = pinned;
-        this.updateAvailable = latest;
-      } else {
-        // The probe only sees the service worker cache; the durable copy lives in
-        // OPFS keyed by version. A cache eviction is therefore not proof the build
-        // is gone, so the pin is left in place to recover on a later load.
-        this.pinExpired = pinned;
+    const latest = await fetchLatestVersion();
+
+    let version: string;
+    if (latest) {
+      // Stay on the loaded build so an analysis in progress isn't re-based; the
+      // newer one is offered instead of applied.
+      version = latest;
+      if (pinned && pinned !== latest) {
+        if (await pinnedBuildCached(`${dbUrl}?v=${encodeURIComponent(pinned)}`)) {
+          version = pinned;
+          this.updateAvailable = latest;
+        } else {
+          // The probe only sees the service worker cache; the durable copy lives in
+          // OPFS keyed by version. A cache eviction is therefore not proof the build
+          // is gone, so the pin is left in place to recover on a later load.
+          this.pinExpired = pinned;
+        }
       }
-    } else if (!pinned) {
-      writePin(latest);
+    } else {
+      // Offline, or version.json is unreachable. Keep whatever this device
+      // already has: a build we could not resolve is not evidence that a newer
+      // one exists, so no update is offered and no pin is written from the
+      // placeholder, which would otherwise outlive the outage.
+      version = pinned ?? fallbackVersion;
     }
     this.version = version;
 
@@ -103,12 +116,16 @@ class DbStore {
     // rebuild given the long edge TTL set in src/worker.ts.
     const versionedUrl = `${dbUrl}?v=${encodeURIComponent(version)}`;
     try {
-      await initDb({
+      const opened = await initDb({
         dbUrl: versionedUrl,
         version,
         onStatus: (m) => (this.status = m),
         onProgress: (r) => (this.progress = r),
       });
+      // The worker falls back to any cached build when the requested one is
+      // missing, so label what actually loaded rather than what was asked for.
+      if (opened?.version) this.version = opened.version;
+      if (!pinned) writePin(this.version);
       const stats = await query<{
         n_genes: number;
         n_go: number;

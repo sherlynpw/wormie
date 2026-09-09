@@ -70,7 +70,7 @@ export function sessionToolLabel(tool: SessionTool): string {
     case 'enrichment':
       return 'Over-representation';
     case 'gsea':
-      return 'Preranked GSEA';
+      return 'Ranked-list enrichment';
     case 'gmt':
       return 'Custom gene sets';
   }

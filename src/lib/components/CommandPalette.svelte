@@ -44,6 +44,7 @@
   import Info from 'lucide-svelte/icons/info';
   import BarChart from 'lucide-svelte/icons/bar-chart-3';
   import TrendingUp from 'lucide-svelte/icons/trending-up';
+  import GitCompare from 'lucide-svelte/icons/git-compare';
 
   let query = $state('');
   let geneResults = $state<SuggestRow[]>([]);
@@ -232,7 +233,106 @@
               Over-representation
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
-              value="gsea"
+              value="read counting counts featurecounts bam"
+              onSelect={() => navigate('/counts')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <TrendingUp class="h-4 w-4 text-muted-foreground" />
+              Read counting
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="differential expression deseq2 de"
+              onSelect={() => navigate('/de')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <TrendingUp class="h-4 w-4 text-muted-foreground" />
+              Differential expression
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="contrast comparison compare contrasts de diff"
+              onSelect={() => navigate('/de/diff')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <TrendingUp class="h-4 w-4 text-muted-foreground" />
+              Contrast comparison
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="custom gene sets gmt"
+              onSelect={() => navigate('/gmt')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <TrendingUp class="h-4 w-4 text-muted-foreground" />
+              Custom gene sets
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="datasets saved inputs"
+              onSelect={() => navigate('/datasets')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <Folder class="h-4 w-4 text-muted-foreground" />
+              Datasets
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="marked genes bookmarks starred"
+              onSelect={() => navigate('/bookmarks')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <Folder class="h-4 w-4 text-muted-foreground" />
+              Marked genes
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="annotation overlap compare genes shared annotations"
+              onSelect={() => navigate('/compare')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <GitCompare class="h-4 w-4 text-muted-foreground" />
+              Annotation overlap
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="gene overlap compare gene lists venn membership"
+              onSelect={() => navigate('/compare/lists')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <GitCompare class="h-4 w-4 text-muted-foreground" />
+              Gene overlap
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="enrichment overlap upset terms"
+              onSelect={() => navigate('/enrichment/overlap')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <BarChart class="h-4 w-4 text-muted-foreground" />
+              Enrichment overlap
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="gsea preranked ranked-list enrichment"
               onSelect={() => navigate('/gsea')}
               class={cn(
                 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
@@ -240,10 +340,10 @@
               )}
             >
               <TrendingUp class="h-4 w-4 text-muted-foreground" />
-              Preranked GSEA
+              Ranked-list enrichment
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
-              value="ssgsea single-sample"
+              value="ssgsea single-sample per-sample set scores"
               onSelect={() => navigate('/ssgsea')}
               class={cn(
                 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
@@ -251,7 +351,7 @@
               )}
             >
               <TrendingUp class="h-4 w-4 text-muted-foreground" />
-              Single-sample GSEA
+              Per-sample set scores
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="nta network topology connectivity"

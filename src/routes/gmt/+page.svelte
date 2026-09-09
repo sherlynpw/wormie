@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { bulkLookup } from '$lib/queries';
+  import { selection } from '$lib/stores/selection.svelte';
   import { parseGmt, summarize, type GmtSet } from '$lib/gmt';
   import {
     runCustomEnrichment,
@@ -341,6 +342,8 @@
   const resultCount = $derived(enrichResults?.length ?? gseaResults?.length ?? 0);
 </script>
 
+<svelte:head><title>Custom gene sets · wormie.rs.ht</title></svelte:head>
+
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/" class="self-start">
     <ArrowLeft />
@@ -496,9 +499,20 @@
             placeholder="daf-16, daf-2, age-1\nhsf-1\nWBGene00000898"
             class="w-full resize-y rounded-md border bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           ></textarea>
-          <Button onclick={runEnrich} disabled={running || !geneListText.trim()}>
-            {running ? 'Running...' : 'Run enrichment'}
-          </Button>
+          <div class="flex items-center gap-2">
+            <Button onclick={runEnrich} disabled={running || !geneListText.trim()}>
+              {running ? 'Running...' : 'Run enrichment'}
+            </Button>
+            {#if selection.ids.length > 0}
+              <Button
+                variant="outline"
+                title="Fill the gene list with your current selection"
+                onclick={() => (geneListText = selection.ids.join('\n'))}
+              >
+                From selection ({selection.ids.length})
+              </Button>
+            {/if}
+          </div>
         {:else}
           <textarea
             bind:value={rankedText}

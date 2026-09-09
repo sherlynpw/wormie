@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { resetClientStorage, saveSession } from './helpers';
 
 // Verifies the session-result-blob round trip:
@@ -103,7 +103,9 @@ test('saves enrichment session with results, loads into overlap', async ({ page 
   await page.locator('textarea').first().fill(TABLE);
   await page.getByRole('button', { name: 'Render' }).click();
   // EnrichmentResults card should appear with at least one tab/row.
-  await expect(page.getByRole('button', { name: 'GO terms' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('button', { name: 'Gene Ontology' })).toBeVisible({
+    timeout: 30_000,
+  });
 
   // Save the session. Default toggle is "Include results" on, which embeds the
   // imported results into session.results.

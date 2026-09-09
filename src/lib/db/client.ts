@@ -41,7 +41,7 @@ function createWorker(): WorkerLike {
 const worker = createWorker();
 const pending = new Map<number, Pending>();
 let nextId = 1;
-let initPromise: Promise<void> | null = null;
+let initPromise: Promise<{ version: string }> | null = null;
 let progressCb: InitOptions['onProgress'];
 let statusCb: InitOptions['onStatus'];
 
@@ -75,11 +75,12 @@ function call<T>(payload: object, onProgress?: (p: TaskProgress) => void): Promi
   });
 }
 
-export function initDb(opts: InitOptions): Promise<void> {
+/** Resolves with the build the worker actually opened, which is not always the one requested. */
+export function initDb(opts: InitOptions): Promise<{ version: string }> {
   if (initPromise) return initPromise;
   progressCb = opts.onProgress;
   statusCb = opts.onStatus;
-  initPromise = call<void>({
+  initPromise = call<{ version: string }>({
     type: 'init',
     dbUrl: opts.dbUrl,
     version: opts.version,

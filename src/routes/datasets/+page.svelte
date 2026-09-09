@@ -162,6 +162,8 @@
   }
 </script>
 
+<svelte:head><title>Datasets · wormie.rs.ht</title></svelte:head>
+
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/" class="self-start">
     <ArrowLeft />
@@ -194,8 +196,8 @@
       {:else if datasets.items.length === 0}
         <div class="text-sm text-muted-foreground">
           No saved datasets. Use the <span class="font-semibold text-foreground">Save</span> button on
-          any tool page (Over-representation, Preranked GSEA, Custom gene sets, Single-sample GSEA) to
-          add one here.
+          any tool page (Over-representation, Ranked-list enrichment, Custom gene sets, Per-sample set
+          scores) to add one here.
         </div>
       {:else}
         <div class="overflow-x-auto rounded-lg border bg-card">
