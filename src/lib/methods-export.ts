@@ -41,7 +41,10 @@ export async function loadBundle(): Promise<MethodsBundle> {
   };
 }
 
-const REPORTED_PACKAGES = ['DESeq2', 'apeglm', 'ashr', 'Rsubread'];
+// Packages the analyses actually call. Rsubread is baked into the bundle but never
+// invoked: /counts runs the standalone featureCounts WASM build, so listing it here
+// credited it for work it did not do.
+const REPORTED_PACKAGES = ['DESeq2', 'apeglm', 'ashr'];
 
 function pkgVersion(bundle: MethodsBundle, name: string): string | null {
   return bundle.rPackages?.find((p) => p.name === name)?.version ?? null;
