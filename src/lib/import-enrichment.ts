@@ -266,7 +266,7 @@ export function parseClusterProfilerCsv(text: string): ImportedEnrichment {
         headerRaw.includes('basemean'));
     if (looksLikeDeseq) {
       throw new Error(
-        'This looks like DESeq2 per-gene output, not enrichment results. Use the /gsea page (paste mode) for a preranked GSEA on the stat column.',
+        'This looks like DESeq2 per-gene output, not enrichment results. Use the /gsea page (paste mode) for ranked-list enrichment on the stat column.',
       );
     }
     throw new Error(

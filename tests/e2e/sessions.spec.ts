@@ -50,7 +50,7 @@ test('gsea session round-trip', async ({ page }) => {
 
   await page.goto('/datasets');
   await expect(page.getByText('gsea-test')).toBeVisible();
-  await page.getByRole('button', { name: 'Ranked-list enrichment' }).first().click();
+  await page.getByRole('button', { name: 'Ranked-list enrichment', exact: true }).first().click();
 
   await expect(page).toHaveURL(/\/gsea\?load=session/);
   await expect(page.locator('textarea').first()).toHaveValue(
@@ -89,7 +89,7 @@ test('gsea session restores geneCol and scoreCol', async ({ page }) => {
   await expect(page.getByText(/session saved/i)).toBeVisible();
 
   await page.goto('/datasets');
-  await page.getByRole('button', { name: 'Ranked-list enrichment' }).first().click();
+  await page.getByRole('button', { name: 'Ranked-list enrichment', exact: true }).first().click();
   await expect(page).toHaveURL(/\/gsea\?load=session/);
 
   await expect(page.locator('input[type="number"]').nth(0)).toHaveValue('3');
@@ -103,8 +103,10 @@ test('gmt session restores mode and nperm', async ({ page }) => {
     .first()
     .fill('SET_A\tdesc\tdaf-16\tdaf-2\tage-1\nSET_B\tdesc\tlin-4\thsf-1');
   // Wait for parse to complete and the mode tabs to render.
-  await expect(page.getByRole('button', { name: 'GSEA (preranked)' })).toBeVisible();
-  await page.getByRole('button', { name: 'GSEA (preranked)' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Ranked-list enrichment', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Ranked-list enrichment', exact: true }).click();
   // Change permutations away from the 1000 default.
   await page.locator('select').selectOption('2500');
 
@@ -116,7 +118,9 @@ test('gmt session restores mode and nperm', async ({ page }) => {
   await expect(page).toHaveURL(/\/gmt\?load=session/);
 
   // The GSEA tab should be active again, and nperm should be 2500.
-  await expect(page.getByRole('button', { name: 'GSEA (preranked)' })).toHaveClass(/font-medium/);
+  await expect(
+    page.getByRole('button', { name: 'Ranked-list enrichment', exact: true }),
+  ).toHaveClass(/font-medium/);
   await expect(page.locator('select')).toHaveValue('2500');
 });
 
