@@ -83,18 +83,31 @@ function genCounts(label, nGenes, nSamples, seed) {
   };
 }
 
-function genGmt(universe, nSets, seed) {
+// A tenth of the sets are concentrated at the top of the ranked list. Without
+// planted signal neither arm calls anything significant, so set-level agreement
+// compares an empty set to an empty set and reports a vacuous Jaccard of 1.
+function genGmt(universe, nSets, seed, order) {
   const rand = mulberry32(seed);
+  const nSignal = Math.max(3, Math.round(nSets * 0.1));
+  const topN = Math.max(50, Math.floor(universe * 0.1));
   const lines = [];
+  const sets = [];
   for (let i = 0; i < nSets; i++) {
     const size = 15 + Math.floor(rand() * 185);
     const genes = new Set();
+    const signal = i < nSignal;
+    if (signal) {
+      const planted = Math.floor(size * 0.7);
+      while (genes.size < planted) genes.add(order[Math.floor(rand() * topN)]);
+    }
     while (genes.size < size) genes.add(geneId(Math.floor(rand() * universe)));
-    lines.push([`SET${String(i + 1).padStart(4, '0')}`, 'bench', ...genes].join('\t'));
+    const id = `SET${String(i + 1).padStart(4, '0')}`;
+    lines.push([id, 'bench', ...genes].join('\t'));
+    sets.push({ id, genes: [...genes], signal });
   }
   const p = path.join(dataDir, 'gsea', `sets_u${universe}_n${nSets}.gmt`);
   fs.writeFileSync(p, lines.join('\n') + '\n');
-  return path.relative(dataDir, p);
+  return { rel: path.relative(dataDir, p), sets };
 }
 function genRanked(universe, seed) {
   const rand = mulberry32(seed);
@@ -103,11 +116,18 @@ function genRanked(universe, seed) {
   rows.sort((a, b) => b[1] - a[1]);
   const p = path.join(dataDir, 'gsea', `ranked_u${universe}.rnk`);
   fs.writeFileSync(p, rows.map((r) => `${r[0]}\t${r[1].toFixed(6)}`).join('\n') + '\n');
-  return path.relative(dataDir, p);
+  return { rel: path.relative(dataDir, p), order: rows.map((r) => r[0]) };
 }
-function genQuery(universe, size, seed) {
+// Likewise over-represent a few sets in the query, so ORA has significant terms.
+function genQuery(universe, size, seed, sets) {
   const rand = mulberry32(seed);
   const genes = new Set();
+  for (const s of sets.filter((x) => x.signal).slice(0, 3)) {
+    const take = Math.min(s.genes.length, Math.floor(size / 6));
+    for (let i = 0; i < take && genes.size < size; i++) {
+      genes.add(s.genes[Math.floor(rand() * s.genes.length)]);
+    }
+  }
   while (genes.size < size) genes.add(geneId(Math.floor(rand() * universe)));
   const p = path.join(dataDir, 'ora', `query_u${universe}_k${size}.txt`);
   fs.writeFileSync(p, [...genes].join('\n') + '\n');
@@ -155,14 +175,20 @@ const manifest = {
 let seed = manifest.seed;
 for (const t of deseqTiers) manifest.deseq2.push(genCounts(t.label, t.nGenes, t.nSamples, seed++));
 for (const u of universes) {
-  const ranked = genRanked(u, seed++);
+  const { rel: ranked, order } = genRanked(u, seed++);
   const expr = genExpr(u, 12, seed++);
   for (const n of setCounts) {
-    const gmt = genGmt(u, n, seed++);
+    const { rel: gmt, sets } = genGmt(u, n, seed++, order);
     manifest.gsea.push({ universe: u, nSets: n, nperm: 1000, ranked, gmt });
     manifest.ssgsea.push({ universe: u, nSets: n, expr, gmt, nSamples: 12 });
     for (const k of querySizes) {
-      manifest.ora.push({ universe: u, nSets: n, querySize: k, gmt, query: genQuery(u, k, seed++) });
+      manifest.ora.push({
+        universe: u,
+        nSets: n,
+        querySize: k,
+        gmt,
+        query: genQuery(u, k, seed++, sets),
+      });
     }
   }
 }
