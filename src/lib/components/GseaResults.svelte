@@ -741,23 +741,24 @@
             </th>
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-              >size</th
+              title="Genes in the set that are also present in your ranked list.">size</th
             >
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-              >ES</th
+              title="Enrichment score: the running sum at its furthest excursion from zero.">ES</th
             >
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+              title="Enrichment score normalized by the permutation mean, so sets of different sizes compare."
               >NES</th
             >
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-              >p</th
+              title="Raw permutation p-value, before correction for testing many sets.">p</th
             >
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-              >q (BH)</th
+              title="Benjamini-Hochberg false discovery rate across every set tested.">q (BH)</th
             >
           </tr>
         </thead>

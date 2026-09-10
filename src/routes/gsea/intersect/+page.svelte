@@ -345,10 +345,22 @@
           <thead class="border-b">
             <tr class="text-[0.65rem] uppercase tracking-wider text-muted-foreground">
               <th class="px-2 py-1.5 text-left">Term</th>
-              <th class="px-2 py-1.5 text-right">hits</th>
+              <th
+                class="px-2 py-1.5 text-right"
+                title="How many of the loaded bundles call this term significant at the q cutoff."
+                >hits</th
+              >
               <th class="px-2 py-1.5 text-right">median NES</th>
-              <th class="px-2 py-1.5 text-right">mean J</th>
-              <th class="px-2 py-1.5 text-right">consensus</th>
+              <th
+                class="px-2 py-1.5 text-right"
+                title="Mean pairwise Jaccard of the leading-edge gene sets across the bundles that call this term. High means they agree on which genes drive it."
+                >mean J</th
+              >
+              <th
+                class="px-2 py-1.5 text-right"
+                title="Whether the term clears both the minimum-hits and the Jaccard floor."
+                >consensus</th
+              >
             </tr>
           </thead>
           <tbody>
