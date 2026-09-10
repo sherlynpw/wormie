@@ -132,7 +132,9 @@
       results = res.results;
       sampleNames = res.sampleNames;
       elapsed = performance.now() - t0;
-      toast.success(`ssGSEA: ${res.results.length} sets · ${(elapsed / 1000).toFixed(1)}s`);
+      toast.success(
+        `Per-sample set scores: ${res.results.length} sets · ${(elapsed / 1000).toFixed(1)}s`,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
     } finally {
@@ -155,12 +157,12 @@
   </header>
 
   <PageHint id="ssgsea.intro" title="What this step does">
-    The method is single-sample GSEA (ssGSEA), which is the name the buttons and exports here keep.
-    Each sample is scored on its own: its genes are sorted from highest to lowest expression, and
-    the score says how near the top of that sample's ranking a gene set's members sit. Positive
-    means concentrated near the top, negative near the bottom. Nothing is compared, so this is the
-    method to reach for when there are no two groups to contrast: a time course, a panel of strains,
-    single worms. Every set scored in every sample gives one matrix:
+    The method is single-sample GSEA (ssGSEA). Each sample is scored on its own: its genes are
+    sorted from highest to lowest expression, and the score says how near the top of that sample's
+    ranking a gene set's members sit. Positive means concentrated near the top, negative near the
+    bottom. Nothing is compared, so this is the method to reach for when there are no two groups to
+    contrast: a time course, a panel of strains, single worms. Every set scored in every sample
+    gives one matrix:
     <pre
       class="my-2 overflow-x-auto rounded bg-background/60 p-2 font-mono text-[0.65rem] leading-relaxed">                 WT.D1  WT.D3  WT.D7  mut.D1  mut.D3  mut.D7
 neuronal          0.31   0.28   0.19    0.30    0.44    0.52
@@ -184,13 +186,20 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
         Expression matrix (genes × samples)
         <ControlHint id="ssgsea-expr" title="Which values to paste">
           Genes down the rows, samples across the columns, one expression value per cell, tab or
-          comma separated with a header row of sample names. The <b>Continue to ssGSEA</b> button on
-          the differential expression page sends one of these for you.
+          comma separated with a header row of sample names. The <b
+            >Continue to per-sample set scores</b
+          >
+          button on the differential expression page sends one of these for you.
           <br /><br />
-          Use values that are comparable between genes within a sample: TPM, RPKM, or a variance-stabilised
-          matrix. Genes are ranked inside each sample, so library size does not matter and normalising
-          across samples changes nothing. Raw counts do work, but longer genes then rank above shorter
-          ones at the same expression level, because nothing has corrected for gene length.
+          Genes are ranked inside each sample, so library size does not matter and normalising across
+          samples changes nothing: counts, normalized counts and a variance-stabilised matrix all give
+          the same scores. What matters is whether two genes in the same sample can be compared with each
+          other, which means correcting for gene length. TPM and RPKM do that. Counts do not, so a longer
+          gene ranks above a shorter one at the same expression level, and the same holds for normalized
+          counts and for a variance-stabilised matrix, since neither touches gene length. That bias is
+          the same in every sample, since gene length does not change between samples, so it has little
+          effect on comparing one with another, which is what these scores are for. It matters when one
+          set's score is read against a different set's.
         </ControlHint>
         {#if exprSource}
           <span class="ml-1 font-normal text-muted-foreground">· {exprSource}</span>
@@ -309,7 +318,7 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
       onclick={run}
       disabled={running}
     >
-      {running ? 'Running…' : 'Run ssGSEA'}
+      {running ? 'Running…' : 'Run scoring'}
     </button>
     {#if elapsed !== null}
       <span class="text-muted-foreground">{(elapsed / 1000).toFixed(2)}s</span>
