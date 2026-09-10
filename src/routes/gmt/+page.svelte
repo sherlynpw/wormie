@@ -619,6 +619,12 @@
         {/if}
       </div>
     {:else}
+      {#if enrichResults && shownEnrich && shownEnrich.length > 0}
+        <p class="mb-2 text-xs text-muted-foreground">
+          Universe: the {shownEnrich[0].N.toLocaleString()} genes across your sets, not the whole genome.
+          Fold enrichment is measured against that.
+        </p>
+      {/if}
       <div class="overflow-x-auto rounded-lg border bg-card">
         <table class="w-full text-sm">
           <thead class="border-b bg-card">
@@ -631,33 +637,37 @@
               {#if enrichResults}
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                  title="k: genes from your list in this term. n: your genes carrying any annotation in this domain."
                   >k / n</th
                 >
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                  title="K: genes in this set. N: the union of genes across all your sets, which is the universe here."
                   >K / N</th
                 >
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                  title="Observed over expected, (k/n) divided by (K/N). Above 1 means the term is over-represented."
                   >fold</th
                 >
               {:else}
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  >size</th
+                  title="Genes in the set that are also present in your ranked list.">size</th
                 >
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                  title="Enrichment score normalized by the permutation mean, so sets of different sizes compare."
                   >NES</th
                 >
               {/if}
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                >p</th
+                title="Raw permutation p-value, before correction for testing many sets.">p</th
               >
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                >q (BH)</th
+                title="Benjamini-Hochberg false discovery rate across every set tested.">q (BH)</th
               >
             </tr>
           </thead>

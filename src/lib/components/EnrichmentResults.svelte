@@ -702,23 +702,26 @@
               </th>
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                title="k: genes from your list in this term. n: your genes carrying any annotation in this domain."
                 >k / n</th
               >
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                title="K: genes in this term across the background. N: the background universe."
                 >K / N</th
               >
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+                title="Observed over expected, (k/n) divided by (K/N). Above 1 means the term is over-represented."
                 >fold</th
               >
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                >p</th
+                title="Raw hypergeometric p-value, before correction for testing many terms.">p</th
               >
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                >q (BH)</th
+                title="Benjamini-Hochberg false discovery rate across every term tested.">q (BH)</th
               >
             </tr>
           </thead>
