@@ -153,7 +153,7 @@ function loadBundle(onLine?: (s: string) => void) {
         const pkg = (n: string) => manifest.packages.find((p) => p.name === n)?.version ?? '?';
         log(
           `bundle ${version} (baked ${manifest.baked}, R ${manifest.rVersion}): ` +
-            `DESeq2 ${pkg('DESeq2')}, apeglm ${pkg('apeglm')}, ashr ${pkg('ashr')}, Rsubread ${pkg('Rsubread')}`,
+            `DESeq2 ${pkg('DESeq2')}, apeglm ${pkg('apeglm')}, ashr ${pkg('ashr')}`,
         );
       }
       const dataKey = `deseq2-bundle.${version}.data`;

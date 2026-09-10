@@ -127,13 +127,13 @@ jobs:
             -v "$(pwd)/scripts/wasm-cran":/out \
             -v "$(pwd)/.cache/wasm-host-rlib":/opt/webr/host/R-4.5.1/lib/R/library \
             wormie-wasm-build:v0.5.9 build-pkgs \
-              locfit Rsubread \
+              locfit \
               BiocGenerics zlibbioc S4Vectors IRanges XVector \
               GenomeInfoDbData GenomeInfoDb Seqinfo GenomicRanges \
               MatrixGenerics S4Arrays SparseArray DelayedArray \
               Biobase BiocParallel SummarizedExperiment apeglm DESeq2
 
-      - name: Bake DESeq2 + apeglm + Rsubread bundle
+      - name: Bake DESeq2 + apeglm bundle
         run: |
           docker run --rm \
             -v "$(pwd)/scripts/wasm-cran":/out \

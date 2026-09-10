@@ -14,7 +14,6 @@ set -euo pipefail
 PIN_DESeq2="${PIN_DESeq2:-1.52.0}"
 PIN_apeglm="${PIN_apeglm:-1.34.0}"
 PIN_ashr="${PIN_ashr:-2.2-63}"
-PIN_Rsubread="${PIN_Rsubread:-2.26.0}"
 
 OUT=/out
 LOCAL_REPO_DIR="${OUT}/bin/emscripten/contrib/4.5"
@@ -40,7 +39,7 @@ ap_all <- if (is.null(ap_bioc)) ap_cran else rbind(
   ap_bioc[!rownames(ap_bioc) %in% rownames(ap_cran), , drop = FALSE]
 )
 deps <- tools::package_dependencies(
-  c("DESeq2", "apeglm", "ashr", "Rsubread"),
+  c("DESeq2", "apeglm", "ashr"),
   db = ap_all,
   which = c("Depends","Imports"),
   recursive = TRUE
@@ -55,7 +54,7 @@ foundational_bioc <- c("BiocGenerics","S4Vectors","IRanges","XVector","zlibbioc"
                        "GenomeInfoDb","GenomeInfoDbData","GenomicRanges","Seqinfo",
                        "MatrixGenerics","DelayedArray","S4Arrays","SparseArray",
                        "Biobase","BiocParallel","SummarizedExperiment")
-all_pkgs <- unique(c("DESeq2", "apeglm", "ashr", "Rsubread", "locfit",
+all_pkgs <- unique(c("DESeq2", "apeglm", "ashr", "locfit",
                      foundational_bioc, unlist(deps)))
 # Drop base + recommended that ship with WebR core
 bundled <- c('base','compiler','datasets','grDevices','graphics','grid',
@@ -77,7 +76,7 @@ manifest <- data.frame(
   stringsAsFactors = FALSE
 )
 # Mark any package as LOCAL when a built .tgz exists in our local repo.
-# Currently this auto-tags locfit and Rsubread (built via build-pkgs.sh) so
+# Currently this auto-tags locfit (built via build-pkgs.sh) so
 # the bake reaches for the local copy first instead of a 404 on r-universe.
 local_dir <- "${LOCAL_REPO_DIR}"
 if (dir.exists(local_dir)) {
@@ -97,7 +96,7 @@ if (dir.exists(local_dir)) {
   }
 }
 pins <- c(DESeq2 = "${PIN_DESeq2}", apeglm = "${PIN_apeglm}",
-          ashr = "${PIN_ashr}", Rsubread = "${PIN_Rsubread}")
+          ashr = "${PIN_ashr}")
 drift <- character(0)
 for (nm in names(pins)) {
   got <- manifest\$version[match(nm, manifest\$name)]
