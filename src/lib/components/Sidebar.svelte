@@ -49,15 +49,15 @@
       icon: FileSearch,
     },
     {
-      href: resolve('/compare/lists'),
-      match: '/compare/lists',
-      label: 'Gene overlap',
-      icon: GitCompare,
-    },
-    {
       href: resolve('/compare'),
       match: '/compare',
       label: 'Annotation overlap',
+      icon: GitCompare,
+    },
+    {
+      href: resolve('/compare/lists'),
+      match: '/compare/lists',
+      label: 'Gene overlap',
       icon: GitCompare,
     },
   ];
@@ -81,12 +81,6 @@
           icon: BarChart,
         },
         {
-          href: resolve('/enrichment/overlap'),
-          match: '/enrichment/overlap',
-          label: 'Enrichment overlap',
-          icon: GitCompare,
-        },
-        {
           href: resolve('/gsea'),
           match: '/gsea',
           label: 'Ranked-list enrichment',
@@ -97,14 +91,20 @@
     {
       heading: 'Standalone analyses',
       items: [
+        { href: resolve('/gmt'), match: '/gmt', label: 'Custom gene sets', icon: TrendingUp },
+        { href: resolve('/nta'), match: '/nta', label: 'Network connectivity', icon: Network },
+        {
+          href: resolve('/enrichment/overlap'),
+          match: '/enrichment/overlap',
+          label: 'Enrichment overlap',
+          icon: GitCompare,
+        },
         {
           href: resolve('/ssgsea'),
           match: '/ssgsea',
           label: 'Per-sample set scores',
           icon: TrendingUp,
         },
-        { href: resolve('/gmt'), match: '/gmt', label: 'Custom gene sets', icon: TrendingUp },
-        { href: resolve('/nta'), match: '/nta', label: 'Network connectivity', icon: Network },
       ],
     },
   ];
