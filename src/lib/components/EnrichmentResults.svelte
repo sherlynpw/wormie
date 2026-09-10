@@ -423,11 +423,12 @@
             {/each}
           </select>
           <ControlHint id="enrich-bg" title="Custom background">
-            By default ORA uses the full annotated genome as the universe (the standard
-            hypergeometric assumption). If your experiment can only detect a biased subset (e.g. a
-            neuronal screen), pick a gene-list dataset as the background so both N and per-term K
-            reflect the actual testable space. Statistically correct; eliminates spurious "ribosome
-            enrichment" artifacts from biased assays.
+            By default the universe is every gene carrying an annotation of the kind being tested,
+            and for Gene Ontology that means every gene annotated in the same aspect as the term,
+            since the three aspects are corrected separately. If your experiment can only detect a
+            biased subset (e.g. a neuronal screen), pick a gene-list dataset as the background so
+            both N and per-term K reflect the actual testable space. Statistically correct;
+            eliminates spurious "ribosome enrichment" artifacts from biased assays.
           </ControlHint>
         </label>
         {#if backgroundLabel}

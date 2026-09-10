@@ -207,6 +207,30 @@ function loadBackground(db: any, kind: EnrichmentKind): BgInfo {
   return info;
 }
 
+// GO is three independent ontologies, and clusterProfiler, topGO and GOstats all
+// scope the background and the FDR correction to one aspect at a time: a gene with
+// no biological-process annotation could never have been drawn into a
+// biological-process term, so it does not belong in that term's denominator.
+// Pooling the three inflates N and makes every test conservative.
+let goAspectIndex: Map<string, Set<string>> | null = null;
+
+function loadGoAspectIndex(db: any): Map<string, Set<string>> {
+  if (goAspectIndex) return goAspectIndex;
+  const bg = loadBackground(db, 'go');
+  const idx = loadAnnotationIndex(db, 'go');
+  const m = new Map<string, Set<string>>();
+  for (const [gene, terms] of idx) {
+    const aspects = new Set<string>();
+    for (const t of terms) {
+      const ns = bg.K.get(t)?.namespace;
+      if (ns) aspects.add(ns);
+    }
+    if (aspects.size > 0) m.set(gene, aspects);
+  }
+  goAspectIndex = m;
+  return m;
+}
+
 // Gene-to-term_ids index per kind, cached for worker lifetime. Avoids SQLite
 // round-trips on subsequent calls and the IN(?) parameter limit.
 const annotIndexCache: Partial<Record<EnrichmentKind, Map<string, string[]>>> = {};
@@ -442,6 +466,25 @@ export function runEnrichmentSync(
   const n = annotatedSelection.size;
   if (n === 0 || N === 0) return [];
 
+  // For GO, n and N are counted within the term's own aspect (see loadGoAspectIndex).
+  let nByAspect: Map<string, number> | null = null;
+  let NByAspect: Map<string, number> | null = null;
+  if (kind === 'go') {
+    const aspectsOf = loadGoAspectIndex(db);
+    const bgSet = opts.background && opts.background.length > 0 ? new Set(opts.background) : null;
+    NByAspect = new Map();
+    for (const [gene, aspects] of aspectsOf) {
+      if (bgSet && !bgSet.has(gene)) continue;
+      for (const a of aspects) NByAspect.set(a, (NByAspect.get(a) ?? 0) + 1);
+    }
+    nByAspect = new Map();
+    for (const gene of annotatedSelection) {
+      const aspects = aspectsOf.get(gene);
+      if (!aspects) continue;
+      for (const a of aspects) nByAspect.set(a, (nByAspect.get(a) ?? 0) + 1);
+    }
+  }
+
   const candidates: EnrichmentResult[] = [];
   for (const [term_id, overlap] of overlapByTerm) {
     const k = overlap.length;
@@ -450,16 +493,19 @@ export function runEnrichmentSync(
     if (!meta) continue;
     const K = meta.K;
     if (K < k) continue; // background mismatch; shouldn't happen but defensive
-    const p = hyperUpperTail(k, K, n, N);
-    const fold = K === 0 || n === 0 ? 0 : k / n / (K / N);
+    const nT = (meta.namespace && nByAspect?.get(meta.namespace)) || n;
+    const NT = (meta.namespace && NByAspect?.get(meta.namespace)) || N;
+    if (nT === 0 || NT === 0 || K > NT) continue;
+    const p = hyperUpperTail(k, K, nT, NT);
+    const fold = K === 0 || nT === 0 ? 0 : k / nT / (K / NT);
     candidates.push({
       term_id,
       name: meta.name,
       namespace: meta.namespace,
       k,
       K,
-      n,
-      N,
+      n: nT,
+      N: NT,
       fold,
       p,
       q: 0,
@@ -468,8 +514,23 @@ export function runEnrichmentSync(
   }
   if (candidates.length === 0) return [];
 
-  const qs = bhFdr(candidates.map((c) => c.p));
-  for (let i = 0; i < candidates.length; i++) candidates[i].q = qs[i];
+  // Each GO aspect is corrected as its own family of tests, matching the background.
+  if (kind === 'go') {
+    const groups = new Map<string, EnrichmentResult[]>();
+    for (const c of candidates) {
+      const key = c.namespace ?? '';
+      const g = groups.get(key);
+      if (g) g.push(c);
+      else groups.set(key, [c]);
+    }
+    for (const group of groups.values()) {
+      const qs = bhFdr(group.map((c) => c.p));
+      for (let i = 0; i < group.length; i++) group[i].q = qs[i];
+    }
+  } else {
+    const qs = bhFdr(candidates.map((c) => c.p));
+    for (let i = 0; i < candidates.length; i++) candidates[i].q = qs[i];
+  }
 
   return candidates.filter((c) => c.q <= maxQ).sort((a, b) => a.p - b.p);
 }
