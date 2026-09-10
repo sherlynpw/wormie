@@ -136,6 +136,7 @@ if (want("ssgsea")) {
   }
 }
 
-write(toJSON(out, auto_unbox = TRUE, digits = 10, na = "null"),
+# digits = NA keeps full double precision; a fixed count would floor the comparison.
+write(toJSON(out, auto_unbox = TRUE, digits = NA, na = "null"),
       file.path(resultsDir, "r.json"))
 cat("==> wrote benchmark/results/r.json\n")

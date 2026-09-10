@@ -4,6 +4,7 @@ import { runFit, runOneContrast } from '$lib/deseq2/client';
 import type { ContrastSpec, DESeq2DesignRow, Shrinkage } from '$lib/deseq2/client';
 import { getPrimary, parseFeatureCountsTsv, rVec } from '$lib/deseq2/fit';
 import { runCustomGSEA, runCustomEnrichment, runCustomSsgsea } from '$lib/db/client';
+import { createWebRInstance, clearBundleCache } from '$lib/deseq2/webr-instance';
 import type { CustomTermSet, GseaInput } from '$lib/db/client';
 
 // measureUserAgentSpecificMemory() blocks for minutes in headless Chromium.
@@ -33,7 +34,55 @@ export interface BenchSsgseaArgs {
   opts?: Record<string, unknown>;
 }
 
+// Phase boundaries are read off the progress lines createWebRInstance already
+// emits, so measuring startup does not require instrumenting the init path.
+const STARTUP_PHASES: [string, RegExp][] = [
+  ['module', /loading WebR module/],
+  ['session', /starting WebR session/],
+  ['bundle', /^\[cache\]/],
+  ['mount', /mounting bundle/],
+  ['library', /loading DESeq2 library/],
+];
+
+async function timeInstance(): Promise<{
+  totalMs: number;
+  phases: Record<string, number>;
+  bundleCached: boolean;
+}> {
+  const marks: { at: number; phase: string }[] = [];
+  let bundleCached = false;
+  const t0 = performance.now();
+  const webR = await createWebRInstance({
+    onLine: (s) => {
+      if (/^\[cache\] hit/.test(s)) bundleCached = true;
+      for (const [phase, re] of STARTUP_PHASES) {
+        if (re.test(s) && !marks.some((m) => m.phase === phase)) {
+          marks.push({ at: performance.now(), phase });
+          return;
+        }
+      }
+    },
+  });
+  const end = performance.now();
+  webR.close();
+  const phases: Record<string, number> = {};
+  for (let i = 0; i < marks.length; i++) {
+    phases[marks[i].phase] = (marks[i + 1]?.at ?? end) - marks[i].at;
+  }
+  return { totalMs: end - t0, phases, bundleCached };
+}
+
 const bench = {
+  // Cost the reimplementation decision avoids: bundle fetch, WebR boot and
+  // library(DESeq2), plus the marginal cost of each extra pool instance.
+  async webrStartup(args: { clearCache?: boolean; extraInstances?: number } = {}) {
+    if (args.clearCache) await clearBundleCache();
+    const first = await timeInstance();
+    const extra = [];
+    for (let i = 0; i < (args.extraInstances ?? 1); i++) extra.push(await timeInstance());
+    return { first, extra, hardwareConcurrency: navigator.hardwareConcurrency ?? null };
+  },
+
   // DESeq + lfcShrink only, R-timed (matches benchmark/bench-r.R exactly).
   async deseq2core(args: BenchDeseqArgs & { treatment?: string }) {
     const webR = await getPrimary();
@@ -71,11 +120,13 @@ const bench = {
       res_df <- as.data.frame(res)
       elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
       header <- "gene\\tbaseMean\\tlog2FoldChange\\tpvalue\\tpadj"
+      # 17 significant digits round-trips a double exactly. At 8 the serialized
+      # value, not the arithmetic, sets the floor on any agreement measured here.
       rows <- paste(rownames(res_df),
-        formatC(res_df$baseMean, format = "g", digits = 8),
-        formatC(res_df$log2FoldChange, format = "g", digits = 8),
-        formatC(res_df$pvalue, format = "g", digits = 8),
-        formatC(res_df$padj, format = "g", digits = 8), sep = "\\t")
+        formatC(res_df$baseMean, format = "g", digits = 17),
+        formatC(res_df$log2FoldChange, format = "g", digits = 17),
+        formatC(res_df$pvalue, format = "g", digits = 17),
+        formatC(res_df$padj, format = "g", digits = 17), sep = "\\t")
       .out <- list(elapsed = elapsed, tsv = paste(c(header, rows), collapse = "\\n"))
       rm(counts, coldata, dds, res, res_df, rows)
       invisible(gc(full = TRUE, verbose = FALSE))

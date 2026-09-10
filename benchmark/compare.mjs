@@ -37,7 +37,8 @@ function stat(xs) {
   const v = xs.filter(finite);
   if (!v.length) return { mean: NaN, sd: NaN, median: NaN };
   const mean = v.reduce((a, b) => a + b, 0) / v.length;
-  const sd = v.length > 1 ? Math.sqrt(v.reduce((a, b) => a + (b - mean) ** 2, 0) / (v.length - 1)) : 0;
+  const sd =
+    v.length > 1 ? Math.sqrt(v.reduce((a, b) => a + (b - mean) ** 2, 0) / (v.length - 1)) : 0;
   const s = [...v].sort((a, b) => a - b);
   return { mean, sd, median: s[Math.floor(s.length / 2)] };
 }
@@ -62,6 +63,23 @@ const msPM = (xs) => {
 const lines = ['# Benchmark report: browser/WASM vs native R', ''];
 lines.push(`Browser run: ${browser.generated} · R run: ${r.generated}`);
 lines.push(`Repeats: browser ${browser.repeats}, R ${r.repeats}. Timing as mean ± sd.`, '');
+
+// The testbed belongs with the timings, since neither arm means anything without it.
+const startupForHost = fs.existsSync(path.join(resultsDir, 'startup.json'))
+  ? JSON.parse(fs.readFileSync(path.join(resultsDir, 'startup.json'), 'utf8'))
+  : null;
+const host = browser.host ?? startupForHost?.host ?? null;
+if (host) {
+  const gb = (b) => (b / 1024 ** 3).toFixed(0);
+  lines.push('## Testbed', '');
+  lines.push(
+    `${host.cpu}, ${host.physicalCores ?? host.logicalCores} physical / ${host.logicalCores} ` +
+      `logical cores, ${gb(host.memoryBytes)} GB RAM, ${host.platform} (${host.arch}).`,
+  );
+  const br = browser.browser ?? startupForHost?.browser;
+  if (br) lines.push(`Browser arm: ${br}. Native arm: R on the same host.`);
+  lines.push('');
+}
 
 lines.push('## DESeq2', '');
 lines.push(
@@ -98,8 +116,10 @@ for (const b of browser.deseq2 || []) {
 lines.push('');
 
 lines.push('## GSEA (preranked)', '');
-lines.push('| universe | nSets | R (ms) | Browser (ms) | slowdown | NES corr | sig-set Jaccard (q<0.05) |');
-lines.push('|---|---|---|---|---|---|---|');
+lines.push(
+  '| universe | nSets | R (ms) | Browser (ms) | slowdown | NES corr | sig sets (R) | recovered | added | Jaccard |',
+);
+lines.push('|---|---|---|---|---|---|---|---|---|---|');
 for (const b of browser.gsea || []) {
   const rc = (r.gsea || []).find((x) => x.universe === b.universe && x.nSets === b.nSets);
   if (!rc) continue;
@@ -111,17 +131,25 @@ for (const b of browser.gsea || []) {
   }
   const bSig = b.results.filter((x) => finite(x.q) && x.q < 0.05).map((x) => x.term_id);
   const rSig = rc.results.filter((x) => finite(x.q) && x.q < 0.05).map((x) => x.term_id);
+  // Section 5 reports set-level agreement as recovered/added, not precision and recall.
+  const rSet = new Set(rSig);
+  const bSet = new Set(bSig);
+  const recovered = rSig.filter((t) => bSet.has(t)).length;
+  const added = bSig.filter((t) => !rSet.has(t)).length;
   const slowdown = stat(b.engineMsAll).mean / stat(rc.msAll).mean;
   lines.push(
     `| ${b.universe} | ${b.nSets} | ${msPM(rc.msAll)} | ${msPM(b.engineMsAll)} | ` +
-      `${fmt(slowdown, 2)}x | ${fmt(pearson(nes))} | ${fmt(jaccard(bSig, rSig), 3)} |`,
+      `${fmt(slowdown, 2)}x | ${fmt(pearson(nes))} | ${rSet.size} | ${recovered} | ${added} | ` +
+      `${fmt(jaccard(bSig, rSig), 3)} |`,
   );
 }
 lines.push('');
 
 lines.push('## ORA (hypergeometric)', '');
-lines.push('| universe | nSets | querySize | R (ms) | Browser (ms) | slowdown | -log10(p) corr | k exact-match |');
-lines.push('|---|---|---|---|---|---|---|---|');
+lines.push(
+  '| universe | nSets | querySize | R (ms) | Browser (ms) | slowdown | -log10(p) corr | k exact-match | sig sets (R) | recovered | added |',
+);
+lines.push('|---|---|---|---|---|---|---|---|---|---|---|');
 for (const b of browser.ora || []) {
   const rc = (r.ora || []).find(
     (x) => x.universe === b.universe && x.nSets === b.nSets && x.querySize === b.querySize,
@@ -140,10 +168,15 @@ for (const b of browser.ora || []) {
     kTotal++;
     if (br.k === rr.k) kMatch++;
   }
+  const rSet = new Set(rc.results.filter((x) => finite(x.q) && x.q < 0.05).map((x) => x.term_id));
+  const bSig = b.results.filter((x) => finite(x.q) && x.q < 0.05).map((x) => x.term_id);
+  const recovered = bSig.filter((t) => rSet.has(t)).length;
+  const added = bSig.filter((t) => !rSet.has(t)).length;
   const slowdown = stat(b.engineMsAll).mean / stat(rc.msAll).mean;
   lines.push(
     `| ${b.universe} | ${b.nSets} | ${b.querySize} | ${msPM(rc.msAll)} | ${msPM(b.engineMsAll)} | ` +
-      `${fmt(slowdown, 2)}x | ${fmt(pearson(lp))} | ${kMatch}/${kTotal} |`,
+      `${fmt(slowdown, 2)}x | ${fmt(pearson(lp))} | ${kMatch}/${kTotal} | ` +
+      `${rSet.size} | ${recovered} | ${added} |`,
   );
 }
 lines.push('');
@@ -181,12 +214,48 @@ if (browser.ssgsea?.length) {
   lines.push('| universe | nSets | nSamples | R (ms) |');
   lines.push('|---|---|---|---|');
   for (const s of r.ssgsea) {
-    lines.push(`| ${s.universe} | ${s.nSets} | ${s.nSamples} | ${msPM(s.msAll ?? [s.elapsedMs])} |`);
+    lines.push(
+      `| ${s.universe} | ${s.nSets} | ${s.nSamples} | ${msPM(s.msAll ?? [s.elapsedMs])} |`,
+    );
   }
 } else {
   lines.push('No ssGSEA results.');
 }
 lines.push('');
+
+// Startup is a separate run (benchmark/bench-startup.mjs), so fold it in when present.
+const startupPath = path.join(resultsDir, 'startup.json');
+if (fs.existsSync(startupPath)) {
+  const su = JSON.parse(fs.readFileSync(startupPath, 'utf8'));
+  lines.push('## WebR startup', '');
+  lines.push(
+    `Bundle ${(su.bundleBytes / 1024 / 1024).toFixed(1)} MB, served from ${su.bundleServedFrom}. ` +
+      `${su.runs.length} repeats.`,
+  );
+  lines.push('');
+  lines.push('| setting | total (s) | bundle (s) | WebR boot (s) | library(DESeq2) (s) |');
+  lines.push('|---|---|---|---|---|');
+  const leg = (rs, phase) => secPM(rs.map((x) => x.phases[phase] ?? 0));
+  for (const [key, label] of [
+    ['cold', 'first visit (empty OPFS)'],
+    ['warm', 'return visit (bundle in OPFS)'],
+    ['extra', 'extra pool instance (same page)'],
+  ]) {
+    const rs = su.runs.map((r) => r[key]).filter(Boolean);
+    if (!rs.length) continue;
+    lines.push(
+      `| ${label} | ${secPM(rs.map((x) => x.totalMs))} | ${leg(rs, 'bundle')} | ` +
+        `${leg(rs, 'session')} | ${leg(rs, 'library')} |`,
+    );
+  }
+  lines.push('');
+  lines.push(
+    'The bundle leg is a localhost read here, so it is a lower bound on what a visitor ' +
+      'pays over a network; the boot and library legs are compute-bound and representative. ' +
+      'An extra instance reuses the in-page bundle, so it has no bundle leg.',
+  );
+  lines.push('');
+}
 
 const report = lines.join('\n') + '\n';
 fs.writeFileSync(path.join(resultsDir, 'report.md'), report);
