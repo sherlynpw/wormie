@@ -42,7 +42,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'sidebar',
     title: 'Tools live in the sidebar',
-    body: 'Enrichment (ORA), GSEA (preranked), GMT (custom sets), Compare (Venn / UpSet of multiple lists), and the GSEA Intersect for cross-comparison consensus.',
+    body: 'Over-representation, Ranked-list enrichment, Custom gene sets, Gene overlap and Annotation overlap (Venn / UpSet of multiple lists), and GSEA intersect for cross-comparison consensus.',
     selector: 'aside, nav[aria-label="Sidebar"]',
     route: '/',
     placement: 'right',

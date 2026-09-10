@@ -375,8 +375,9 @@
       <CardTitle class="text-xl">Custom gene sets</CardTitle>
       <div class="text-sm text-muted-foreground">
         Paste or upload a GMT collection (MSigDB / Reactome / KEGG / custom WormCat exports) and run
-        enrichment or preranked GSEA against your genes. Set names work as term IDs in results. Gene
-        IDs are bulk-resolved to WBGene before analysis, so symbols and sequence names both work.
+        over-representation or ranked-list enrichment against your genes. Set names work as term IDs
+        in results. Gene IDs are bulk-resolved to WBGene before analysis, so symbols and sequence
+        names both work.
       </div>
     </CardHeader>
     <CardContent class="space-y-3">
@@ -456,12 +457,12 @@
       <CardHeader>
         <CardTitle class="inline-flex items-center gap-1.5 text-base">
           Run analysis
-          <ControlHint id="gmt-mode" title="Enrichment vs GSEA">
-            <b>Enrichment (hypergeometric)</b>: tests whether your gene list overlaps each custom
-            set more than chance. Use when you have an already-filtered list of "interesting" genes.<br
-            /><br />
-            <b>GSEA (preranked)</b>: walks the full ranked stat list, no cutoff. Use when you have a
-            signed score per gene (Wald stat, log2FC).
+          <ControlHint id="gmt-mode" title="Over-representation vs ranked-list enrichment">
+            <b>Over-representation</b> (hypergeometric): tests whether your gene list overlaps each
+            custom set more than chance. Use when you have an already-filtered list of "interesting"
+            genes.<br /><br />
+            <b>Ranked-list enrichment</b> (preranked GSEA): walks the full ranked stat list, no cutoff.
+            Use when you have a signed score per gene (Wald stat, log2FC).
           </ControlHint>
         </CardTitle>
         <div class="mt-2 flex flex-wrap items-center gap-2">
@@ -475,7 +476,7 @@
                 : 'text-muted-foreground hover:bg-accent/50',
             )}
           >
-            Enrichment (hypergeometric)
+            Over-representation
           </button>
           <button
             type="button"
@@ -487,7 +488,7 @@
                 : 'text-muted-foreground hover:bg-accent/50',
             )}
           >
-            GSEA (preranked)
+            Ranked-list enrichment
           </button>
         </div>
       </CardHeader>

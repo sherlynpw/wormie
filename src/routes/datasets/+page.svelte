@@ -26,21 +26,21 @@
   // First entry is the default target; rest appear in "Open in ..." submenu.
   const TYPE_ROUTES: Record<DatasetType, Target[]> = {
     'gene-list': [
-      { path: '/enrichment', param: 'paste', label: 'Enrichment (ORA)' },
-      { path: '/enrichment', param: 'deseq2', label: 'Enrichment (DE table / volcano)' },
+      { path: '/enrichment', param: 'paste', label: 'Over-representation' },
+      { path: '/enrichment', param: 'deseq2', label: 'Over-representation (DE table / volcano)' },
       { path: '/compare/lists', param: 'list', label: 'Gene overlap' },
     ],
     ranked: [
-      { path: '/gsea', param: 'ranked', label: 'GSEA' },
-      { path: '/enrichment', param: 'ranked', label: 'Enrichment (gene list)' },
-      { path: '/enrichment', param: 'deseq2', label: 'Enrichment (DE table / volcano)' },
+      { path: '/gsea', param: 'ranked', label: 'Ranked-list enrichment' },
+      { path: '/enrichment', param: 'ranked', label: 'Over-representation (gene list)' },
+      { path: '/enrichment', param: 'deseq2', label: 'Over-representation (DE table / volcano)' },
     ],
     deseq2: [
-      { path: '/enrichment', param: 'deseq2', label: 'Enrichment (DE subset)' },
-      { path: '/gsea', param: 'ranked', label: 'GSEA (preranked)' },
+      { path: '/enrichment', param: 'deseq2', label: 'Over-representation (DE subset)' },
+      { path: '/gsea', param: 'ranked', label: 'Ranked-list enrichment' },
     ],
-    gmt: [{ path: '/gmt', param: 'gmt', label: 'GMT' }],
-    counts: [{ path: '/ssgsea', param: 'counts', label: 'ssGSEA' }],
+    gmt: [{ path: '/gmt', param: 'gmt', label: 'Custom gene sets' }],
+    counts: [{ path: '/ssgsea', param: 'counts', label: 'Per-sample set scores' }],
     'gsea-bundle': [{ path: '/gsea/intersect', param: 'bundle', label: 'GSEA intersect' }],
     // Placeholder replaced by sessionTargets() at render time.
     session: [{ path: '', param: 'session', label: 'Open session' }],

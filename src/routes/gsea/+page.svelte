@@ -373,7 +373,7 @@
 
   <Card>
     <CardHeader>
-      <CardTitle class="text-xl">Preranked GSEA</CardTitle>
+      <CardTitle class="text-xl">Ranked-list enrichment</CardTitle>
       <div class="text-sm text-muted-foreground">
         Weighted running enrichment score (Subramanian et al. 2005), gene-set permutation for
         p-values (fgsea-style preranked). Paste a ranked list of (gene, score). Score is typically

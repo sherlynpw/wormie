@@ -176,7 +176,7 @@ export async function runGSEA(
     score: Number(r.score),
   }));
   const jobId = nextJobId('gsea');
-  jobs.start(jobId, `GSEA · ${kind}`);
+  jobs.start(jobId, `Ranked-list enrichment · ${kind}`);
   try {
     const res = await call<{ results: GseaResult[]; elapsedMs: number }>(
       { type: 'gsea', ranked: plainRanked, kind, opts: { ...opts } },
@@ -212,7 +212,7 @@ export async function runCustomEnrichment(
     genes: Array.from(s.genes),
   }));
   const jobId = nextJobId('enrich-gmt');
-  jobs.start(jobId, 'Enrichment · GMT');
+  jobs.start(jobId, 'Over-representation · GMT');
   try {
     const res = await call<{ results: EnrichmentResult[]; elapsedMs: number }>(
       { type: 'customEnrichment', ids: plainIds, sets: plainSets, opts: { ...opts } },
@@ -248,7 +248,7 @@ export async function runCustomSsgsea(
     genes: Array.from(s.genes),
   }));
   const jobId = nextJobId('ssgsea-gmt');
-  jobs.start(jobId, 'ssGSEA · GMT');
+  jobs.start(jobId, 'Per-sample set scores · GMT');
   try {
     const res = await call<{ results: SsgseaScores[]; sampleNames: string[]; elapsedMs: number }>(
       { type: 'customSsgsea', expr, sets: plainSets, opts: { ...opts } },
@@ -287,7 +287,7 @@ export async function runCustomGSEA(
     genes: Array.from(s.genes),
   }));
   const jobId = nextJobId('gsea-gmt');
-  jobs.start(jobId, 'GSEA · GMT');
+  jobs.start(jobId, 'Ranked-list enrichment · GMT');
   try {
     const res = await call<{ results: GseaResult[]; elapsedMs: number }>(
       { type: 'customGsea', ranked: plainRanked, sets: plainSets, opts: { ...opts } },
@@ -317,7 +317,7 @@ export async function runEnrichment(
     background: opts.background ? Array.from(opts.background) : undefined,
   };
   const jobId = nextJobId('enrich');
-  jobs.start(jobId, `Enrichment · ${kind}`);
+  jobs.start(jobId, `Over-representation · ${kind}`);
   try {
     const res = await call<{ results: EnrichmentResult[]; elapsedMs: number }>(
       { type: 'enrichment', ids: plainIds, kind, opts: plainOpts },
