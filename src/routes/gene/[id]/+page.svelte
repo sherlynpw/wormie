@@ -1260,8 +1260,8 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Neuronal classification
               <ControlHint id="gene-neuronal" title="Neuronal classification">
-                CeNGEN / Hobert-lab classification of neuronal-expressed genes by function
-                (transcription factor, neuropeptide, receptor, etc.) and by supercategory.
+                Hobert-lab catalogue of neuronal genes, classified by function (transcription
+                factor, neuropeptide, receptor, etc.) and by supercategory.
               </ControlHint>
             </CardTitle>
           </CardHeader>
@@ -1291,10 +1291,11 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Synaptogenesis panel
               <ControlHint id="gene-synaptogenesis" title="Synaptogenesis panel">
-                Curated 215-gene panel grouped into 13 functional classes — proneural fate, terminal
+                A 242-gene panel grouped into 13 functional classes — proneural fate, terminal
                 selectors, active zone, SV release, innexins, postsynaptic, Wnt/PHR signaling, etc.
-                Source: Andrew lab pipeline. Each class links to the primary references that justify
-                its membership.
+                Curated by the Richardson Lab from the primary literature, since no maintained
+                resource groups these genes by the role they play. Each class links to the
+                publications that justify its membership.
               </ControlHint>
             </CardTitle>
           </CardHeader>
@@ -1675,7 +1676,10 @@
                 neighbors, the second where this gene sits among its. #3/#4 is a tighter pair than
                 #3/#180 even though both start the same. Pick a neuron to restrict neighbors to
                 those also called expressed in that neuron at the chosen threshold; Pearson scores
-                stay global so they still measure overall pattern similarity.
+                stay global so they still measure overall pattern similarity. Correlations were run
+                over the whole CeNGEN matrix, while the expression card above lists only values
+                above 0.5 TMM, so a low-lying gene can have neighbors here and no expression card at
+                all.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">

@@ -197,7 +197,7 @@
       url: 'https://github.com/rayandrew/celegans-pipeline',
       license: 'project-internal',
       description:
-        'Curated 215-gene panel grouped into 13 functional classes (proneural fate, terminal selector, active zone, SV release, innexins, postsynaptic, Wnt/PHR signaling, etc.). Sourced from the Andrew lab celegans-pipeline repo, with class membership PDF-verified. Drives the Synaptogenesis enrichment/GSEA tab and the gene-page panel card.',
+        'A 242-gene panel grouped into 13 functional classes (proneural fate, terminal selector, active zone, SV release, innexins, postsynaptic, Wnt/PHR signaling, etc.). Curated by the Richardson Lab from 25 publications, with class membership PDF-verified. Drives the Synaptogenesis enrichment/GSEA tab and the gene-page panel card.',
     },
   ]);
 

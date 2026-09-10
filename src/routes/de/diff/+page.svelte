@@ -300,9 +300,10 @@
     Two comparisons from the same study — a mutant against wild type at two timepoints, say, or two
     mutants against one control — plotted against each other, one dot per gene, its fold change in
     the first comparison on one axis and in the second on the other. Genes along the diagonal behave
-    the same way in both. Genes in purple reverse: up in one comparison, down in the other, which is
-    usually the interesting minority. Pearson r summarises how closely the two agree overall. Result
-    tables from DESeq2, edgeR or limma all work.
+    the same way in both. Genes in purple reverse: up in one comparison, down in the other, and by
+    more than a half on a log2 scale in both, which is usually the interesting minority. Pearson r
+    summarises how closely the two agree overall. Result tables from DESeq2, edgeR or limma all
+    work.
   </PageHint>
 
   <div class="grid gap-3 sm:grid-cols-2">

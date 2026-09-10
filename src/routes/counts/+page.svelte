@@ -23,7 +23,13 @@
 
   let bamFiles = $state<File[]>([]);
   let gtfFile = $state<File | null>(null);
-  let threads = $state(4);
+  // featureCounts is genuinely multithreaded here, so start at the machine's core
+  // count. Capped at 8 because the input caps there and memory grows per worker.
+  const DEFAULT_THREADS = Math.max(
+    1,
+    Math.min(8, (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 4),
+  );
+  let threads = $state(DEFAULT_THREADS);
   let isPaired = $state(false);
 
   let bamInput: HTMLInputElement | null = $state(null);

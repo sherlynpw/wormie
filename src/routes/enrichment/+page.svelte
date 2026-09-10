@@ -27,6 +27,7 @@
     looksLikeSingleCellMarkers,
   } from '$lib/import-enrichment';
   import type { EnrichmentKind, EnrichmentResult } from '$lib/db/client';
+  import { KEGG_ENABLED } from '$lib/config';
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
@@ -534,13 +535,15 @@
 
   <PageHint id="enrichment" title="What this step does">
     You have a list of genes worth explaining: the ones that changed, or hits from a screen. Genes
-    carry annotations describing what they do (GO terms), what happens when they break (phenotypes),
-    which tissue they act in, and which WormCat category they fall under. This asks whether any of
-    those labels turns up in your list more often than drawing the same number of genes at random
-    would give. Each label gets a <b>fold enrichment</b> (how many times more often than expected)
-    and a <b>q-value</b>, the false discovery rate across all labels tested; q ≤ 0.05 is the usual
-    cutoff. Paste gene names, or a differential expression table from DESeq2, edgeR or limma and
-    choose which genes to test. If nothing in your list passes a significance cutoff, try
+    carry annotations of {KEGG_ENABLED ? 'nine' : 'eight'} kinds: what they do (GO terms), what happens
+    when they break (phenotypes), where they are expressed (tissues and CeNGEN neuron types), which WormCat
+    category they fall under, which disease their orthologs are tied to and which neuronal or synaptogenesis
+    panel they belong to{KEGG_ENABLED ? ', plus the KEGG pathways they sit on' : ''}. This asks
+    whether any of those labels turns up in your list more often than drawing the same number of
+    genes at random would give. Each label gets a <b>fold enrichment</b> (how many times more often
+    than expected) and a <b>q-value</b>, the false discovery rate across all labels tested; q ≤ 0.05
+    is the usual cutoff. Paste gene names, or a differential expression table from DESeq2, edgeR or
+    limma and choose which genes to test. If nothing in your list passes a significance cutoff, try
     <a href={resolve('/gsea')} class="text-primary hover:underline">ranked-list enrichment</a>,
     which needs no cutoff.
   </PageHint>
@@ -908,13 +911,14 @@
                   {resolving ? 'Resolving...' : 'Run enrichment on DE subset'}
                 </Button>
                 <ControlHint id="enrich-de-subset" title="DE-subset ORA">
-                  Runs hypergeometric over-representation on the filtered subset against GO /
-                  Phenotype / WormCat / Tissue. The universe is set to the genes in your
-                  differential expression table ({deseqRows ? deseqRows.length.toLocaleString() : 0} of
-                  them), not the whole genome, so terms whose members were never expressed in this experiment
-                  don't inflate the background. A directional run keeps that same universe, so up- and
-                  down-regulated genes are each tested against every tested row. The universe in force
-                  is shown on the results card and can be cleared there.
+                  Runs hypergeometric over-representation on the filtered subset against all
+                  {KEGG_ENABLED ? 'nine' : 'eight'} annotation domains. The universe is set to the genes
+                  in your differential expression table ({deseqRows
+                    ? deseqRows.length.toLocaleString()
+                    : 0} of them), not the whole genome, so terms whose members were never expressed in
+                  this experiment don't inflate the background. A directional run keeps that same universe,
+                  so up- and down-regulated genes are each tested against every tested row. The universe
+                  in force is shown on the results card and can be cleared there.
                 </ControlHint>
               </div>
               <div class="text-[0.7rem] text-muted-foreground">
