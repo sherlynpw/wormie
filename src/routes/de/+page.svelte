@@ -437,10 +437,11 @@
   }
 
   async function continueToSsgsea() {
-    if (!fit?.vstCountsTsv) return;
+    if (!fit?.normalizedCountsTsv) return;
     // ssGSEA ranks genes within each sample, so any per-sample monotone transform
-    // gives identical scores; VST is sent because it is the conventional input.
-    handoff.ssgsea.set({ tsv: fit.vstCountsTsv, label: 'VST counts from /de' });
+    // gives identical scores. Normalized counts are sent rather than VST so that
+    // VST stays confined to visualization (the PCA and the sample-distance heatmap).
+    handoff.ssgsea.set({ tsv: fit.normalizedCountsTsv, label: 'Normalized counts from /de' });
     await goto(resolve('/ssgsea') + '?from=de');
   }
 
@@ -1219,10 +1220,10 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
           <Button
             variant="outline"
             onclick={continueToSsgsea}
-            disabled={!fit?.vstCountsTsv}
-            title="Hand off the VST expression matrix (all samples) to /ssgsea"
+            disabled={!fit?.normalizedCountsTsv}
+            title="Hand off the normalized count matrix (all samples) to /ssgsea"
           >
-            Continue to ssGSEA <ArrowRight class="h-4 w-4" />
+            Continue to per-sample set scores <ArrowRight class="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
