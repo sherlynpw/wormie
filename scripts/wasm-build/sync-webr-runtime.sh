@@ -69,8 +69,20 @@ fi
 
 # The DESeq2 bundle is baked in CI and lives only in R2; without it /de loads
 # WebR and then fails on library(DESeq2). Mirror the deployed copy for dev.
+#
+# CI must skip this. The bake step writes a fresh bundle into the same directory,
+# and mirroring afterwards overwrites it with the copy already deployed, so the
+# upload that follows pushes the old bundle straight back to R2 and every rebuild
+# is a silent no-op. Set SKIP_BUNDLE_MIRROR=1 wherever the bundle was just baked.
 BUNDLE_DIR="${REPO_DIR}/scripts/wasm-cran"
 SITE="https://wormie.rs.ht/wasm-cran"
+if [ "${SKIP_BUNDLE_MIRROR:-0}" = "1" ]; then
+  echo "==> SKIP_BUNDLE_MIRROR=1, keeping the locally baked deseq2 bundle"
+  echo "==> done. Listing:"
+  ls -lh "${DEST}"
+  ls -lh "${BUNDLE_DIR}"/deseq2-bundle.* 2>/dev/null || true
+  exit 0
+fi
 echo "==> fetching deseq2 bundle from ${SITE}"
 for f in deseq2-bundle.data deseq2-bundle.js.metadata deseq2-bundle.manifest.json; do
   echo "  -> ${f}"

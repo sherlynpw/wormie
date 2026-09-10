@@ -154,6 +154,10 @@ jobs:
           sudo chown -R $(id -u):$(id -g) out-blas
 
       - name: Sync upstream WebR runtime + overlay SIMD libs
+        # The bundle was just baked into scripts/wasm-cran; mirroring the deployed
+        # copy here would overwrite it and make the R2 upload below a no-op.
+        env:
+          SKIP_BUNDLE_MIRROR: '1'
         run: bash scripts/wasm-build/sync-webr-runtime.sh
 
       - name: Report artifacts in job summary
