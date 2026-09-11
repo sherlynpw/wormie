@@ -33,9 +33,15 @@ export default {
       if (!key || key.includes('..')) return new Response('Bad request', { status: 400 });
 
       // version.json: short TTL (60 s) so clients notice new releases. DB+WASM are content-addressed, so long TTL (browser 3600 s, edge 86400 s).
-      const isVersion = key === 'version.json';
-      const browserMaxAge = isVersion ? 60 : 3600;
-      const edgeMaxAge = isVersion ? 60 : 86400;
+      // Pointer files are small and describe a much larger object: version.json names the
+      // database build, deseq2-bundle.manifest.json names the bundle and supplies the
+      // bundleVersion used as the OPFS cache key. They are separate cache entries from the
+      // payloads they describe, so a long edge TTL lets a rebuilt payload be served alongside
+      // a stale descriptor: the client then caches new data under an old key and reports the
+      // wrong package versions. Keep them short so that window is minutes, not a day.
+      const isPointer = key === 'version.json' || key.endsWith('.manifest.json');
+      const browserMaxAge = isPointer ? 60 : 3600;
+      const edgeMaxAge = isPointer ? 60 : 86400;
 
       // caches.default is a Workers-runtime extension not in lib.dom's CacheStorage; cast required.
       const cache = (caches as unknown as { default: Cache }).default;

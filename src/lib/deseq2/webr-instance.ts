@@ -181,16 +181,42 @@ function loadBundle(onLine?: (s: string) => void) {
 
       log('miss, downloading bundle...');
       const t0 = performance.now();
-      const [d, m] = await Promise.all([
-        fetch(`${BUNDLE_BASE}deseq2-bundle.data`),
-        fetch(`${BUNDLE_BASE}deseq2-bundle.js.metadata`),
-      ]);
-      if (!d.ok || !m.ok) {
-        throw new Error(`deseq2-bundle missing (data=${d.status}, meta=${m.status})`);
+      // The payload, its offset table and the manifest are three separate cache entries that
+      // a rebuild updates independently, so an edge can serve a fresh one beside a stale one.
+      // The offsets have to describe the payload exactly or the mount reads at wrong
+      // positions, so check before trusting the pair and retry past the cache once.
+      const fetchPair = async (bust: boolean) => {
+        const q = bust ? `?nocache=${Date.now()}` : '';
+        const [d, m] = await Promise.all([
+          fetch(`${BUNDLE_BASE}deseq2-bundle.data${q}`),
+          fetch(`${BUNDLE_BASE}deseq2-bundle.js.metadata${q}`),
+        ]);
+        if (!d.ok || !m.ok) {
+          throw new Error(`deseq2-bundle missing (data=${d.status}, meta=${m.status})`);
+        }
+        const buf = await d.arrayBuffer();
+        const text = await m.text();
+        return { buf, text, meta: JSON.parse(text) as { remote_package_size?: number } };
+      };
+      const coherent = (buf: ArrayBuffer, meta: { remote_package_size?: number }) =>
+        meta.remote_package_size === buf.byteLength &&
+        (manifest?.dataBytes === undefined || manifest.dataBytes === buf.byteLength);
+
+      let got = await fetchPair(false);
+      if (!coherent(got.buf, got.meta)) {
+        log('payload and offset table disagree, refetching past the cache');
+        got = await fetchPair(true);
+        if (!coherent(got.buf, got.meta)) {
+          throw new Error(
+            `deseq2-bundle is inconsistent: ${got.buf.byteLength} bytes of payload, ` +
+              `offset table expects ${got.meta.remote_package_size}` +
+              (manifest?.dataBytes ? `, manifest expects ${manifest.dataBytes}` : ''),
+          );
+        }
       }
-      const dataBuf = await d.arrayBuffer();
-      const metaText = await m.text();
-      const metadata = JSON.parse(metaText) as object;
+      const dataBuf = got.buf;
+      const metaText = got.text;
+      const metadata = got.meta as object;
       log(
         `fetched ${(dataBuf.byteLength / 1024 / 1024).toFixed(1)} MB in ${((performance.now() - t0) / 1000).toFixed(1)}s`,
       );
