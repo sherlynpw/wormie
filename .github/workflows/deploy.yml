@@ -26,7 +26,9 @@ concurrency:
 
 env:
   WB_RELEASE: ${{ github.event.inputs.wb_release }}
-  DISABLE_KEGG: ${{ github.event.inputs.disable_kegg || vars.DISABLE_KEGG }}
+  # An unticked input arrives as the string 'false', which is truthy and would
+  # otherwise mask the repo variable on every manual run.
+  DISABLE_KEGG: ${{ github.event.inputs.disable_kegg == 'true' && '1' || vars.DISABLE_KEGG }}
 
 jobs:
   build:

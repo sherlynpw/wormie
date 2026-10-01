@@ -4,6 +4,7 @@
   import { untrack } from 'svelte';
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import { fmtTitle } from '$lib/format';
+  import { KEGG_ENABLED } from '$lib/config';
   import {
     getGene,
     getWormcatFor,
@@ -365,7 +366,7 @@
       { id: 'wormcat', label: 'WormCat' },
       { id: 'neuronal', label: 'Neuronal class' },
       { id: 'synaptogenesis', label: 'Synaptogenesis' },
-      { id: 'pathways', label: 'KEGG' },
+      ...(KEGG_ENABLED ? [{ id: 'pathways', label: 'KEGG' }] : []),
     ];
     const expression: TocLeaf[] = [
       { id: 'tissues', label: 'Tissues' },
@@ -1352,7 +1353,9 @@
         />
       {/if}
 
-      {#if pathways.length > 0}
+      {#if !KEGG_ENABLED}
+        <!-- KEGG excluded from the build (license): no panel, not an empty one -->
+      {:else if pathways.length > 0}
         <Card id="pathways">
           <CardHeader class="flex flex-row items-baseline justify-between pb-3">
             <CardTitle class="text-base">KEGG pathways</CardTitle>
