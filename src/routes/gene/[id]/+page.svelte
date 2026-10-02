@@ -1294,15 +1294,16 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Synaptogenesis panel
               <ControlHint id="gene-synaptogenesis" title="Synaptogenesis panel">
-                A 220-gene panel grouped into 13 functional classes — proneural fate, terminal
-                selectors, active zone, SV release, innexins, postsynaptic, Wnt/PHR signaling, etc.
-                Curated by the Richardson Lab from the primary literature, since no maintained
-                resource groups these genes by the role they play. References are held per class,
-                not per gene: they are the papers the class was built from, so the same list shows
-                for every gene in a class and none of them is necessarily about this gene. Where a
-                specific paper supports this gene, it is named in the note above instead.
+                220 genes in 13 functional classes, from proneural fate through to synaptic
+                machinery. References are held per class, not per gene, so the same list shows for
+                every gene in a class; a paper supporting this gene specifically is named in its own
+                note.
               </ControlHint>
             </CardTitle>
+            <div class="text-xs text-muted-foreground">
+              Curated from the literature by the Richardson Lab. Not exhaustive and may contain
+              errors; corrections are welcome.
+            </div>
           </CardHeader>
           <CardContent class="space-y-3 pt-0">
             {#each synaptogenesis as s, i (i)}
@@ -1318,13 +1319,11 @@
                   {/if}
                 </div>
                 {#if s.notes}
-                  <div class="mt-1.5 text-xs text-muted-foreground">{s.notes}</div>
+                  <div class="mt-2.5 text-xs text-muted-foreground">{s.notes}</div>
                 {/if}
                 {#if meta?.refIds && meta.refIds.length > 0}
                   <div class="mt-1.5 flex flex-wrap items-center gap-1">
-                    <span class="text-xs text-muted-foreground"
-                      >Papers behind this class, not this gene:</span
-                    >
+                    <span class="text-xs text-muted-foreground">Papers behind this class:</span>
                     {#each meta.refIds as rid (rid)}
                       {@const r = synaptoRefById(rid)}
                       {#if r}
@@ -1670,20 +1669,11 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Co-expressions across neuron types
               <ControlHint id="gene-cengen-coexpr" title="CeNGEN co-expression">
-                Genes whose expression pattern across CeNGEN's 41 bulk-covered neuron types most
-                closely matches this gene (Pearson on log1p TMM, computed at build time). A pair is
-                kept only if it clears both tests: significant at p &lt; 0.001 (r ≥ 0.495 across 41
-                neuron types), and each gene among the other's 200 strongest partners. The second
-                test removes promiscuous edges that significance alone lets through, so there are no
-                weak entries in the list. Ordering is by mutual rank, the geometric mean of the two
-                ranks shown on each row: the first is where that gene sits among this gene's
-                neighbors, the second where this gene sits among its. #3/#4 is a tighter pair than
-                #3/#180 even though both start the same. Pick a neuron to restrict neighbors to
-                those also called expressed in that neuron at the chosen threshold; Pearson scores
-                stay global so they still measure overall pattern similarity. Correlations were run
-                over the whole CeNGEN matrix, while the expression card above lists only values
-                above 0.5 TMM, so a low-lying gene can have neighbors here and no expression card at
-                all.
+                Genes whose expression across CeNGEN's 41 neuron types best matches this gene
+                (Pearson on log1p TMM). A pair is kept only if it is significant at p &lt; 0.001 and
+                each gene is among the other's 200 strongest partners. Rows are ordered by mutual
+                rank, so #3/#4 is a tighter pair than #3/#180. A gene can appear here with no
+                expression card above, which shows only values over 0.5 TMM.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
