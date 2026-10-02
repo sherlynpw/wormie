@@ -7,6 +7,8 @@ build
 .DS_Store
 static/data/wormie.sqlite*
 static/data/version.json
+static/data/annotation.saf.gz
+static/data/unresolved-symbols.txt
 .cache
 .wrangler
 test-results
