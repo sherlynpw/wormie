@@ -1,5 +1,5 @@
 // Static reference + class metadata for the curated synaptogenesis panel
-// (source: celegans-pipeline:SYNAPTOGENESIS.txt v3, PDF-verified).
+// (source: celegans-pipeline:SYNAPTOGENESIS.txt v4, PDF-verified).
 // Gene-to-class membership is in the SQLite `synaptogenesis` table; this module
 // carries only the bibliographic and per-class editorial layer surfaced by the UI.
 

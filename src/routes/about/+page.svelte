@@ -192,7 +192,7 @@
         'C. elegans pathway gene sets (~150 maps including Insulin/IGF, TGF-β, FoxO, longevity, autophagy), the KO ↔ worm-gene table, and the pre-rendered pathway map images (lossless WebP) re-encoded from the KEGG PNG output. All assets are pulled at build time from the KEGG REST API and ingested into the local SQLite DB so the /pathway/[id] viewer works fully offline. KEGG REST access is free for academic use; redistribution of the bulk dump is license-restricted (we ship per-pathway assets used to power the local viewer, no full data dump). Cite Kanehisa et al. as KEGG requires.',
     },
     {
-      name: 'Synaptogenesis panel (v3)',
+      name: 'Synaptogenesis panel (v4)',
       version: 'celegans-pipeline refs/gene_sets',
       url: 'https://github.com/rayandrew/celegans-pipeline',
       license: 'project-internal',
