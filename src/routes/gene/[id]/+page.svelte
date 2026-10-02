@@ -83,6 +83,8 @@
     classById as synaptoClassById,
     refById as synaptoRefById,
     doiHref as synaptoDoiHref,
+    prettySubclass as synaptoSubclass,
+    refShortLabel as synaptoRefLabel,
   } from '$lib/synaptogenesis-references';
 
   let gene = $state<GeneRow | null>(null);
@@ -1292,7 +1294,7 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Synaptogenesis panel
               <ControlHint id="gene-synaptogenesis" title="Synaptogenesis panel">
-                A 242-gene panel grouped into 13 functional classes — proneural fate, terminal
+                A 220-gene panel grouped into 13 functional classes — proneural fate, terminal
                 selectors, active zone, SV release, innexins, postsynaptic, Wnt/PHR signaling, etc.
                 Curated by the Richardson Lab from the primary literature, since no maintained
                 resource groups these genes by the role they play. Each class links to the
@@ -1300,30 +1302,25 @@
               </ControlHint>
             </CardTitle>
           </CardHeader>
-          <CardContent class="space-y-2 pt-0">
+          <CardContent class="space-y-3 pt-0">
             {#each synaptogenesis as s, i (i)}
               {@const meta = synaptoClassById(s.class)}
-              <div class="rounded-md border bg-card/50 p-2">
-                <div class="flex flex-wrap items-center gap-1.5 text-sm">
-                  <a
-                    href={resolve(`/?view=synaptogenesis&q=${encodeURIComponent(s.class)}`)}
-                    class="text-primary hover:underline"
-                  >
+              <div>
+                <div class="flex flex-wrap items-center gap-2 text-sm">
+                  <a href={resolve(`/?view=synaptogenesis&q=${encodeURIComponent(s.class)}`)}>
                     <Badge variant="secondary">{meta?.label ?? s.class}</Badge>
                   </a>
                   {#if s.subclass}
                     <span class="text-muted-foreground">›</span>
-                    <Badge variant="muted" class="text-[0.65rem]">{s.subclass}</Badge>
-                  {/if}
-                  {#if meta?.note}
-                    <Badge variant="outline" class="text-[0.6rem]">{meta.note}</Badge>
+                    <Badge variant="secondary">{synaptoSubclass(s.subclass)}</Badge>
                   {/if}
                 </div>
                 {#if s.notes}
-                  <div class="mt-1 text-xs text-muted-foreground">{s.notes}</div>
+                  <div class="mt-1.5 text-xs text-muted-foreground">{s.notes}</div>
                 {/if}
                 {#if meta?.refIds && meta.refIds.length > 0}
-                  <div class="mt-1.5 flex flex-wrap gap-1">
+                  <div class="mt-1.5 flex flex-wrap items-center gap-1">
+                    <span class="text-xs text-muted-foreground">Class references:</span>
                     {#each meta.refIds as rid (rid)}
                       {@const r = synaptoRefById(rid)}
                       {#if r}
@@ -1333,9 +1330,9 @@
                           target="_blank"
                           rel="noopener noreferrer"
                           title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
-                          class="inline-block rounded border bg-background px-1.5 py-0.5 font-mono text-[0.6rem] text-muted-foreground hover:bg-accent"
+                          class="inline-block rounded border bg-background px-1.5 py-0.5 text-[0.65rem] text-muted-foreground hover:bg-accent"
                         >
-                          {rid}
+                          {synaptoRefLabel(r)}
                         </a>
                       {/if}
                     {/each}
