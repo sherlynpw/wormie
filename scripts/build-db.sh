@@ -1854,6 +1854,19 @@ with gzip.open(reference_json_gz, 'rt') as fh:
     _refdoc = json.load(fh)
 _records = _refdoc.get('data', _refdoc) if isinstance(_refdoc, dict) else _refdoc
 
+def _author_short(label):
+    # Some dump records and all WormBase REST labels are "Surname, Given";
+    # the rest of the dump and NCBI use "Surname GI". Rewrite to match.
+    last, sep, given = label.partition(',')
+    parts = given.replace('.', ' ').replace('-', ' ').split()
+    if not sep or not parts:
+        return label.strip()
+    if all(p.isupper() and len(p) <= 3 for p in parts):
+        initials = ''.join(parts)
+    else:
+        initials = ''.join(p[0].upper() for p in parts)
+    return f'{last.strip()} {initials}'
+
 paper_rows = []
 for r in _records:
     # A record's WBPaper id, DOI and PMID may each be in primaryId or in
@@ -1876,7 +1889,7 @@ for r in _records:
         year = None
     authors = r.get('authors') or []
     if authors:
-        short = (authors[0].get('name') or '') + (' et al.' if len(authors) > 1 else '')
+        short = _author_short(authors[0].get('name') or '') + (' et al.' if len(authors) > 1 else '')
     else:
         short = None
     paper_rows.append((pid, pmid, doi, r.get('title'), r.get('resourceAbbreviation'), year, short or None))
@@ -1951,7 +1964,7 @@ else:
         if not title:
             continue
         au = g('authors') or []
-        short = ((au[0].get('label') or '') + (' et al.' if len(au) > 1 else '')) if isinstance(au, list) and au else None
+        short = (_author_short(au[0].get('label') or '') + (' et al.' if len(au) > 1 else '')) if isinstance(au, list) and au else None
         year = g('year')
         extra.append((pid, g('pmid'), g('doi'), title, g('journal'),
                       str(year) if year else None, short or None))

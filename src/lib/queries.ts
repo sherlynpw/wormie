@@ -1702,20 +1702,34 @@ export async function getPapersFor(wormbase_gene: string, limit = 20): Promise<P
     }
     // drop GO_REF:* and others (curation references, not papers)
   }
-  out.sort((a, b) => b.total - a.total);
-  const top = out.slice(0, limit);
-  await enrichPaperMeta(top);
-  return top;
+  // GO cites by PMID and phenotypes by WBPaper id, so one paper can arrive as
+  // two references. Merge on the resolved paper before ranking.
+  const paperOf = await enrichPaperMeta(out);
+  const merged = new Map<string, PaperRef>();
+  for (const p of out) {
+    const key = paperOf.get(p.reference) ?? p.reference;
+    const seen = merged.get(key);
+    if (!seen) {
+      merged.set(key, p);
+      continue;
+    }
+    seen.n_go += p.n_go;
+    seen.n_pheno += p.n_pheno;
+    seen.total += p.total;
+  }
+  return [...merged.values()].sort((a, b) => b.total - a.total).slice(0, limit);
 }
 
 // Resolve titles/DOIs for a list of papers from the paper_meta table (built from
 // the Alliance bibliography) and rewrite each link to prefer the DOI. Papers not
 // in the dump (e.g. published after the dump cutoff) keep their WBPaper/PMID link.
-async function enrichPaperMeta(papers: PaperRef[]): Promise<void> {
-  if (papers.length === 0) return;
+// Returns each resolved reference's paper_meta id.
+async function enrichPaperMeta(papers: PaperRef[]): Promise<Map<string, string>> {
+  const paperOf = new Map<string, string>();
+  if (papers.length === 0) return paperOf;
   const paperIds = papers.filter((p) => p.prefix === 'WBPaper').map((p) => p.id);
   const pmids = papers.filter((p) => p.prefix === 'PMID').map((p) => p.id);
-  if (paperIds.length === 0 && pmids.length === 0) return;
+  if (paperIds.length === 0 && pmids.length === 0) return paperOf;
 
   const clauses: string[] = [];
   const params: string[] = [];
@@ -1736,7 +1750,7 @@ async function enrichPaperMeta(papers: PaperRef[]): Promise<void> {
       params,
     );
   } catch {
-    return; // table absent (older DB build) — leave the bare links in place
+    return paperOf; // table absent (older DB build): leave the bare links in place
   }
 
   const byPaperId = new Map<string, PaperMetaRow>();
@@ -1749,6 +1763,7 @@ async function enrichPaperMeta(papers: PaperRef[]): Promise<void> {
   for (const p of papers) {
     const meta = p.prefix === 'WBPaper' ? byPaperId.get(p.id) : byPmid.get(p.id);
     if (!meta) continue;
+    paperOf.set(p.reference, meta.paper_id);
     p.title = meta.title ?? undefined;
     p.doi = meta.doi ?? undefined;
     p.journal = meta.journal ?? undefined;
@@ -1756,6 +1771,7 @@ async function enrichPaperMeta(papers: PaperRef[]): Promise<void> {
     p.authors = meta.authors ?? undefined;
     if (meta.doi) p.url = `https://doi.org/${meta.doi}`;
   }
+  return paperOf;
 }
 
 export interface GenePaper {
