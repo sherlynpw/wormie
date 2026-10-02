@@ -114,6 +114,12 @@
   <div class="py-10 text-center text-sm text-muted-foreground">No matching panel entries.</div>
 {:else}
   <div class="space-y-3">
+    <p class="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+      This panel was curated from the literature by the Richardson Lab. Each assignment was checked
+      against the cited references to the best of our ability, but the panel is not exhaustive and
+      may contain errors. It is one example of a lab-curated gene list integrated into WormIE. We
+      welcome corrections and suggestions for additional genes.
+    </p>
     <div class="flex flex-wrap items-center gap-1">
       <Button variant="outline" size="sm" onclick={expandAll}>
         <ChevronsDown class="h-3 w-3" />
@@ -253,7 +259,7 @@
         <div
           class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
         >
-          References (R1-R{SYNAPTOGENESIS_REFERENCES.length})
+          References ({SYNAPTOGENESIS_REFERENCES.length})
         </div>
         <ol class="space-y-2 text-xs">
           {#each SYNAPTOGENESIS_REFERENCES as r (r.id)}
