@@ -219,25 +219,6 @@
                               {#if g.notes}
                                 <span class="text-xs text-muted-foreground">— {g.notes}</span>
                               {/if}
-                              {#if meta?.refIds && meta.refIds.length > 0}
-                                <span class="ml-1 inline-flex gap-1">
-                                  {#each meta.refIds as rid (`${g.wormbase_gene}:${rid}`)}
-                                    {@const r = refById(rid)}
-                                    {#if r}
-                                      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-                                      <a
-                                        href={doiHref(r.doi)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
-                                        class="inline-block rounded border bg-card px-1 py-0 font-mono text-[0.55rem] text-muted-foreground hover:bg-accent"
-                                      >
-                                        {rid}
-                                      </a>
-                                    {/if}
-                                  {/each}
-                                </span>
-                              {/if}
                             </div>
                           {/each}
                         </div>

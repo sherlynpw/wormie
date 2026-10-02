@@ -1,6 +1,8 @@
 symbol	class	subclass	notes	family
 # ============================================================================
-# Synaptogenesis gene panel for C. elegans (v4 - PDF-verified)
+# Synaptogenesis gene panel for C. elegans (v4)
+# References checked against Crossref and PubMed; SYNAPTOGENESIS.txt records
+# which were read in full and which from the abstract.
 # 13 classes spanning regulatory layer (TFs + mRNA export) -> effector
 # machinery (adhesion, AZ, SV, innexins, receptors) -> signaling (Wnt, PHR/MAPK)
 # v3 changes: cross-checked against 7 primary papers (Hendi 2019, Klassen 2007,
@@ -55,7 +57,7 @@ ahr-1	02_terminal_selector	multi_class_selectors	AhR; touch + interneuron identi
 lim-6	02_terminal_selector	multi_class_selectors	GABAergic VC/RIS + ASE-L identity (moved from class 01)	lim_homeobox
 vab-3	02_terminal_selector	sensory_specific_selectors	Pax6; head sensory neuron identity (moved from class 01)	pax
 daf-19	02_terminal_selector	multi_class_selectors	RFX; master selector for ALL ciliated sensory neurons; DAF-19A/B also maintains synaptic activity in non-ciliated neurons (Senti & Swoboda 2008)	rfx
-bnc-1	02_terminal_selector	motor_specific_selectors	Basonuclin/Disco; repressor for VA motor neuron subtype identity (with UNC-4); continuously required (Li/Kratsios 2020 eLife)	c2h2_zf
+bnc-1	02_terminal_selector	motor_specific_selectors	Basonuclin/Disco; UNC-3 target required for maintenance of VA and VB motor neuron identity (Li 2020)	c2h2_zf
 ceh-17	02_terminal_selector	sensory_specific_selectors	ALA + SIA selector (with ceh-14); Hobert 2016 map table	homeobox
 egl-5	02_terminal_selector	sensory_specific_selectors	Posterior Hox; PLM touch + tail neuron identity (Hobert 2016 map)	hox
 egl-44	02_terminal_selector	sensory_specific_selectors	TEAD-family; co-selector for FLP head touch neuron (with egl-46)	tead
@@ -142,7 +144,7 @@ unc-104	07_SV_release	vesicle_transport_and_biogenesis_factors	KIF1A; SV axonal 
 unc-57	07_SV_release	endocytosis_and_recycling_factors	Endophilin; SV endocytosis (Schuske 2003)	endophilin
 dyn-1	07_SV_release	endocytosis_and_recycling_factors	Dynamin; clathrin-mediated SV endocytosis (Clark 1997)	dynamin
 egl-3	07_SV_release	neuropeptide_processing_enzymes	PC2 proprotein convertase; processes pro-NLP-40 for gut->brain AIY presynaptic assembly (Shi 2022)	pc2_propeptide
-egl-21	07_SV_release	neuropeptide_processing_enzymes	Carboxypeptidase E; pathway partner of EGL-3 in NLP processing; supports synaptic transmission/assembly at NMJ (Jacob & Kaplan 2003)	cpe_propeptide
+egl-21	07_SV_release	neuropeptide_processing_enzymes	Carboxypeptidase E; pathway partner of EGL-3 in NLP processing; facilitates acetylcholine release at the NMJ (Jacob & Kaplan 2003)	cpe_propeptide
 cyy-1	07_SV_release	vesicle_transport_and_biogenesis_factors	Cyclin Y; partners with CDK-5 to drive presynaptic component trafficking + synapse elimination (Park 2011)	cyclin_y
 ccb-1	07_SV_release	calcium_channels	CaV2 beta auxiliary subunit; presynaptic active zone; stabilizes UNC-2 (Oh 2023)	cav_beta
 snn-1	07_SV_release	vesicle_associated_proteins	Synapsin	synapsin

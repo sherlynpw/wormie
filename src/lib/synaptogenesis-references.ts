@@ -1,5 +1,6 @@
 // Static reference + class metadata for the curated synaptogenesis panel
-// (source: celegans-pipeline:SYNAPTOGENESIS.txt v4, PDF-verified).
+// (source: celegans-pipeline:SYNAPTOGENESIS.txt v4; references checked against
+// Crossref and PubMed, with the per-reference reading record in that file).
 // Gene-to-class membership is in the SQLite `synaptogenesis` table; this module
 // carries only the bibliographic and per-class editorial layer surfaced by the UI.
 
@@ -587,6 +588,15 @@ export const SYNAPTOGENESIS_REFERENCES: PanelReference[] = [
     journal: 'Nature 430(6997):345-50',
     doi: '10.1038/nature02647',
   },
+  {
+    id: 'R67',
+    authors: 'Jacob TC, Kaplan JM',
+    year: 2003,
+    title:
+      'The EGL-21 carboxypeptidase E facilitates acetylcholine release at Caenorhabditis elegans neuromuscular junctions',
+    journal: 'J Neurosci 23(6):2122-2130',
+    doi: '10.1523/jneurosci.23-06-02122.2003',
+  },
 ];
 
 // Class-level editorial layer keyed by the `class` column in the DB.
@@ -639,7 +649,7 @@ export const SYNAPTOGENESIS_CLASSES: PanelClass[] = [
     label: 'Synaptic vesicle / release machinery',
     description:
       'Pan-neuronal core: SNARE/release proteins, voltage-gated Ca channels, vesicle trafficking + transport machinery, cargo kinases.',
-    refIds: ['R4', 'R6', 'R14', 'R23', 'R24', 'R60', 'R61', 'R62', 'R63'],
+    refIds: ['R4', 'R6', 'R14', 'R23', 'R24', 'R60', 'R61', 'R62', 'R63', 'R67'],
   },
   {
     id: '08_innexin',

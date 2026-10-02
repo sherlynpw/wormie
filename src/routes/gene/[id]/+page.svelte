@@ -1297,8 +1297,10 @@
                 A 220-gene panel grouped into 13 functional classes — proneural fate, terminal
                 selectors, active zone, SV release, innexins, postsynaptic, Wnt/PHR signaling, etc.
                 Curated by the Richardson Lab from the primary literature, since no maintained
-                resource groups these genes by the role they play. Each class links to the
-                publications that justify its membership.
+                resource groups these genes by the role they play. References are held per class,
+                not per gene: they are the papers the class was built from, so the same list shows
+                for every gene in a class and none of them is necessarily about this gene. Where a
+                specific paper supports this gene, it is named in the note above instead.
               </ControlHint>
             </CardTitle>
           </CardHeader>
@@ -1320,7 +1322,9 @@
                 {/if}
                 {#if meta?.refIds && meta.refIds.length > 0}
                   <div class="mt-1.5 flex flex-wrap items-center gap-1">
-                    <span class="text-xs text-muted-foreground">Class references:</span>
+                    <span class="text-xs text-muted-foreground"
+                      >Papers behind this class, not this gene:</span
+                    >
                     {#each meta.refIds as rid (rid)}
                       {@const r = synaptoRefById(rid)}
                       {#if r}
