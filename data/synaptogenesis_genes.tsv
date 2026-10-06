@@ -208,7 +208,7 @@ dop-1	09_postsynaptic	metabotropic_receptors	D1-like dopamine receptor	d1_dopami
 ser-2	09_postsynaptic	metabotropic_receptors	Serotonin/dopamine GPCR	5ht_gpcr
 glc-3	09_postsynaptic	ionotropic_receptors	Glutamate-gated Cl channel	glu_cl
 aex-2	09_postsynaptic	metabotropic_receptors	GPCR for NLP-40; neuronal receiver of gut neuroendocrine signal driving AIY presynaptic assembly (Shi 2022)	neuropeptide_gpcr
-# ---- Class 10: mRNA export / RNA processing for synaptic transcripts -------
+# ---- Class 10: RNA export and processing ----------------------------------
 thoc-1	10_mRNA_export	tho_complex_subunits	THO/TREX subunit; dopaminergic synaptogenesis (Maeder 2018)	tho_complex
 thoc-2	10_mRNA_export	tho_complex_subunits	THO/TREX subunit	tho_complex
 thoc-5	10_mRNA_export	tho_complex_subunits	THO/TREX subunit; conserved in mouse SNc DA neuron synapse maintenance	tho_complex
@@ -216,7 +216,7 @@ crh-1	10_mRNA_export	export_adaptors_and_cofactors	CREB; binds THOC to mark syna
 aly-1	10_mRNA_export	export_adaptors_and_cofactors	ALY/REF-1; TREX mRNA-export adaptor (Maeder 2018)	trex_adaptor
 aly-2	10_mRNA_export	export_adaptors_and_cofactors	ALY/REF-2; TREX adaptor	trex_adaptor
 aly-3	10_mRNA_export	export_adaptors_and_cofactors	ALY/REF-3; TREX adaptor	trex_adaptor
-# ---- Class 11: PHR / MAPK ubiquitin signaling at synapse -------------------
+# ---- Class 11: Synapse growth control -------------------------------------
 rpm-1	11_PHR_MAPK	phr_ligase_complex_and_effectors	PHR ligase; synapse formation + axon termination	phr_ubiquitin
 fsn-1	11_PHR_MAPK	phr_ligase_complex_and_effectors	F-box partner of RPM-1	fbox
 skr-1	11_PHR_MAPK	phr_ligase_complex_and_effectors	SKP1-like; SCF complex with RPM-1/FSN-1 (Liao 2004)	skp1
@@ -224,7 +224,7 @@ dlk-1	11_PHR_MAPK	mapk_cascade_kinases	DLK MAPKKK; regulated by RPM-1; synapse f
 mkk-4	11_PHR_MAPK	mapk_cascade_kinases	MKK4 in DLK-1 -> PMK-3 cascade	mapkk
 pmk-3	11_PHR_MAPK	mapk_cascade_kinases	p38 MAPK; AMPA receptor trafficking	p38_mapk
 glo-4	11_PHR_MAPK	phr_ligase_complex_and_effectors	Rab GEF; RPM-1 binding protein mediating axon termination and synaptogenesis (Grill 2007)	rab_gef
-# ---- Class 12: Wnt / morphogen synaptic positioning ------------------------
+# ---- Class 12: Synapse positioning ----------------------------------------
 lin-44	12_wnt_morphogen	wnt_ligands	Posterior Wnt; inhibits synapse formation in DA9 posterior axon	wnt
 egl-20	12_wnt_morphogen	wnt_ligands	Posterior Wnt; co-acts with lin-44	wnt
 cwn-2	12_wnt_morphogen	wnt_ligands	Wnt; required for ACR-16 acetylcholine receptor translocation to synapses (Jensen 2012)	wnt
@@ -232,7 +232,7 @@ lin-17	12_wnt_morphogen	wnt_receptors_and_coreceptors	Frizzled receptor for LIN-
 dsh-1	12_wnt_morphogen	intracellular_transducers	Dishevelled	dishevelled
 bar-1	12_wnt_morphogen	intracellular_transducers	beta-catenin; regulates GLR-1 glutamate receptor abundance in the ventral nerve cord (Dreier 2005)	beta_catenin
 mig-1	12_wnt_morphogen	wnt_receptors_and_coreceptors	Frizzled; receptor through which EGL-20 inhibits synapse formation in DA8 (Mizumoto 2013)	frizzled
-# ---- Class 13: Neurotransmitter identity (terminal selector targets) ------
+# ---- Class 13: Neurotransmitter identity ----------------------------------
 unc-17	13_NT_identity	vesicular_transporters_and_cofactors	VAChT; cholinergic identity	vacht_cholinergic
 cha-1	13_NT_identity	biosynthetic_enzymes	ChAT; cholinergic	chat_cholinergic
 unc-25	13_NT_identity	biosynthetic_enzymes	GAD; GABAergic	gad_gabaergic
