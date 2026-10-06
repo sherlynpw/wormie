@@ -144,7 +144,7 @@ export const SYNAPTOGENESIS_REFERENCES: PanelReference[] = [
     authors: 'Hobert O',
     year: 2016,
     title: 'Terminal Selectors of Neuronal Identity',
-    journal: 'Curr Top Dev Biol 116 ch.25:455-475',
+    journal: 'Curr Top Dev Biol 116:455-475',
     doi: '10.1016/bs.ctdb.2015.12.007',
   },
   {
@@ -585,7 +585,7 @@ export const SYNAPTOGENESIS_REFERENCES: PanelReference[] = [
     authors: 'Liao EH, Hung W, Abrams B, Zhen M',
     year: 2004,
     title: 'An SCF-like ubiquitin ligase complex that controls presynaptic differentiation',
-    journal: 'Nature 430(6997):345-50',
+    journal: 'Nature 430(6997):345-350',
     doi: '10.1038/nature02647',
   },
   {
@@ -605,28 +605,28 @@ export const SYNAPTOGENESIS_CLASSES: PanelClass[] = [
     id: '01_proneural_fate',
     label: 'Proneural / fate-specifying TFs',
     description:
-      'Upstream, transient. Specify neuroblast identity before terminal selectors take over.',
+      'Transcription factors that act upstream of neurogenesis and specify neuroblast identity.',
     refIds: ['R1', 'R7', 'R20', 'R26', 'R27', 'R28', 'R29', 'R30', 'R31', 'R32', 'R33'],
   },
   {
     id: '02_terminal_selector',
     label: 'Terminal selector TFs',
     description:
-      'Continuous, lifelong. Master regulators of neuron-type identity; directly activate effector gene batteries.',
+      'Transcription factors that regulate aspects of neuron identity and directly activate effector gene batteries.',
     refIds: ['R7', 'R12', 'R15', 'R1', 'R16', 'R18', 'R25', 'R34', 'R35'],
   },
   {
     id: '03_activity_regulated',
     label: 'Activity-regulated / feed-forward synaptogenesis TFs',
     description:
-      'Activity-induced FOS-1 + EGL-43/MECOM mutually activate each other and co-bind CUT homeobox factors on synaptic gene promoters in C. elegans dopaminergic neurons.',
+      'Transcription factors, with their co-activators and homeobox cofactors, that promote the transcription of synaptic genes in response to neuronal activity.',
     refIds: ['R2'],
   },
   {
     id: '04_remodeling',
     label: 'Remodeling-specific TFs + factors',
     description:
-      'Pro- vs anti-remodeling TFs, dauer/heterochronic regulators, and BK-channel modulator slo-1.',
+      'Transcription factors and their modulators and regulators that act on synaptic remodeling, with the dauer signaling genes that trigger synaptic rewiring on dauer entry.',
     refIds: ['R3', 'R8', 'R19', 'R64', 'R65'],
     note: 'DAUER-RELEVANT',
   },
@@ -634,28 +634,28 @@ export const SYNAPTOGENESIS_CLASSES: PanelClass[] = [
     id: '05_adhesion_specificity',
     label: 'Synaptic specificity / cell adhesion',
     description:
-      'Core synaptic adhesion (SYG, NRX-NLG, MADD-4), IgSF members, axon guidance / cytoskeletal regulators, and clustering factors.',
+      'Genes encoding proteins that direct synapses to the correct partner cell and hold them there.',
     refIds: ['R4', 'R9', 'R5', 'R21', 'R50', 'R51', 'R52', 'R53', 'R54'],
   },
   {
     id: '06_active_zone',
     label: 'Active zone scaffolding',
     description:
-      'Core AZ scaffold (SYD-1/2, ELKS, UNC-10, RIMB-1, CLA-1) plus kinases / phosphatases shaping AZ assembly.',
+      'Genes encoding the core active zone scaffolds and the kinases and phosphatases that act on them.',
     refIds: ['R4', 'R5', 'R13', 'R22', 'R37'],
   },
   {
     id: '07_SV_release',
     label: 'Synaptic vesicle / release machinery',
     description:
-      'Pan-neuronal core: SNARE/release proteins, voltage-gated Ca channels, vesicle trafficking + transport machinery, cargo kinases.',
+      'Genes encoding components essential for synaptic vesicle formation and the release machinery.',
     refIds: ['R4', 'R6', 'R14', 'R23', 'R24', 'R60', 'R61', 'R62', 'R63', 'R67'],
   },
   {
     id: '08_innexin',
     label: 'Electrical synapse / innexins',
     description:
-      'The 15 innexins expressed in the nervous system. Bhattacharya 2019 mapped expression across the whole nervous system and showed neuron-specific combinatorial codes and stress plasticity.',
+      'Genes encoding the 15 innexins shown to be expressed in the nervous system and to rewire under stress and in dauer.',
     refIds: ['R8'],
     note: 'DAUER-REMODELED',
   },
@@ -663,35 +663,34 @@ export const SYNAPTOGENESIS_CLASSES: PanelClass[] = [
     id: '09_postsynaptic',
     label: 'Postsynaptic receptors / clustering',
     description:
-      'Levamisole + other nAChRs, GABA-A/B, muscarinic, glutamate (iGluR + mGluR + glc-3), other LGICs, dopamine / serotonin receptors, cleft enzyme ace-2, and clustering scaffolds (lev-9/10, oig-4, lin-2/7/10, dlg-1, magi-1).',
+      'Genes encoding postsynaptic receptors of every receptor class, with the enzymes and scaffolds that cluster the receptors at their correct positions.',
     refIds: ['R3', 'R7', 'R41', 'R42', 'R43', 'R44', 'R45', 'R46', 'R47', 'R48', 'R49'],
   },
   {
     id: '10_mRNA_export',
-    label: 'mRNA export / RNA processing for synaptic transcripts',
+    label: 'RNA export and processing',
     description:
-      'THO complex + TREX adaptors + activity-driven CREB binder. Functionally synaptic in this context per Maeder 2018 even though aly-1/2/3 lack synapse GO annotations.',
+      'Genes encoding proteins involved in the export and processing of synaptic transcripts.',
     refIds: ['R6'],
   },
   {
     id: '11_PHR_MAPK',
-    label: 'PHR / MAPK ubiquitin signaling at synapse',
-    description:
-      'rpm-1 founding paper + the DLK-1 / MKK-4 / PMK-3 cascade and downstream targets. Negative regulator of synapse formation via MAPK signaling.',
+    label: 'Synapse growth control',
+    description: 'Genes that limit synapse formation and terminate axon growth.',
     refIds: ['R10', 'R11', 'R4', 'R13', 'R36', 'R66'],
   },
   {
     id: '12_wnt_morphogen',
-    label: 'Wnt / morphogen synaptic positioning',
+    label: 'Synapse positioning',
     description:
-      'Wnt ligands, Frizzled receptors, plus Dishevelled and β-catenin. Klassen & Shen 2007 is the definitive DA9 motor-neuron positioning paradigm.',
+      'Genes encoding components of the Wnt pathway (ligands, receptors and transducers) that restrict synapse placement to the correct region along the axon.',
     refIds: ['R9', 'R38', 'R39', 'R40'],
   },
   {
     id: '13_NT_identity',
-    label: 'Neurotransmitter identity (terminal selector targets)',
+    label: 'Neurotransmitter identity',
     description:
-      'Vesicular transporters + biosynthetic enzymes that define cholinergic / GABAergic / glutamatergic / monoamine / dopaminergic / serotonergic identity.',
+      'Genes encoding the components that give a neuron its neurotransmitter identity (cholinergic, GABAergic and so on).',
     refIds: ['R7', 'R55', 'R56', 'R57', 'R58', 'R59'],
   },
 ];
