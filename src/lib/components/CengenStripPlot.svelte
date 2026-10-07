@@ -4,7 +4,7 @@
   // Column 2: bulk expression bar (log10(value+1), available for 52 of 128 types).
   import type { CengenExpressionRow } from '$lib/queries';
   import ExternalLink from 'lucide-svelte/icons/external-link';
-  import { rangeColor } from '$lib/plot-colors';
+  import { rangeColor, fmtExpression } from '$lib/plot-colors';
   import { CENGEN_TRANSGENE_GENES, CENGEN_TRANSGENE_NOTE } from '$lib/cengen-caveats';
 
   type Props = {
@@ -127,11 +127,11 @@
               2,
               (Math.log10(r.tmm + 1) / logMax) * 100,
             )}%; background-color: {tmmColor(r.tmm)};"
-            title="{r.neuron_type}: TMM {r.tmm.toFixed(
-              1,
+            title="{r.neuron_type}: TMM {fmtExpression(
+              r.tmm,
             )} ({r.n_replicates} replicate{r.n_replicates === 1 ? '' : 's'})"
           ></div>
-          <span class="font-mono tabular-nums text-muted-foreground">{r.tmm.toFixed(1)}</span>
+          <span class="font-mono tabular-nums text-muted-foreground">{fmtExpression(r.tmm)}</span>
         {:else}
           <span class="text-[0.6rem] italic text-muted-foreground">no bulk data</span>
           <span class="font-mono tabular-nums text-muted-foreground">–</span>
@@ -150,7 +150,7 @@
             0.5,
           )}, {rangeColor(1)})"
         ></span>
-        <span class="font-mono">{maxTmm.toFixed(0)} TMM</span>
+        <span class="font-mono">{fmtExpression(maxTmm)} TMM</span>
       </span>
       <span>
         Dots: 1=liberal, 2=medium (CeNGEN app default), 3=conservative, 4=stringent. Bars: log<sub
