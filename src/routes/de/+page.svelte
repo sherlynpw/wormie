@@ -61,6 +61,7 @@
     geneRowFromCountsTsv,
   } from '$lib/deseq2/parse-tsv';
   import { getGeneNames, getCengenExpressionFor, type CengenExpressionRow } from '$lib/queries';
+  import { prettySample } from '$lib/sample-names';
 
   type GeneNameMap = Map<
     string,
@@ -81,11 +82,6 @@
   let countsName = $state('');
   let countsInput: HTMLInputElement | null = $state(null);
 
-  // featureCounts column names look like "/sample.bam"; strip leading slash and .bam for display.
-  function prettySample(s: string): string {
-    return s.replace(/^\//, '').replace(/\.bam$/i, '');
-  }
-
   function detectSamples(tsv: string): string[] {
     const lines = tsv.split('\n').filter((l) => l && !l.startsWith('#'));
     if (lines.length < 1) return [];
@@ -97,12 +93,15 @@
   const samples = $derived(detectSamples(countsText));
   let design = $state<DESeq2DesignRow[]>([]);
   // Re-seed design rows when samples change; preserve existing conditions. untrack avoids self-trigger.
+  // Conditions and reference set on /counts, applied once the handed-off samples appear.
+  let prefill = new Map<string, string>();
+  let prefillReference = '';
   $effect(() => {
     const newSamples = samples;
     const existing = new Map(untrack(() => design.map((d) => [d.sample, d.condition])));
     design = newSamples.map((sample) => ({
       sample,
-      condition: existing.get(sample) ?? '',
+      condition: existing.get(sample) ?? prefill.get(sample) ?? '',
     }));
   });
 
@@ -122,7 +121,10 @@
   $effect(() => {
     const cs = conditions;
     untrack(() => {
-      if (!cs.includes(reference)) reference = cs[0] ?? '';
+      if (prefillReference && cs.includes(prefillReference)) {
+        reference = prefillReference;
+        prefillReference = '';
+      } else if (!cs.includes(reference)) reference = cs[0] ?? '';
     });
   });
 
@@ -207,6 +209,8 @@
     if (page.url.searchParams.get('from') === 'counts') {
       const h = handoff.counts.consume();
       if (h) {
+        if (h.conditions) prefill = new Map(h.samples.map((s, i) => [s, h.conditions![i] ?? '']));
+        prefillReference = h.reference ?? '';
         countsText = h.tsv;
         countsName = 'counts.tsv (from /counts)';
         toast.success('Loaded counts from /counts');
@@ -700,7 +704,11 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
       <Card>
         <CardHeader><CardTitle>Sample QC (pre-fit)</CardTitle></CardHeader>
         <CardContent>
-          <CountsQcPanel matrix={preFitMatrix} conditions={design.map((d) => d.condition)} />
+          <CountsQcPanel
+            matrix={preFitMatrix}
+            conditions={design.map((d) => d.condition)}
+            {reference}
+          />
         </CardContent>
       </Card>
     {/if}
@@ -924,6 +932,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             yLabel={`PC2${qcPca.varExp[1] != null ? ` (${(qcPca.varExp[1] * 100).toFixed(1)}%)` : ''}`}
             title="PCA (VST, all genes)"
             exportName="pca"
+            {reference}
           />
         {:else if qcTab === 'distance' && qcDist}
           <SampleDistanceHeatmap
@@ -940,12 +949,14 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
                 boxes={qcBoxes.rawBoxes}
                 title="Raw counts (log10 + 1)"
                 exportName="counts-raw"
+                {reference}
               />
             {/if}
             <CountsBoxplot
               boxes={qcBoxes.normBoxes}
               title="Normalized counts (log10 + 1)"
               exportName="counts-normalized"
+              {reference}
             />
           </div>
         {/if}
@@ -1128,6 +1139,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
                 displayLabel={selectedDisplay}
                 row={selectedRow}
                 {design}
+                {reference}
                 countsBySample={selectedCounts}
                 cengen={cengenForSelected}
                 wormbaseGene={selectedWbgene}

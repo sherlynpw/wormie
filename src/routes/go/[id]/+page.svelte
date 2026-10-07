@@ -27,6 +27,7 @@
   import ExternalLink from 'lucide-svelte/icons/external-link';
   import ArrowUp from 'lucide-svelte/icons/arrow-up';
   import ArrowDown from 'lucide-svelte/icons/arrow-down';
+  import { UP_COLOR, DOWN_COLOR } from '$lib/plot-colors';
 
   const id = $derived(page.params.id ?? '');
   let center = $state<GoTermDetail | null>(null);
@@ -183,9 +184,9 @@
   const EDGE_STYLES: Record<GoEdgeType, string> = {
     is_a: 'stroke: hsl(240 4% 50% / 0.6); stroke-width: 1.5;',
     part_of: 'stroke: hsl(290 30% 55%); stroke-width: 1.75; stroke-dasharray: 6 3;',
-    regulates: 'stroke: hsl(220 70% 55%); stroke-width: 1.75; stroke-dasharray: 2 3;',
-    positively_regulates: 'stroke: hsl(150 65% 42%); stroke-width: 1.75; stroke-dasharray: 2 3;',
-    negatively_regulates: 'stroke: hsl(0 70% 55%); stroke-width: 1.75; stroke-dasharray: 2 3;',
+    regulates: 'stroke: hsl(240 4% 50%); stroke-width: 1.75; stroke-dasharray: 2 3;',
+    positively_regulates: `stroke: ${UP_COLOR}; stroke-width: 1.75; stroke-dasharray: 2 3;`,
+    negatively_regulates: `stroke: ${DOWN_COLOR}; stroke-width: 1.75; stroke-dasharray: 2 3;`,
   };
 
   const flowEdges = $derived.by<Edge[]>(() => {
@@ -209,14 +210,14 @@
   const EDGE_LABEL: Record<GoEdgeType, { label: string; swatch: string }> = {
     is_a: { label: 'is_a', swatch: 'border-t-2 border-solid border-muted-foreground' },
     part_of: { label: 'part_of', swatch: 'border-t-2 border-dashed border-primary' },
-    regulates: { label: 'regulates', swatch: 'border-t-2 border-dotted border-sky-500' },
+    regulates: { label: 'regulates', swatch: 'border-t-2 border-dotted border-zinc-500' },
     positively_regulates: {
       label: '+regulates',
-      swatch: 'border-t-2 border-dotted border-emerald-500',
+      swatch: 'border-t-2 border-dotted border-[hsl(var(--plot-up))]',
     },
     negatively_regulates: {
       label: '-regulates',
-      swatch: 'border-t-2 border-dotted border-rose-500',
+      swatch: 'border-t-2 border-dotted border-[hsl(var(--plot-down))]',
     },
   };
 </script>

@@ -23,6 +23,7 @@
   import { gseaResultsToTsv } from '$lib/results-to-paste';
   import type { GseaResult } from '$lib/db/client';
   import { onMount } from 'svelte';
+  import { CONDITION_PALETTE } from '$lib/plot-colors';
 
   onMount(() => datasets.init());
 
@@ -140,14 +141,7 @@
   let minTermsPerGene = $state<number>(2);
 
   // Same palette as /enrichment/overlap; term tinted by first slot it appears in (all-blue = contrast A, mixed = shared).
-  const SLOT_COLORS = [
-    'hsl(217 91% 60%)',
-    'hsl(142 71% 45%)',
-    'hsl(38 92% 50%)',
-    'hsl(0 84% 60%)',
-    'hsl(280 75% 60%)',
-    'hsl(190 90% 45%)',
-  ];
+  const SLOT_COLORS = CONDITION_PALETTE;
 
   // Heatmap: significant GSEA terms with leading-edge gene lists (always populated in the wormie.rs.ht export format).
   const heatmapTerms = $derived.by<HeatmapTerm[]>(() => {

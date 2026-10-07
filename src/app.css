@@ -17,6 +17,12 @@
 
     /* brand purple as primary */
     --primary: 290 19% 46%;
+    /* Data colours: purple = down/low/reference, orange = up/high; a pale neutral between them. */
+    --plot-down: 283 36% 35%;
+    --plot-up: 33 87% 49%;
+    --plot-mid: 36 37% 89%;
+    --plot-text-on-low: 240 20% 97%;
+    --plot-text: 240 20% 10%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 240 4.8% 95.9%;
@@ -51,6 +57,12 @@
     --popover-foreground: 0 0% 98%;
 
     --primary: 290 30% 70%;
+    /* Lighter purple and orange read better on the dark background; the midpoint turns dark. */
+    --plot-down: 283 45% 70%;
+    --plot-up: 33 90% 62%;
+    --plot-mid: 36 8% 32%;
+    --plot-text-on-low: 240 20% 10%;
+    --plot-text: 240 20% 94%;
     --primary-foreground: 290 30% 12%;
 
     --secondary: 240 3.7% 15.9%;

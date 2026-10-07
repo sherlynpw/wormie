@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { rangeColor, rangeTextColor } from '$lib/plot-colors';
   // Symmetric N x N Jaccard matrix (|A ∩ B| / |A ∪ B|) for the /compare page (N ≥ 2 genes).
 
   interface GeneSets {
@@ -38,14 +39,7 @@
 
   const dedupedSizes = $derived(sets.map((s) => new Set(s.ids).size));
 
-  function shade(v: number): string {
-    // White-to-accent-purple gradient, v in [0,1].
-    const t = Math.max(0, Math.min(1, v));
-    const r = Math.round(255 - t * (255 - 124));
-    const g = Math.round(255 - t * (255 - 58));
-    const b = Math.round(255 - t * (255 - 237));
-    return `rgb(${r} ${g} ${b})`;
-  }
+  const shade = rangeColor;
 
   function fmt(v: number): string {
     if (v === 1) return '1';
@@ -86,9 +80,9 @@
               {#each row as v, j (j)}
                 <td
                   class="border border-border/40 text-center font-mono text-[0.65rem] tabular-nums"
-                  style="background: {shade(v)}; color: {v > 0.5
-                    ? 'rgb(245 245 250)'
-                    : 'rgb(20 20 30)'}; min-width: 56px; height: 28px;"
+                  style="background: {shade(v)}; color: {rangeTextColor(
+                    v,
+                  )}; min-width: 56px; height: 28px;"
                   title={`${sets[i].name} ∩ ${sets[j].name}: ${fmt(v)}`}
                 >
                   {i === j ? '' : fmt(v)}

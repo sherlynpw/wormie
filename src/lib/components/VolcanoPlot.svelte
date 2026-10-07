@@ -6,6 +6,8 @@
   import { getGeneNames } from '$lib/queries';
   import { resolve } from '$app/paths';
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { niceTicks } from '$lib/nice-ticks';
+  import { UP_COLOR, DOWN_COLOR } from '$lib/plot-colors';
 
   export type DeRow = {
     gene: string; // gene name or WBGene
@@ -124,7 +126,7 @@
     if (isHighlight) return 'hsl(45 95% 50%)'; // amber; overlay pass ensures always on top
     const sig = p.padj <= qThreshold && Math.abs(p.lfc) >= lfcThreshold;
     if (!sig) return 'hsl(0 0% 75% / 0.5)';
-    return p.lfc > 0 ? 'hsl(0 72% 45%)' : 'hsl(220 70% 50%)';
+    return p.lfc > 0 ? UP_COLOR : DOWN_COLOR;
   }
 
   function radiusFor(p: { gene: string }): number {
@@ -178,18 +180,8 @@
   const innerW = $derived(W - PAD_L - PAD_R);
   const innerH = $derived(H - PAD_T - PAD_B);
 
-  // 5 x-ticks and up to 6 y-ticks.
-  function xTicks() {
-    const lo = xRange[0],
-      hi = xRange[1];
-    return Array.from({ length: 5 }, (_, i) => lo + (i / 4) * (hi - lo));
-  }
-  function yTicks() {
-    const hi = yRange[1];
-    if (hi < 4) return [0, 1, 2, 3];
-    const step = Math.ceil(hi / 5);
-    return Array.from({ length: 6 }, (_, i) => i * step).filter((v) => v <= hi);
-  }
+  const xTicks = $derived(niceTicks(xRange[0], xRange[1]));
+  const yTicks = $derived(niceTicks(0, yRange[1], 5, 1));
 
   // Hover via SVG event delegation (not per-circle handlers; critical at 20k+ points).
   let hover = $state<{ gene: string; lfc: number; padj: number; x: number; y: number } | null>(
@@ -319,7 +311,7 @@
       {/if}
 
       <!-- Tick labels -->
-      {#each xTicks() as t (t)}
+      {#each xTicks.values as t (t)}
         {@const x = PAD_L + (innerW * (t - xRange[0])) / Math.max(1e-9, xRange[1] - xRange[0])}
         <line
           x1={x}
@@ -333,10 +325,10 @@
           y={H - PAD_B + 14}
           font-size="9"
           text-anchor="middle"
-          fill="hsl(var(--muted-foreground))">{t.toFixed(1)}</text
+          fill="hsl(var(--muted-foreground))">{xTicks.format(t)}</text
         >
       {/each}
-      {#each yTicks() as t (t)}
+      {#each yTicks.values as t (t)}
         {@const y = PAD_T + ((yRange[1] - t) / Math.max(1e-9, yRange[1] - yRange[0])) * innerH}
         <line x1={PAD_L - 3} x2={PAD_L} y1={y} y2={y} stroke="hsl(var(--muted-foreground))" />
         <text
@@ -426,11 +418,11 @@
   </div>
   <div class="mt-2 flex flex-wrap items-center gap-3 text-[0.65rem] text-muted-foreground">
     <span class="inline-flex items-center gap-1">
-      <span class="inline-block h-2 w-2 rounded-full" style="background: hsl(0 72% 45%)"></span>
+      <span class="inline-block h-2 w-2 rounded-full" style="background: {UP_COLOR}"></span>
       up (q ≤ {qThreshold}, log2FC ≥ {lfcThreshold})
     </span>
     <span class="inline-flex items-center gap-1">
-      <span class="inline-block h-2 w-2 rounded-full" style="background: hsl(220 70% 50%)"></span>
+      <span class="inline-block h-2 w-2 rounded-full" style="background: {DOWN_COLOR}"></span>
       down (q ≤ {qThreshold}, log2FC ≤ −{lfcThreshold})
     </span>
     <span class="inline-flex items-center gap-1">

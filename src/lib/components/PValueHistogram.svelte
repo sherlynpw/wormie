@@ -3,6 +3,7 @@
   // PlotExportMenu via the getSvg() accessor.
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { niceTicks } from '$lib/nice-ticks';
 
   let {
     values,
@@ -45,14 +46,7 @@
     return PAD_T + innerH - (c / maxCount) * innerH;
   }
 
-  const yTicks = $derived.by(() => {
-    if (maxCount <= 0) return [0];
-    const step = Math.pow(10, Math.floor(Math.log10(maxCount)));
-    const out: number[] = [];
-    for (let v = 0; v <= maxCount; v += step) out.push(v);
-    if (out.length > 6) return [0, Math.round(maxCount / 2), maxCount];
-    return out;
-  });
+  const yTicks = $derived(maxCount <= 0 ? [0] : niceTicks(0, maxCount, 5, 1).values);
   const xTicks = [0, 0.25, 0.5, 0.75, 1];
 
   let svgEl: SVGSVGElement | null = $state(null);
@@ -96,7 +90,7 @@
         y={yFor(c)}
         width={Math.max(0, barW - 1)}
         height={height - PAD_B - yFor(c)}
-        fill="hsl(220 70% 50% / 0.7)"
+        fill="hsl(var(--primary) / 0.8)"
       />
     {/each}
 
@@ -119,7 +113,7 @@
     {/each}
     {#each yTicks as t (t)}
       {@const y = yFor(t)}
-      <line x1={PAD_L - 3} x2={PAD_L} {y} y2={y} stroke="hsl(var(--muted-foreground))" />
+      <line x1={PAD_L - 3} x2={PAD_L} y1={y} y2={y} stroke="hsl(var(--muted-foreground))" />
       <text
         x={PAD_L - 5}
         y={y + 3}

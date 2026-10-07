@@ -7,6 +7,11 @@
     TooltipProvider,
   } from '$lib/components/ui/tooltip';
   import { resolve } from '$app/paths';
+  import { niceTicks } from '$lib/nice-ticks';
+  import { wrapLabel } from '$lib/wrap-label';
+  import { rangeColor } from '$lib/plot-colors';
+  import { qScale } from '$lib/stores/plot-scale.svelte';
+  import { onMount } from 'svelte';
 
   type SortBy = 'q' | 'fold' | 'k';
 
@@ -34,7 +39,9 @@
   });
 
   // Layout
-  const ROW = 20;
+  // Tall enough for a term name wrapped onto two lines.
+  const ROW = 26;
+  const LABEL_CHARS = 42;
   const MARGIN_LEFT = 280;
   const MARGIN_RIGHT = 90;
   const MARGIN_TOP = 30;
@@ -48,6 +55,15 @@
   const foldMax = $derived(Math.max(2, ...top.map((r) => r.fold)));
   const kMax = $derived(Math.max(1, ...top.map((r) => r.k)));
   const logQMax = $derived(Math.max(1, ...top.map((r) => (r.q > 0 ? -Math.log10(r.q) : 30))));
+  // Colour spans the terms actually plotted unless the user fixed the scale, so a page of strong
+  // hits still uses the whole range and plots from different lists can share one legend.
+  const dataQMin = $derived(
+    Math.min(logQMax, ...top.map((r) => (r.q > 0 ? -Math.log10(r.q) : 30))),
+  );
+  const scaleMin = $derived(qScale.fixed ? qScale.min! : Math.floor(dataQMin * 2) / 2);
+  const scaleMax = $derived(qScale.fixed ? qScale.max! : Math.ceil(logQMax * 2) / 2);
+  const scaleGroup = 'qscale-ora';
+  onMount(() => qScale.init());
 
   function xFor(fold: number): number {
     // Linear scale clamped to [0, foldMax].
@@ -62,50 +78,19 @@
     return tMin + t * (tMax - tMin);
   }
 
-  // Viridis-ish 5-stop gradient (perceptually uniform, no external lib).
   function colorFor(q: number): string {
-    const v = Math.min(1, q > 0 ? -Math.log10(q) / logQMax : 1);
-    // Stops: deep purple -> blue -> teal -> green -> yellow
-    const stops: [number, [number, number, number]][] = [
-      [0.0, [68, 1, 84]],
-      [0.25, [59, 82, 139]],
-      [0.5, [33, 145, 140]],
-      [0.75, [94, 201, 98]],
-      [1.0, [253, 231, 37]],
-    ];
-    for (let i = 0; i < stops.length - 1; i++) {
-      const [a, ca] = stops[i];
-      const [b, cb] = stops[i + 1];
-      if (v >= a && v <= b) {
-        const t = b === a ? 0 : (v - a) / (b - a);
-        const r = Math.round(ca[0] + t * (cb[0] - ca[0]));
-        const g = Math.round(ca[1] + t * (cb[1] - ca[1]));
-        const bl = Math.round(ca[2] + t * (cb[2] - ca[2]));
-        return `rgb(${r}, ${g}, ${bl})`;
-      }
-    }
-    return 'rgb(253,231,37)';
+    const v = q > 0 ? -Math.log10(q) : logQMax;
+    return rangeColor(scaleMax > scaleMin ? (v - scaleMin) / (scaleMax - scaleMin) : 1);
   }
 
-  function truncate(s: string, n: number): string {
-    return s.length > n ? s.slice(0, n - 1) + '…' : s;
-  }
-
-  function ticks(maxV: number, n: number): number[] {
-    const step = maxV / n;
-    const out: number[] = [];
-    for (let i = 0; i <= n; i++) out.push(i * step);
-    return out;
-  }
-
-  const fold_ticks = $derived(ticks(foldMax, 4));
+  const foldTicks = $derived(niceTicks(0, foldMax, 4));
 
   // Right-side legends: colour = -log10(q), size = gene count k.
   const legendStops = $derived(
-    Array.from({ length: 6 }, (_, i) => {
-      const t = i / 5;
-      return { value: t * logQMax, color: colorFor(Math.pow(10, -t * logQMax)) };
-    }),
+    niceTicks(scaleMin, scaleMax, 5).values.map((value) => ({
+      value,
+      color: colorFor(Math.pow(10, -value)),
+    })),
   );
 
   const sizeLegendY = $derived(MARGIN_TOP + legendStops.length * 12 + 24);
@@ -122,10 +107,68 @@
   );
 </script>
 
+{#snippet termLabel(name: string, cy: number)}
+  {@const lines = wrapLabel(name, LABEL_CHARS)}
+  <text
+    x={MARGIN_LEFT - 8}
+    y={lines.length > 1 ? cy - 2 : cy + 4}
+    text-anchor="end"
+    class="fill-foreground"
+    style="font-size: 11px;"
+  >
+    {#each lines as line, li (li)}
+      <tspan x={MARGIN_LEFT - 8} dy={li === 0 ? 0 : 11}>{line}</tspan>
+    {/each}
+    <title>{name}</title>
+  </text>
+{/snippet}
+
 {#if top.length === 0}
   <div class="py-10 text-center text-sm text-muted-foreground">No enriched terms to plot.</div>
 {:else}
   <TooltipProvider delayDuration={120}>
+    <div
+      class="mb-1 flex flex-wrap items-center justify-end gap-2 text-[0.65rem] text-muted-foreground"
+    >
+      <span>colour scale -log10(q)</span>
+      <label class="inline-flex items-center gap-1">
+        <input
+          type="radio"
+          name={scaleGroup}
+          checked={!qScale.fixed}
+          onchange={() => qScale.set(null, null)}
+        />
+        fit to plot
+      </label>
+      <label class="inline-flex items-center gap-1">
+        <input
+          type="radio"
+          name={scaleGroup}
+          checked={qScale.fixed}
+          onchange={() => qScale.set(scaleMin, scaleMax)}
+        />
+        fixed
+      </label>
+      <input
+        type="number"
+        step="0.5"
+        min="0"
+        value={scaleMin}
+        onchange={(e) => qScale.set(Number(e.currentTarget.value), qScale.max ?? scaleMax)}
+        class="w-14 rounded border bg-card px-1 py-0.5 font-mono"
+        title="Lowest -log10(q) on the colour scale"
+      />
+      <span>to</span>
+      <input
+        type="number"
+        step="0.5"
+        min="0"
+        value={scaleMax}
+        onchange={(e) => qScale.set(qScale.min ?? scaleMin, Number(e.currentTarget.value))}
+        class="w-14 rounded border bg-card px-1 py-0.5 font-mono"
+        title="Highest -log10(q) on the colour scale; stronger terms take the end colour"
+      />
+    </div>
     <div class="overflow-x-auto">
       <svg
         bind:this={svgEl}
@@ -136,7 +179,7 @@
         aria-label="Enrichment dot plot"
       >
         <!-- X grid -->
-        {#each fold_ticks as t (t)}
+        {#each foldTicks.values as t (t)}
           <line
             x1={xFor(t)}
             x2={xFor(t)}
@@ -149,7 +192,7 @@
         {/each}
 
         <!-- X axis labels -->
-        {#each fold_ticks as t (t)}
+        {#each foldTicks.values as t (t)}
           <text
             x={xFor(t)}
             y={MARGIN_TOP + innerH + 14}
@@ -157,7 +200,7 @@
             class="fill-muted-foreground"
             style="font-size: 10px;"
           >
-            {t.toFixed(t < 10 ? 1 : 0)}×
+            {foldTicks.format(t)}×
           </text>
         {/each}
         <text
@@ -192,26 +235,10 @@
           <!-- Term label -->
           {#if link}
             <a href={resolve(link as '/')} class="hover:underline">
-              <text
-                x={MARGIN_LEFT - 8}
-                y={cy + 4}
-                text-anchor="end"
-                class="fill-foreground"
-                style="font-size: 11px;"
-              >
-                {truncate(r.name, 38)}
-              </text>
+              {@render termLabel(r.name, cy)}
             </a>
           {:else}
-            <text
-              x={MARGIN_LEFT - 8}
-              y={cy + 4}
-              text-anchor="end"
-              class="fill-foreground"
-              style="font-size: 11px;"
-            >
-              {truncate(r.name, 38)}
-            </text>
+            {@render termLabel(r.name, cy)}
           {/if}
 
           <!-- Dot -->
@@ -289,7 +316,7 @@
             class="fill-muted-foreground"
             style="font-size: 10px;"
           >
-            {s.value.toFixed(1)}
+            {s.value}
           </text>
         {/each}
 

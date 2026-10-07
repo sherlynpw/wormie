@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SsgseaScores } from '$lib/db/client';
+  import { rangeColor } from '$lib/plot-colors';
 
   type Props = {
     results: SsgseaScores[];
@@ -38,19 +39,17 @@
 
   function color(v: number): string {
     const t = Math.max(-1, Math.min(1, v / range()));
-    if (t >= 0) {
-      const a = Math.round(255 * (1 - t));
-      return `rgb(${a},${a},255)`;
-    } else {
-      const a = Math.round(255 * (1 + t));
-      return `rgb(255,${a},${a})`;
-    }
+    // Orange for high scores, purple for low: the usual red-high, blue-low direction.
+    return rangeColor((t + 1) / 2);
   }
 
   const cellW = 32;
   const cellH = 14;
   const labelW = 240;
-  const headerH = 80;
+  // Sample names sit at -60 degrees; 10px monospace advances ~6.1px per character.
+  const headerH = $derived(
+    Math.max(80, Math.ceil(Math.max(0, ...sampleNames.map((s) => s.length)) * 6.1 * 0.866) + 12),
+  );
 
   function exportTsv() {
     const head = ['term_id', 'name', 'size', ...sampleNames].join('\t');
@@ -92,7 +91,7 @@
     <button class="rounded border px-2 py-0.5 text-xs hover:bg-accent" onclick={exportTsv}
       >Export TSV</button
     >
-    <span class="text-muted-foreground">colormap: red ↔ 0 ↔ blue</span>
+    <span class="text-muted-foreground">colormap: purple (low) ↔ 0 ↔ orange (high)</span>
   </div>
 
   <div class="overflow-x-auto">

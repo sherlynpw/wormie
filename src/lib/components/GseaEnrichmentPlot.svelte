@@ -6,6 +6,8 @@
   type Ranked = { gene: string; score: number };
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { niceTicks } from '$lib/nice-ticks';
+  import { UP_COLOR, DOWN_COLOR } from '$lib/plot-colors';
 
   let {
     ranked,
@@ -170,6 +172,7 @@
 
 {#if plot}
   {@const yZero = plot.yScale(0)}
+  {@const esTicks = niceTicks(-plot.yRange, plot.yRange, 4)}
   {@const peakX = plot.xScale(plot.argMax)}
   {@const peakY = plot.yScale(plot.es)}
   {@const hitY = PAD_T + ES_H + 4}
@@ -209,33 +212,17 @@
         stroke-dasharray="2,2"
       />
       <!-- Y axis labels -->
-      <text
-        x={PAD_L - 6}
-        y={PAD_T + 4}
-        text-anchor="end"
-        font-size="9"
-        fill="hsl(var(--muted-foreground))"
-      >
-        {plot.yRange.toFixed(2)}
-      </text>
-      <text
-        x={PAD_L - 6}
-        y={yZero + 3}
-        text-anchor="end"
-        font-size="9"
-        fill="hsl(var(--muted-foreground))"
-      >
-        0
-      </text>
-      <text
-        x={PAD_L - 6}
-        y={PAD_T + ES_H - 1}
-        text-anchor="end"
-        font-size="9"
-        fill="hsl(var(--muted-foreground))"
-      >
-        {(-plot.yRange).toFixed(2)}
-      </text>
+      {#each esTicks.values as t (t)}
+        <text
+          x={PAD_L - 6}
+          y={plot.yScale(t) + 3}
+          text-anchor="end"
+          font-size="9"
+          fill="hsl(var(--muted-foreground))"
+        >
+          {esTicks.format(t)}
+        </text>
+      {/each}
       <text
         x={PAD_L - 28}
         y={PAD_T + ES_H / 2}
@@ -251,7 +238,7 @@
       <path
         d={plot.pathD}
         fill="none"
-        stroke={plot.es >= 0 ? 'hsl(142 71% 35%)' : 'hsl(0 72% 45%)'}
+        stroke={plot.es >= 0 ? UP_COLOR : DOWN_COLOR}
         stroke-width="1.5"
       />
 
@@ -292,9 +279,9 @@
       <!-- Stat colorbar (red = positive / up, blue = negative / down) -->
       <defs>
         <linearGradient id="statGrad" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%" stop-color="hsl(142 71% 35%)" />
+          <stop offset="0%" stop-color={UP_COLOR} />
           <stop offset="50%" stop-color="hsl(var(--muted))" />
-          <stop offset="100%" stop-color="hsl(0 72% 45%)" />
+          <stop offset="100%" stop-color={DOWN_COLOR} />
         </linearGradient>
       </defs>
       <rect

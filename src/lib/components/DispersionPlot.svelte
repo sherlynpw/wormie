@@ -11,6 +11,7 @@
   }
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { UP_COLOR, DOWN_COLOR, downAlpha } from '$lib/plot-colors';
 
   let {
     rows,
@@ -148,7 +149,7 @@
     {/each}
     {#each yTicks as t (t)}
       {@const y = PAD_T + ((yRange[1] - t) / Math.max(1e-9, yRange[1] - yRange[0])) * innerH}
-      <line x1={PAD_L - 3} x2={PAD_L} {y} y2={y} stroke="hsl(var(--muted-foreground))" />
+      <line x1={PAD_L - 3} x2={PAD_L} y1={y} y2={y} stroke="hsl(var(--muted-foreground))" />
       <text
         x={PAD_L - 5}
         y={y + 3}
@@ -186,7 +187,7 @@
     {/each}
     {#each valid as r (r.gene + '_f')}
       {#if Number.isFinite(r.dispersion) && r.dispersion > 0}
-        <circle cx={xFor(r.baseMean)} cy={yFor(r.dispersion)} r={1.4} fill="hsl(0 72% 50% / 0.7)" />
+        <circle cx={xFor(r.baseMean)} cy={yFor(r.dispersion)} r={1.4} fill={downAlpha(0.7)} />
       {/if}
     {/each}
     {#if fitLine.length > 1}
@@ -199,7 +200,7 @@
           })
           .join(' ')}
         fill="none"
-        stroke="hsl(220 80% 50%)"
+        stroke={UP_COLOR}
         stroke-width="1.5"
       />
     {/if}
@@ -210,11 +211,11 @@
       gene-wise estimate
     </span>
     <span class="inline-flex items-center gap-1">
-      <span class="inline-block h-2 w-2 rounded-full" style="background: hsl(0 72% 50%)"></span>
+      <span class="inline-block h-2 w-2 rounded-full" style="background: {DOWN_COLOR}"></span>
       final
     </span>
     <span class="inline-flex items-center gap-1">
-      <span class="inline-block h-[2px] w-4" style="background: hsl(220 80% 50%)"></span>
+      <span class="inline-block h-[2px] w-4" style="background: {UP_COLOR}"></span>
       fitted curve
     </span>
     <span class="ml-auto font-mono">{valid.length.toLocaleString()} genes</span>
