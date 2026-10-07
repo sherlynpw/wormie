@@ -29,7 +29,9 @@
         ? filtered.slice(0, 25)
         : filtered,
   );
-  const tmmRows = $derived(filtered.filter((r) => r.tmm !== null));
+  // Scale over every neuron with a value, not only those passing the threshold filter, so the
+  // bars and legend keep their meaning when the filter changes.
+  const tmmRows = $derived(rows.filter((r) => r.tmm !== null));
   const maxTmm = $derived(tmmRows.length > 0 ? Math.max(...tmmRows.map((r) => r.tmm ?? 0)) : 1);
   const logMax = $derived(Math.log10(maxTmm + 1) || 1);
 
