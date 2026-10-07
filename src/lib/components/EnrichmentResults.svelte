@@ -27,7 +27,15 @@
   import { termHref } from '$lib/term-link';
   import { parseGeneList } from '$lib/gene-parse';
   import { downloadTsv } from '$lib/download';
-  import { collapseTerms, type CollapseGroup } from '$lib/term-collapse';
+  import {
+    loadGoSemData,
+    revigoReduce,
+    goAdapter,
+    geneSetAdapter,
+    REVIGO_MAX_TERMS,
+    type CollapseGroup,
+    type GoSemData,
+  } from '$lib/go-revigo';
   import ChevronRight from 'lucide-svelte/icons/chevron-right';
   import ChevronDown from 'lucide-svelte/icons/chevron-down';
 
@@ -268,16 +276,18 @@
     setBackground([], '');
   }
 
-  function exportTsv() {
-    const r = activeResults;
+  // `collapsed` writes the reduced list as its own file, next to the full export.
+  function exportTsv(collapsed = false) {
+    const r = collapsed ? groupedResults.map((g) => g.rep) : activeResults;
     if (r.length === 0) {
       toast.error('Nothing to export');
       return;
     }
+    const folded = new Map(groupedResults.map((g) => [g.rep.term_id, g.children]));
     const ts = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16);
     const qTag = effQ >= 1 ? 'all' : `q${effQ}`;
     downloadTsv(
-      `enrichment_${active}_${qTag}_${ts}.tsv`,
+      `enrichment_${active}_${qTag}${collapsed ? `_${collapseTag}` : ''}_${ts}.tsv`,
       [
         { header: 'term_id', get: (row) => row.term_id },
         { header: 'name', get: (row) => row.name },
@@ -289,6 +299,15 @@
         { header: 'fold', get: (row) => row.fold.toFixed(3) },
         { header: 'p', get: (row) => row.p.toExponential(3) },
         { header: 'q', get: (row) => row.q.toExponential(3) },
+        ...(collapsed
+          ? [
+              {
+                header: 'folded_terms',
+                get: (row: EnrichmentResult) =>
+                  (folded.get(row.term_id) ?? []).map((c) => c.term_id).join('|'),
+              },
+            ]
+          : []),
       ],
       r,
     );
@@ -318,10 +337,33 @@
     return { n: first.n, N: first.N, ratio };
   });
 
-  // REVIGO-style collapse: groups terms by Jaccard similarity on overlap genes above `jaccardCutoff`;
-  // best-q term becomes representative, redundant siblings fold under it.
-  let collapseRedundant = $state<boolean>(true);
+  // Redundancy reduction: REVIGO (SimRel) for GO, gene-overlap Jaccard for every other kind.
+  // Off by default so tables and figures show the unreduced result until asked.
+  let collapseRedundant = $state<boolean>(false);
   let jaccardCutoff = $state<number>(0.5);
+  // REVIGO's "medium" setting.
+  let simCutoff = $state<number>(0.7);
+  // GO has a DAG to measure semantic similarity on; other kinds fall back to gene-overlap Jaccard.
+  const useRevigo = $derived(active === 'go');
+  let goSem = $state.raw<GoSemData | null>(null);
+  $effect(() => {
+    if (!collapseRedundant || !useRevigo) return;
+    const ids = activeResults.map((r) => r.term_id);
+    let stale = false;
+    goSem = null;
+    loadGoSemData(ids)
+      .then((d) => {
+        if (!stale) goSem = d;
+      })
+      .catch((e) => console.error('GO similarity load failed', e));
+    return () => {
+      stale = true;
+    };
+  });
+  const collapseTag = $derived(
+    useRevigo ? `revigo${simCutoff.toFixed(2)}` : `jaccard${jaccardCutoff.toFixed(2)}`,
+  );
+  const revigoTooMany = $derived(useRevigo && activeResults.length > REVIGO_MAX_TERMS);
   // SvelteMap so toggling one row's expand state re-renders only THAT row; a plain object
   // reassignment invalidates every row in the {#each} (O(N) on each click).
   const expanded: Map<string, boolean> = new SvelteMap();
@@ -332,20 +374,35 @@
     if (!collapseRedundant || activeResults.length === 0) {
       return activeResults.map((r) => ({ rep: r, children: [] }));
     }
-    // Imported clusterProfiler rows sometimes lack a gene-ID column; skip collapse rather than
-    // merging on empty overlap data.
-    if (activeResults.every((r) => r.overlap.length === 0)) {
-      return activeResults.map((r) => ({ rep: r, children: [] }));
+    if (useRevigo) {
+      if (!goSem || revigoTooMany) return activeResults.map((r) => ({ rep: r, children: [] }));
+      return revigoReduce(
+        activeResults,
+        goAdapter(goSem, (r) => r.term_id),
+        {
+          cutoff: simCutoff,
+          idOf: (r) => r.term_id,
+          pOf: (r) => r.p,
+        },
+      );
     }
-    return collapseTerms(activeResults, {
-      cutoff: jaccardCutoff,
-      geneSetOf: (r) => r.overlap,
-      scoreOf: (r) => r.q,
-      tiebreaker: (r) => r.p,
-    });
+    // Imported clusterProfiler rows sometimes lack a gene-ID column; the adapter then knows no
+    // term and nothing folds.
+    return revigoReduce(
+      activeResults,
+      geneSetAdapter(
+        (r) => r.overlap,
+        (r) => (r.N > 0 ? r.K / r.N : 0),
+      ),
+      { cutoff: jaccardCutoff, idOf: (r) => r.term_id, pOf: (r) => r.p },
+    );
   });
 
   const displayCount = $derived(groupedResults.length);
+  // Figures follow the same reduction as the table.
+  const plotResults = $derived(
+    collapseRedundant ? groupedResults.map((g) => g.rep) : activeResults,
+  );
   const collapsedCount = $derived(groupedResults.reduce((acc, g) => acc + g.children.length, 0));
 
   // Chip mount is deferred one frame: row expands instantly (header + count), then chips
@@ -555,11 +612,22 @@
           variant="outline"
           size="sm"
           disabled={activeResults.length === 0}
-          onclick={exportTsv}
+          onclick={() => exportTsv()}
         >
           <Download class="h-3 w-3" />
           TSV
         </Button>
+        {#if collapseRedundant && collapsedCount > 0}
+          <Button
+            variant="outline"
+            size="sm"
+            onclick={() => exportTsv(true)}
+            title="Download only the representative terms, with the terms folded under each"
+          >
+            <Download class="h-3 w-3" />
+            TSV (collapsed)
+          </Button>
+        {/if}
         {#if viewMode === 'plot' && activeResults.length > 0}
           <label class="inline-flex items-center gap-1 text-xs">
             sort
@@ -571,31 +639,61 @@
           </label>
           <PlotExportMenu getSvg={() => plotSvg} baseName={`enrichment_${active}`} />
         {/if}
-        {#if viewMode === 'table' && activeResults.length > 0}
+        {#if activeResults.length > 0}
           <label class="inline-flex items-center gap-1 text-xs">
             <input type="checkbox" bind:checked={collapseRedundant} class="rounded" />
             collapse
-            <ControlHint id="enrich-collapse" title="REVIGO-style collapse">
-              Groups redundant terms by Jaccard similarity of the overlap genes. The
-              most-significant term becomes the representative; redundant siblings get folded under
-              it. Disabled when no overlap data is available (eg some imported tables).
+            <ControlHint id="enrich-collapse" title="Collapse redundant terms">
+              Removes redundant terms from the table and the figures; it does not change any p or q
+              value. GO uses REVIGO (Supek et al. 2011): SimRel semantic similarity on the GO
+              hierarchy, with term frequencies from the <i>C. elegans</i> annotations. Of each pair
+              more similar than the cutoff, the broader (over 5% of annotated genes) or less
+              significant term is folded under the other. Other term types have no hierarchy, so the
+              same procedure runs on the genes behind each term: similarity is the Jaccard overlap
+              of the hit genes, a term is broad when it annotates over 5% of the universe, and a
+              term whose hit genes contain another's plays the parent.
+              <br /><br />
+              <b>Slider:</b> the highest similarity two kept terms may share. Lower is stricter (more
+              terms folded, shorter list); higher is more lenient; 1 folds nothing. REVIGO's own default
+              is 0.7 ("medium"), with 0.9, 0.5 and 0.4 as its large, small and tiny presets. For term
+              types other than GO the slider is the gene-overlap (Jaccard) cutoff and starts at 0.5.
             </ControlHint>
           </label>
           {#if collapseRedundant}
             <label
               class="inline-flex items-center gap-1 text-xs text-muted-foreground"
-              title="Jaccard cutoff for grouping. Lower = more aggressive collapse."
+              title={useRevigo
+                ? 'Allowed SimRel similarity (REVIGO: 0.9 large, 0.7 medium, 0.5 small, 0.4 tiny). Lower = shorter list.'
+                : 'Jaccard cutoff for grouping. Lower = more aggressive collapse.'}
             >
-              cutoff
-              <input
-                type="number"
-                step="0.05"
-                min="0.1"
-                max="0.95"
-                bind:value={jaccardCutoff}
-                class="w-14 rounded border bg-card px-1 py-0.5 text-xs"
-              />
+              similarity
+              {#if useRevigo}
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  bind:value={simCutoff}
+                  class="w-24"
+                />
+                <span class="w-7 font-mono tabular-nums">{simCutoff.toFixed(2)}</span>
+              {:else}
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  bind:value={jaccardCutoff}
+                  class="w-24"
+                />
+                <span class="w-7 font-mono tabular-nums">{jaccardCutoff.toFixed(2)}</span>
+              {/if}
             </label>
+          {/if}
+          {#if collapseRedundant && revigoTooMany}
+            <span class="text-[0.7rem] text-muted-foreground"
+              >(over {REVIGO_MAX_TERMS.toLocaleString()} terms; tighten q to collapse)</span
+            >
           {/if}
           {#if collapseRedundant && collapsedCount > 0}
             <span class="text-[0.7rem] text-muted-foreground"
@@ -665,7 +763,7 @@
     {#if viewMode === 'plot'}
       <div class="rounded-lg border bg-card p-3">
         <EnrichmentDotPlot
-          results={activeResults}
+          results={plotResults}
           linkFor={(r) => termHref(active, r.term_id)}
           sortBy={plotSort}
           bind:svgEl={plotSvg}
@@ -674,14 +772,14 @@
     {:else if viewMode === 'cnet'}
       <div class="rounded-lg border bg-card p-3">
         <EnrichmentCnetplot
-          results={activeResults}
+          results={plotResults}
           kind={active}
           exportName={`enrichment-cnet_${active}`}
         />
       </div>
     {:else if viewMode === 'heatmap'}
       <EnrichmentHeatmap
-        results={activeResults}
+        results={plotResults}
         geneLabel={(g) => geneNameMap.get(g) ?? g}
         title="Term × gene (top 25 by q)"
         exportName={`enrichment-heatmap_${active}`}
