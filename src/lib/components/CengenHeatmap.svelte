@@ -8,6 +8,8 @@
   import { resolve } from '$app/paths';
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { rangeColor } from '$lib/plot-colors';
+  import { CENGEN_TRANSGENE_GENES, CENGEN_TRANSGENE_NOTE } from '$lib/cengen-caveats';
 
   type Props = {
     ids: string[];
@@ -135,14 +137,10 @@
     void load();
   });
 
+  // Shared range scale on log(1 + TMM); zero stays off-white so absence reads as empty.
   function cellColor(v: number): string {
     if (v <= 0) return 'hsl(60 20% 96%)';
-    const t = Math.min(1, Math.log1p(v) / maxLog);
-    // Yellow-orange-red ramp, same scheme as the strip plot for consistent visual encoding.
-    const h = 50 - t * 50;
-    const s = 70 + t * 25;
-    const l = 75 - t * 35;
-    return `hsl(${h.toFixed(0)} ${s.toFixed(0)}% ${l.toFixed(0)}%)`;
+    return rangeColor(Math.min(1, Math.log1p(v) / maxLog));
   }
 
   const width = $derived(LEFT_PAD + neuronOrder.length * CELL_W);
@@ -164,6 +162,16 @@
       <span>
         <span class="font-semibold tabular-nums text-foreground">{rows.length}</span> of
         {ids.length} genes × {neuronOrder.length} neuron types
+      </span>
+      <span class="inline-flex items-center gap-1" title="log(1 + TMM), low to high">
+        <span class="font-mono">0</span>
+        <span
+          class="inline-block h-2 w-16 rounded-sm"
+          style="background: linear-gradient(to right, {rangeColor(0)}, {rangeColor(
+            0.5,
+          )}, {rangeColor(1)})"
+        ></span>
+        <span class="font-mono">{Math.round(Math.expm1(maxLog)).toLocaleString()} TMM</span>
       </span>
       <div class="ml-auto inline-flex overflow-hidden rounded-md border text-[0.65rem]">
         {#each [{ k: 'cluster', label: 'Cluster' }, { k: 'name', label: 'Alphabetical' }] as opt (opt.k)}
@@ -220,7 +228,11 @@
               text-anchor="end"
               fill="hsl(var(--foreground))"
             >
-              {r.gene_name ?? r.wormbase_gene}
+              {r.gene_name ?? r.wormbase_gene}{CENGEN_TRANSGENE_GENES.has(r.wormbase_gene)
+                ? ' *'
+                : ''}
+              {#if CENGEN_TRANSGENE_GENES.has(r.wormbase_gene)}<title>{CENGEN_TRANSGENE_NOTE}</title
+                >{/if}
             </text>
           </a>
           {#each r.values as v, j (j)}
@@ -240,6 +252,9 @@
       </svg>
     </div>
 
+    {#if rows.some((r) => CENGEN_TRANSGENE_GENES.has(r.wormbase_gene))}
+      <div class="text-[0.65rem] text-amber-900 dark:text-amber-200">* {CENGEN_TRANSGENE_NOTE}</div>
+    {/if}
     <div class="text-[0.65rem] text-muted-foreground">
       Cell color: log<sub>10</sub>(TMM + 1) on the same scale as the per-gene strip plot. Cluster
       sort = ranked by each gene's dominant neuron type, then by peak intensity.

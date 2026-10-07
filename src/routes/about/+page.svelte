@@ -153,7 +153,7 @@
       license: 'CC BY 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
       description:
-        'L4 nervous-system scRNA-Seq atlas from Taylor et al. 2021 (Cell). Four FACS-calibrated binary call matrices (1=liberal, 2=medium, 3=conservative, 4=stringent) for 128 neuron classes + an integrated bulk TMM table for 41 classes. Feeds the Cell-type enrichment/GSEA tab and the /cell-type browse + per-gene heatmap. Cite Taylor et al. 2021.',
+        'L4 nervous-system scRNA-Seq atlas from Taylor et al. 2021 (Cell). Four FACS-calibrated binary call matrices (1=liberal, 2=medium, 3=conservative, 4=stringent) for 128 neuron classes + an integrated bulk + single-cell expression table for 52 classes (Barrett et al. 2025, contamination-subtracted). Feeds the Cell-type enrichment/GSEA tab and the /cell-type browse + per-gene heatmap. Cite Taylor et al. 2021.',
     },
     {
       name: 'WormBase RNAi phenotypes',

@@ -285,11 +285,12 @@ export async function buildCitationBibtex(): Promise<string> {
   note = {Expression data version ${expr}}
 }`);
   if (cengen) {
-    entries.push(`@article{barrett2022_cengen,
+    entries.push(`@article{barrett2025_cengen,
   title = {Integrating bulk and single cell RNA-seq refines transcriptomic profiles of individual C. elegans neurons},
-  author = {Barrett, A and Taylor, S R and Hammarlund, M and others},
-  journal = {eLife},
-  year = {2022},
+  author = {Barrett, A and Varol, E and Weinreb, A and Taylor, S R and others},
+  journal = {bioRxiv},
+  year = {2025},
+  doi = {10.1101/2025.01.26.634951},
   note = {CeNGEN release ${cengen}; https://www.cengen.org}
 }`);
   }

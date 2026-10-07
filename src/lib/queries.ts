@@ -1206,7 +1206,7 @@ export interface CengenCoexprNeighbor {
   rank_other: number;
 }
 
-// Co-expressed genes across CeNGEN's 41 bulk neuron types. A stored pair is both
+// Co-expressed genes across CeNGEN's 52 bulk-sequenced neuron types. A stored pair is both
 // significant at p < 0.001 and reciprocal (each gene in the other's top 200), so
 // the list is bounded at 200 per gene. Ordering is by mutual rank rather than raw
 // Pearson, which otherwise puts the same broadly expressed genes atop every list.
