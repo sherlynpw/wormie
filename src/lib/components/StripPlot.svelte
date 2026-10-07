@@ -10,6 +10,8 @@
   }
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { niceTicks } from '$lib/nice-ticks';
+  import { CONDITION_PALETTE, referenceFirst } from '$lib/plot-colors';
 
   let {
     points,
@@ -20,6 +22,7 @@
     width: widthOverride = null,
     showMedian = true,
     exportName,
+    reference,
   }: {
     points: StripPoint[];
     yLabel: string;
@@ -29,6 +32,8 @@
     width?: number | null;
     showMedian?: boolean;
     exportName?: string;
+    /** Reference condition; drawn in the first palette colour. */
+    reference?: string | null;
   } = $props();
 
   const PAD_L = 56;
@@ -47,7 +52,7 @@
         out.push(p.group);
       }
     }
-    return out;
+    return referenceFirst(out, reference);
   });
 
   const transformed = $derived.by(() => {
@@ -98,16 +103,7 @@
     return ((h % 1000) / 1000 - 0.5) * Math.min(groupW * 0.6, 60);
   }
 
-  const PALETTE = [
-    'hsl(220 70% 50%)',
-    'hsl(0 72% 50%)',
-    'hsl(140 60% 40%)',
-    'hsl(280 60% 50%)',
-    'hsl(35 90% 50%)',
-    'hsl(180 60% 40%)',
-    'hsl(320 60% 50%)',
-    'hsl(60 70% 45%)',
-  ];
+  const PALETTE = CONDITION_PALETTE;
   function colorFor(g: string): string {
     const i = groups.indexOf(g);
     return PALETTE[((i % PALETTE.length) + PALETTE.length) % PALETTE.length];
@@ -130,17 +126,7 @@
     return out;
   });
 
-  const yTicks = $derived.by(() => {
-    const lo = yRange[0],
-      hi = yRange[1];
-    return Array.from({ length: 5 }, (_, i) => lo + (i / 4) * (hi - lo));
-  });
-
-  function fmtTick(v: number): string {
-    if (Math.abs(v) >= 100) return Math.round(v).toLocaleString();
-    if (Math.abs(v) >= 10) return v.toFixed(1);
-    return v.toFixed(2);
-  }
+  const yTicks = $derived(niceTicks(yRange[0], yRange[1]));
 
   let svgEl: SVGSVGElement | null = $state(null);
   export function getSvg() {
@@ -177,15 +163,15 @@
     />
     <line x1={PAD_L} x2={PAD_L} y1={PAD_T} y2={height - PAD_B} stroke="hsl(var(--border))" />
 
-    {#each yTicks as t (t)}
+    {#each yTicks.values as t (t)}
       {@const y = yFor(t)}
-      <line x1={PAD_L - 3} x2={PAD_L} {y} y2={y} stroke="hsl(var(--muted-foreground))" />
+      <line x1={PAD_L - 3} x2={PAD_L} y1={y} y2={y} stroke="hsl(var(--muted-foreground))" />
       <text
         x={PAD_L - 5}
         y={y + 3}
         font-size="9"
         text-anchor="end"
-        fill="hsl(var(--muted-foreground))">{fmtTick(t)}</text
+        fill="hsl(var(--muted-foreground))">{yTicks.format(t)}</text
       >
     {/each}
 

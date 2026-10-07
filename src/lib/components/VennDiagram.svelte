@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { UP_COLOR, DOWN_COLOR, upAlpha, downAlpha } from '$lib/plot-colors';
   // Two-set Venn with directional breakdown. Circle geometry is fixed rather than
   // area-proportional: with counts spanning orders of magnitude a proportional
   // layout collapses the smaller set to a dot, and the numbers carry the size.
@@ -24,8 +25,9 @@
   const CX_B = 350;
   const CY = 180;
 
-  const UP = 'hsl(0 72% 45%)'; // same red/blue the volcano uses for direction
-  const DOWN = 'hsl(220 70% 50%)';
+  // Same red/blue the volcano uses for direction.
+  const UP = UP_COLOR;
+  const DOWN = DOWN_COLOR;
 
   const totalA = $derived(a.up + a.down);
   const totalB = $derived(b.up + b.down);
@@ -46,8 +48,8 @@
     )}
   </title>
 
-  <circle cx={CX_A} cy={CY} r={R} fill="hsl(220 70% 50% / 0.18)" stroke="hsl(220 70% 50% / 0.5)" />
-  <circle cx={CX_B} cy={CY} r={R} fill="hsl(25 85% 55% / 0.18)" stroke="hsl(25 85% 55% / 0.5)" />
+  <circle cx={CX_A} cy={CY} r={R} fill={downAlpha(0.18)} stroke={downAlpha(0.5)} />
+  <circle cx={CX_B} cy={CY} r={R} fill={upAlpha(0.18)} stroke={upAlpha(0.5)} />
 
   <text
     x={CX_A - 40}

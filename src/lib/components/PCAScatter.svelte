@@ -8,9 +8,13 @@
     y: number;
     group: string;
     shape?: string | null;
+    /** Short text drawn beside the point, e.g. a replicate number. */
+    label?: string | null;
   }
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { niceTicks } from '$lib/nice-ticks';
+  import { CONDITION_PALETTE, referenceFirst } from '$lib/plot-colors';
 
   let {
     points,
@@ -20,6 +24,7 @@
     width = 520,
     height = 360,
     exportName,
+    reference,
   }: {
     points: PCAPoint[];
     xLabel: string;
@@ -28,6 +33,8 @@
     width?: number;
     height?: number;
     exportName?: string;
+    /** Reference condition; drawn in the first palette colour. */
+    reference?: string | null;
   } = $props();
 
   const PAD_L = 52;
@@ -35,21 +42,14 @@
   const PAD_T = 14;
   const PAD_B = 36;
 
-  const groups = $derived(Array.from(new Set(points.map((p) => p.group))));
+  const groups = $derived(
+    referenceFirst(Array.from(new Set(points.map((p) => p.group))), reference),
+  );
   const shapes = $derived(
     Array.from(new Set(points.map((p) => p.shape).filter((s): s is string => !!s))),
   );
 
-  const PALETTE = [
-    'hsl(0 72% 50%)',
-    'hsl(220 70% 50%)',
-    'hsl(140 60% 40%)',
-    'hsl(280 60% 50%)',
-    'hsl(35 90% 50%)',
-    'hsl(180 60% 40%)',
-    'hsl(320 60% 50%)',
-    'hsl(60 70% 45%)',
-  ];
+  const PALETTE = CONDITION_PALETTE;
   const SHAPES = ['circle', 'square', 'triangle', 'diamond'];
 
   function colorFor(g: string): string {
@@ -94,16 +94,8 @@
     return PAD_T + ((yRange[1] - v) / Math.max(1e-9, yRange[1] - yRange[0])) * innerH;
   }
 
-  function xTicks() {
-    const lo = xRange[0],
-      hi = xRange[1];
-    return Array.from({ length: 5 }, (_, i) => lo + (i / 4) * (hi - lo));
-  }
-  function yTicks() {
-    const lo = yRange[0],
-      hi = yRange[1];
-    return Array.from({ length: 5 }, (_, i) => lo + (i / 4) * (hi - lo));
-  }
+  const xTicks = $derived(niceTicks(xRange[0], xRange[1]));
+  const yTicks = $derived(niceTicks(yRange[0], yRange[1]));
 
   function shapePath(kind: string, cx: number, cy: number, r: number): string {
     if (kind === 'square') return `M${cx - r},${cy - r} h${r * 2} v${r * 2} h${-r * 2} Z`;
@@ -148,7 +140,7 @@
     />
     <line x1={PAD_L} x2={PAD_L} y1={PAD_T} y2={height - PAD_B} stroke="hsl(var(--border))" />
 
-    {#each xTicks() as t (t)}
+    {#each xTicks.values as t (t)}
       {@const x = xFor(t)}
       <line
         x1={x}
@@ -162,18 +154,18 @@
         y={height - PAD_B + 14}
         font-size="9"
         text-anchor="middle"
-        fill="hsl(var(--muted-foreground))">{t.toFixed(1)}</text
+        fill="hsl(var(--muted-foreground))">{xTicks.format(t)}</text
       >
     {/each}
-    {#each yTicks() as t (t)}
+    {#each yTicks.values as t (t)}
       {@const y = yFor(t)}
-      <line x1={PAD_L - 3} x2={PAD_L} {y} y2={y} stroke="hsl(var(--muted-foreground))" />
+      <line x1={PAD_L - 3} x2={PAD_L} y1={y} y2={y} stroke="hsl(var(--muted-foreground))" />
       <text
         x={PAD_L - 5}
         y={y + 3}
         font-size="9"
         text-anchor="end"
-        fill="hsl(var(--muted-foreground))">{t.toFixed(1)}</text
+        fill="hsl(var(--muted-foreground))">{yTicks.format(t)}</text
       >
     {/each}
 
@@ -198,6 +190,11 @@
       {@const cy = yFor(p.y)}
       {@const c = colorFor(p.group)}
       {@const sh = shapeFor(p.shape)}
+      {#if p.label}
+        <text x={cx + 8} y={cy + 3} font-size="9" fill="hsl(var(--muted-foreground))"
+          >{p.label}</text
+        >
+      {/if}
       {#if sh === 'circle'}
         <circle {cx} {cy} r={5} fill={c} stroke="white" stroke-width="0.6">
           <title>{p.sample} · {p.group}{p.shape ? ' · ' + p.shape : ''}</title>

@@ -1,6 +1,7 @@
 // Main-thread client for featureCounts.
 
 import type { FeatureCountsRequest, FeatureCountsResult } from './types';
+import { prettySample } from '$lib/sample-names';
 
 const DEFAULT_BASE = '/wasm-cran/featurecounts/';
 
@@ -54,6 +55,19 @@ export async function prefetchFeatureCounts(opts?: { baseUrl?: string }): Promis
   await Promise.all(
     ['featureCounts.js', 'featureCounts.wasm'].map((f) => fetch(base + f).catch(() => undefined)),
   );
+}
+
+// Sample columns are named after the staged MEMFS path ("/x.bam"); rename them at the source so
+// downloads and every downstream page carry the bare sample name.
+function cleanHeader(tsv: string, sampleStart: number): string {
+  const lines = tsv.split('\n');
+  const h = lines.findIndex((l) => l && !l.startsWith('#'));
+  if (h < 0) return tsv;
+  lines[h] = lines[h]
+    .split('\t')
+    .map((c, i) => (i >= sampleStart ? prettySample(c) : c))
+    .join('\t');
+  return lines.join('\n');
 }
 
 function parseCountsMatrix(tsv: string): FeatureCountsResult['matrix'] {
@@ -141,8 +155,11 @@ export function createFeatureCountsClient(opts?: { baseUrl?: string }): FeatureC
     const elapsedSec = (performance.now() - t0) / 1000;
     if (rc !== 0) throw new Error(`featureCounts exited with code ${rc}`);
 
-    const countsTsv = Module.FS.readFile('/counts.txt', { encoding: 'utf8' });
-    const summaryTsv = Module.FS.readFile('/counts.txt.summary', { encoding: 'utf8' });
+    const countsTsv = cleanHeader(Module.FS.readFile('/counts.txt', { encoding: 'utf8' }), 6);
+    const summaryTsv = cleanHeader(
+      Module.FS.readFile('/counts.txt.summary', { encoding: 'utf8' }),
+      1,
+    );
 
     // Free wasm MEMFS to prevent per-run heap accumulation.
     for (const p of [...stagedPaths, '/counts.txt', '/counts.txt.summary']) {

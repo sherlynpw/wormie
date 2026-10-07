@@ -20,6 +20,8 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { handoff } from '$lib/pipeline-handoff';
+  import { niceTicks } from '$lib/nice-ticks';
+  import { DOWN_COLOR } from '$lib/plot-colors';
 
   type DeRow = { gene: string; padj: number | null; log2fc: number | null };
 
@@ -115,6 +117,9 @@
     return num / Math.sqrt(Math.max(1e-12, da * db));
   });
 
+  // Flipped genes carry the brand purple from the shared palette; everything else stays grey.
+  const FLIPPED = DOWN_COLOR;
+  const FLIPPED_EDGE = 'rgb(70 36 84)';
   const W = 720,
     H = 460,
     PAD_L = 56,
@@ -130,6 +135,7 @@
     }
     return Math.max(1, m * 1.05);
   });
+  const lfcTicks = $derived(niceTicks(-range, range, 6));
   function xFor(v: number): number {
     const inner = W - PAD_L - PAD_R;
     return PAD_L + ((v + range) / (2 * range)) * inner;
@@ -139,7 +145,7 @@
     return PAD_T + ((range - v) / (2 * range)) * inner;
   }
   function colorFor(j: Joined): string {
-    if (j.flipped) return 'hsl(280 70% 50%)';
+    if (j.flipped) return FLIPPED;
     const sigA = j.padjA !== null && j.padjA <= 0.05;
     const sigB = j.padjB !== null && j.padjB <= 0.05;
     if (sigA && sigB) return 'hsl(0 0% 25%)';
@@ -195,8 +201,8 @@
       key: 'flipped',
       label: 'Flipped',
       rows: flipped,
-      color: 'hsl(280 70% 50%)',
-      border: 'hsl(280 70% 30%)',
+      color: FLIPPED,
+      border: FLIPPED_EDGE,
     },
     {
       key: 'both',
@@ -461,6 +467,36 @@
               stroke="hsl(var(--border))"
             />
             <line x1={PAD_L} x2={PAD_L} y1={PAD_T} y2={H - PAD_B} stroke="hsl(var(--border))" />
+            {#each lfcTicks.values as t (t)}
+              <line
+                x1={xFor(t)}
+                x2={xFor(t)}
+                y1={H - PAD_B}
+                y2={H - PAD_B + 3}
+                stroke="hsl(var(--muted-foreground))"
+              />
+              <text
+                x={xFor(t)}
+                y={H - PAD_B + 14}
+                font-size="9"
+                text-anchor="middle"
+                fill="hsl(var(--muted-foreground))">{lfcTicks.format(t)}</text
+              >
+              <line
+                x1={PAD_L - 3}
+                x2={PAD_L}
+                y1={yFor(t)}
+                y2={yFor(t)}
+                stroke="hsl(var(--muted-foreground))"
+              />
+              <text
+                x={PAD_L - 5}
+                y={yFor(t) + 3}
+                font-size="9"
+                text-anchor="end"
+                fill="hsl(var(--muted-foreground))">{lfcTicks.format(t)}</text
+              >
+            {/each}
             <!-- diagonal y=x -->
             <line
               x1={xFor(-range)}
@@ -525,7 +561,7 @@
                     cy={yFor(j.lfcB)}
                     r="3.5"
                     fill={colorFor(j)}
-                    stroke="hsl(280 70% 30%)"
+                    stroke={FLIPPED_EDGE}
                     stroke-width="0.8"
                     data-gene={j.gene}
                     data-lfca={j.lfcA}
@@ -580,8 +616,8 @@
         </div>
         <div class="mt-2 flex flex-wrap items-center gap-3 text-[0.65rem] text-muted-foreground">
           <span
-            ><span class="inline-block h-2 w-2 rounded-full" style="background: hsl(280 70% 50%)"
-            ></span> flipped direction</span
+            ><span class="inline-block h-2 w-2 rounded-full" style="background: {FLIPPED}"></span> flipped
+            direction</span
           >
           <span
             ><span class="inline-block h-2 w-2 rounded-full" style="background: hsl(0 0% 25%)"

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { rangeColor, rangeTextColor } from '$lib/plot-colors';
   // Sample × sample distance heatmap. Lower distance = more similar samples.
 
   let {
@@ -6,20 +7,19 @@
     matrix,
     title,
     cellSize = 36,
-    labelMaxChars = 18,
-    headerHeight = 110,
   }: {
     samples: string[];
     matrix: number[][];
     title?: string;
     cellSize?: number;
-    labelMaxChars?: number;
-    headerHeight?: number;
   } = $props();
 
-  function shorten(s: string): string {
-    return s.length > labelMaxChars ? s.slice(0, labelMaxChars - 1) + '…' : s;
-  }
+  // Column labels sit at -45 degrees, so their rise and their overhang past the last
+  // column both scale with the longest name (0.6rem monospace advances ~5.8px/char).
+  const labelRise = $derived(
+    Math.ceil(Math.max(0, ...samples.map((s) => s.length)) * 5.8 * Math.SQRT1_2),
+  );
+  const headerHeight = $derived(labelRise + 16);
 
   const N = $derived(samples.length);
   const maxVal = $derived.by(() => {
@@ -28,13 +28,18 @@
     return m;
   });
 
-  function shade(v: number): string {
-    if (!Number.isFinite(v)) return 'hsl(0 0% 90%)';
-    const t = maxVal > 0 ? Math.max(0, Math.min(1, v / maxVal)) : 0;
-    const r = Math.round(255 - t * (255 - 14));
-    const g = Math.round(255 - t * (255 - 64));
-    const b = Math.round(255 - t * (255 - 122));
-    return `rgb(${r} ${g} ${b})`;
+  // Scaled over the off-diagonal values so the closest and the farthest pair use both ends.
+  const minVal = $derived.by(() => {
+    let m = Infinity;
+    matrix.forEach((row, i) =>
+      row.forEach((v, j) => {
+        if (i !== j && Number.isFinite(v) && v < m) m = v;
+      }),
+    );
+    return Number.isFinite(m) ? m : 0;
+  });
+  function scaled(v: number): number {
+    return maxVal > minVal ? (v - minVal) / (maxVal - minVal) : 0;
   }
 
   function fmt(v: number): string {
@@ -55,7 +60,7 @@
   {#if N < 2}
     <div class="text-xs italic text-muted-foreground">Need at least 2 samples.</div>
   {:else}
-    <div class="inline-block">
+    <div class="inline-block" style="padding-right: {labelRise}px;">
       <table class="border-collapse text-xs">
         <thead>
           <tr>
@@ -71,7 +76,7 @@
                     style="bottom: 0; left: 50%;"
                     title={s}
                   >
-                    {shorten(s)}
+                    {s}
                   </div>
                 </div>
               </th>
@@ -82,16 +87,18 @@
           {#each matrix as row, i (i)}
             <tr>
               <th class="px-2 py-1 text-right font-mono text-[0.6rem] text-muted-foreground">
-                <div class="max-w-[180px] truncate" title={samples[i]}>{shorten(samples[i])}</div>
+                <div class="whitespace-nowrap">{samples[i]}</div>
               </th>
               {#each row as v, j (j)}
                 <td
                   class="border border-border/30 text-center font-mono text-[0.55rem] tabular-nums"
-                  style="background: {shade(v)}; color: {Number.isFinite(v) &&
-                  maxVal > 0 &&
-                  v / maxVal > 0.5
-                    ? 'rgb(245 245 250)'
-                    : 'rgb(20 20 30)'}; min-width: {cellSize}px; height: {cellSize}px;"
+                  style="background: {i === j
+                    ? 'transparent'
+                    : Number.isFinite(v)
+                      ? rangeColor(scaled(v))
+                      : 'hsl(0 0% 90%)'}; color: {rangeTextColor(
+                    scaled(v),
+                  )}; min-width: {cellSize}px; height: {cellSize}px;"
                   title={`${samples[i]} ↔ ${samples[j]}: ${fmt(v)}`}
                 >
                   {i === j ? '' : fmt(v)}

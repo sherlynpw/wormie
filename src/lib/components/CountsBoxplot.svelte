@@ -11,45 +11,42 @@
     condition?: string | null;
   }
 
-  const PALETTE = [
-    'hsl(220 70% 60%)',
-    'hsl(0 72% 55%)',
-    'hsl(140 60% 45%)',
-    'hsl(280 60% 55%)',
-    'hsl(35 90% 55%)',
-    'hsl(180 60% 45%)',
-    'hsl(320 60% 55%)',
-    'hsl(60 70% 50%)',
-  ];
+  const PALETTE = CONDITION_PALETTE;
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { niceTicks } from '$lib/nice-ticks';
+  import { CONDITION_PALETTE, DOWN_COLOR, downAlpha, referenceFirst } from '$lib/plot-colors';
 
   let {
     boxes,
     title,
     yLabel = 'log10(count + 1)',
     height = 320,
-    labelMaxChars = 16,
     exportName,
+    reference,
   }: {
     boxes: SampleBox[];
     title?: string;
     yLabel?: string;
     height?: number;
-    labelMaxChars?: number;
     exportName?: string;
+    /** Reference condition; drawn in the first palette colour. */
+    reference?: string | null;
   } = $props();
 
-  const PAD_L = 52;
+  const LABEL_ANGLE = 55;
+  // 9px sans advances ~5.2px per character; rotated labels hang down-left of their box,
+  // so both margins grow with the longest sample name.
+  const labelPx = $derived(Math.max(0, ...boxes.map((b) => b.sample.length)) * 5.2);
+  const rad = (LABEL_ANGLE * Math.PI) / 180;
+  const PAD_L = $derived(Math.max(52, Math.ceil(labelPx * Math.cos(rad)) - 4));
   const PAD_R = 14;
   const PAD_T = 14;
-  const PAD_B = 96;
+  const PAD_B = $derived(Math.max(40, Math.ceil(labelPx * Math.sin(rad)) + 20));
+  // `height` budgets 96px for labels; longer names extend the SVG instead of squeezing the plot.
+  const svgH = $derived(height - 96 + PAD_B);
   const BOX_GAP = 12;
   const BOX_MIN_W = 18;
-
-  function shorten(s: string): string {
-    return s.length > labelMaxChars ? s.slice(0, labelMaxChars - 1) + '…' : s;
-  }
 
   const conditions = $derived.by(() => {
     // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -62,16 +59,16 @@
         out.push(c);
       }
     }
-    return out;
+    return referenceFirst(out, reference);
   });
   function fillFor(b: SampleBox): string {
-    if (!b.condition || conditions.length === 0) return 'hsl(220 70% 60% / 0.55)';
+    if (!b.condition || conditions.length === 0) return downAlpha(0.55);
     const i = conditions.indexOf(b.condition);
     const hue = PALETTE[((i % PALETTE.length) + PALETTE.length) % PALETTE.length];
     return hue.replace(/\)$/, ' / 0.55)');
   }
   function strokeFor(b: SampleBox): string {
-    if (!b.condition || conditions.length === 0) return 'hsl(220 70% 35%)';
+    if (!b.condition || conditions.length === 0) return DOWN_COLOR;
     const i = conditions.indexOf(b.condition);
     return PALETTE[((i % PALETTE.length) + PALETTE.length) % PALETTE.length];
   }
@@ -91,17 +88,13 @@
   });
 
   const innerW = $derived(width - PAD_L - PAD_R);
-  const innerH = $derived(height - PAD_T - PAD_B);
+  const innerH = $derived(svgH - PAD_T - PAD_B);
   function yFor(v: number): number {
     return PAD_T + ((yRange[1] - v) / Math.max(1e-9, yRange[1] - yRange[0])) * innerH;
   }
   const boxW = $derived(boxes.length > 0 ? innerW / boxes.length - BOX_GAP : BOX_MIN_W);
 
-  const yTicks = $derived.by(() => {
-    const lo = yRange[0],
-      hi = yRange[1];
-    return Array.from({ length: 5 }, (_, i) => lo + (i / 4) * (hi - lo));
-  });
+  const yTicks = $derived(niceTicks(yRange[0], yRange[1]));
 
   let svgEl: SVGSVGElement | null = $state(null);
   export function getSvg() {
@@ -122,9 +115,9 @@
   {/if}
   <svg
     bind:this={svgEl}
-    viewBox="0 0 {width} {height}"
+    viewBox="0 0 {width} {svgH}"
     {width}
-    {height}
+    height={svgH}
     class="block"
     role="img"
     aria-label="Counts boxplot"
@@ -132,21 +125,21 @@
     <line
       x1={PAD_L}
       x2={width - PAD_R}
-      y1={height - PAD_B}
-      y2={height - PAD_B}
+      y1={svgH - PAD_B}
+      y2={svgH - PAD_B}
       stroke="hsl(var(--border))"
     />
-    <line x1={PAD_L} x2={PAD_L} y1={PAD_T} y2={height - PAD_B} stroke="hsl(var(--border))" />
+    <line x1={PAD_L} x2={PAD_L} y1={PAD_T} y2={svgH - PAD_B} stroke="hsl(var(--border))" />
 
-    {#each yTicks as t (t)}
+    {#each yTicks.values as t (t)}
       {@const y = yFor(t)}
-      <line x1={PAD_L - 3} x2={PAD_L} {y} y2={y} stroke="hsl(var(--muted-foreground))" />
+      <line x1={PAD_L - 3} x2={PAD_L} y1={y} y2={y} stroke="hsl(var(--muted-foreground))" />
       <text
         x={PAD_L - 5}
         y={y + 3}
         font-size="9"
         text-anchor="end"
-        fill="hsl(var(--muted-foreground))">{t.toFixed(1)}</text
+        fill="hsl(var(--muted-foreground))">{yTicks.format(t)}</text
       >
     {/each}
     <text
@@ -204,11 +197,11 @@
       />
       <text
         x={xMid}
-        y={height - PAD_B + 12}
+        y={svgH - PAD_B + 12}
         font-size="9"
         text-anchor="end"
-        transform="rotate(-55 {xMid} {height - PAD_B + 12})"
-        fill="hsl(var(--muted-foreground))">{shorten(b.sample)}<title>{b.sample}</title></text
+        transform="rotate(-{LABEL_ANGLE} {xMid} {svgH - PAD_B + 12})"
+        fill="hsl(var(--muted-foreground))">{b.sample}</text
       >
     {/each}
   </svg>

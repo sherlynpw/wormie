@@ -3,6 +3,7 @@
   import CengenStripPlot from './CengenStripPlot.svelte';
   import type { CengenExpressionRow } from '$lib/queries';
   import type { DESeq2Row, DESeq2DesignRow } from '$lib/deseq2/types';
+  import { prettySample } from '$lib/sample-names';
 
   let {
     gene,
@@ -13,6 +14,7 @@
     cengen,
     wormbaseGene,
     onClose,
+    reference,
   }: {
     gene: string;
     displayLabel: string;
@@ -22,6 +24,7 @@
     cengen?: CengenExpressionRow[] | null;
     wormbaseGene?: string | null;
     onClose?: () => void;
+    reference?: string | null;
   } = $props();
 
   let scale = $state<'log' | 'linear'>('log');
@@ -29,7 +32,7 @@
   const points = $derived.by<StripPoint[]>(() => {
     if (!countsBySample) return [];
     return design.map((d) => ({
-      id: d.sample,
+      id: prettySample(d.sample),
       group: d.condition || '?',
       value: countsBySample.get(d.sample) ?? NaN,
     }));
@@ -113,6 +116,7 @@
   {#if countsBySample}
     <StripPlot
       {points}
+      {reference}
       yLabel={scale === 'log' ? 'log10(normalized count + 1)' : 'normalized count'}
       logY={scale === 'log'}
       height={260}

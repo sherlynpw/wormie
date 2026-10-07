@@ -23,6 +23,7 @@
   import { enrichmentResultsToCsv } from '$lib/results-to-paste';
   import { handoff } from '$lib/pipeline-handoff';
   import { onMount } from 'svelte';
+  import { CONDITION_PALETTE } from '$lib/plot-colors';
 
   onMount(() => {
     datasets.init();
@@ -118,14 +119,7 @@
   let minTermsPerGene = $state<number>(2);
 
   // Categorical palette for per-slot heatmap tints; cycled when slots exceed color count.
-  const SLOT_COLORS = [
-    'hsl(217 91% 60%)',
-    'hsl(142 71% 45%)',
-    'hsl(38 92% 50%)',
-    'hsl(0 84% 60%)',
-    'hsl(280 75% 60%)',
-    'hsl(190 90% 45%)',
-  ];
+  const SLOT_COLORS = CONDITION_PALETTE;
 
   // Heatmap: union of significant terms (q <= cutoff, non-empty clusterProfiler geneID).
   // Each term tinted by first slot it appears in (approximation, avoids per-cell stacking).

@@ -6,7 +6,7 @@
   import { Badge } from '$lib/components/ui/badge';
   import PageHint from '$lib/components/PageHint.svelte';
   import ControlHint from '$lib/components/ControlHint.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import ArrowRight from 'lucide-svelte/icons/arrow-right';
   import Download from 'lucide-svelte/icons/download';
@@ -19,6 +19,7 @@
   import type { FeatureCountsResult } from '$lib/featurecounts/types';
   import { handoff } from '$lib/pipeline-handoff';
   import { parseFeatureCountsTsv } from '$lib/qc';
+  import { inferGroups } from '$lib/sample-names';
   import CountsQcPanel from '$lib/components/CountsQcPanel.svelte';
 
   let bamFiles = $state<File[]>([]);
@@ -182,9 +183,51 @@
     URL.revokeObjectURL(url);
   }
 
+  const qcMatrix = $derived(result ? parseFeatureCountsTsv(result.countsTsv) : null);
+  // Optional per-sample labels: colour the QC plots and pre-fill the design on /de.
+  let sampleMeta = $state<{ condition: string; replicate: string }[]>([]);
+  let qcReference = $state('');
+  $effect(() => {
+    const n = qcMatrix?.samples.length ?? 0;
+    untrack(() => {
+      if (sampleMeta.length !== n) {
+        sampleMeta = Array.from({ length: n }, () => ({ condition: '', replicate: '' }));
+      }
+    });
+  });
+  const qcConditions = $derived([...new Set(sampleMeta.map((m) => m.condition).filter(Boolean))]);
+  $effect(() => {
+    const cs = qcConditions;
+    untrack(() => {
+      if (!cs.includes(qcReference)) qcReference = cs[0] ?? '';
+    });
+  });
+  function guessFromNames() {
+    if (!qcMatrix) return;
+    const groups = inferGroups(qcMatrix.samples);
+    if (!groups) {
+      toast.error('Could not guess from the sample names', {
+        description: 'Type the condition for each sample instead.',
+      });
+      return;
+    }
+    const seen: Record<string, number> = {};
+    sampleMeta = groups.map((g) => {
+      seen[g] = (seen[g] ?? 0) + 1;
+      return { condition: g, replicate: String(seen[g]) };
+    });
+  }
+
   async function continueToDe() {
     if (!result) return;
-    handoff.counts.set({ tsv: result.countsTsv, samples: result.matrix.samples });
+    handoff.counts.set({
+      tsv: result.countsTsv,
+      samples: qcMatrix?.samples ?? result.matrix.samples,
+      conditions: sampleMeta.some((m) => m.condition)
+        ? sampleMeta.map((m) => m.condition)
+        : undefined,
+      reference: qcReference || undefined,
+    });
     await goto(resolve('/de') + '?from=counts');
   }
 
@@ -467,7 +510,67 @@
     <Card>
       <CardHeader><CardTitle>Sample QC (pre-DE)</CardTitle></CardHeader>
       <CardContent>
-        <CountsQcPanel matrix={parseFeatureCountsTsv(result.countsTsv)} />
+        {#if qcMatrix}
+          <div class="mb-4 space-y-2">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>
+                Optional: label each sample to colour the PCA by condition. The labels carry over to
+                the differential expression step.
+              </span>
+              <Button variant="outline" size="sm" onclick={guessFromNames}>
+                Guess from sample names
+              </Button>
+            </div>
+            <table class="text-xs">
+              <thead>
+                <tr class="border-b text-left">
+                  <th class="py-1 pr-3 font-medium">Sample</th>
+                  <th class="py-1 pr-3 font-medium">Condition</th>
+                  <th class="py-1 pr-3 font-medium">Replicate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each qcMatrix.samples as s, i (s)}
+                  {#if sampleMeta[i]}
+                    <tr class="border-b last:border-b-0">
+                      <td class="py-1 pr-3 font-mono">{s}</td>
+                      <td class="py-1 pr-3">
+                        <Input
+                          bind:value={sampleMeta[i].condition}
+                          placeholder="e.g. WT"
+                          class="h-7 max-w-40"
+                        />
+                      </td>
+                      <td class="py-1 pr-3">
+                        <Input
+                          bind:value={sampleMeta[i].replicate}
+                          placeholder="e.g. 1"
+                          class="h-7 max-w-20"
+                        />
+                      </td>
+                    </tr>
+                  {/if}
+                {/each}
+              </tbody>
+            </table>
+            {#if qcConditions.length > 1}
+              <label class="inline-flex items-center gap-2 text-xs">
+                Reference (shown in purple)
+                <select bind:value={qcReference} class="rounded border bg-card px-1 py-0.5">
+                  {#each qcConditions as c (c)}
+                    <option value={c}>{c}</option>
+                  {/each}
+                </select>
+              </label>
+            {/if}
+          </div>
+          <CountsQcPanel
+            matrix={qcMatrix}
+            conditions={sampleMeta.map((m) => m.condition)}
+            replicates={sampleMeta.map((m) => m.replicate)}
+            reference={qcReference}
+          />
+        {/if}
       </CardContent>
     </Card>
   {/if}

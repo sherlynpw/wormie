@@ -1,8 +1,9 @@
 <script lang="ts">
   // Term x gene presence heatmap. Rows = top-N terms by q; columns = union of hit genes.
-  // Cell colour: hsl(220 70% L) where L scales with -log10(q) so significant rows are darker.
+  // Cell colour: the shared purple-neutral-orange scale over -log10(q); orange rows are the most significant.
   // Generic: works for ORA (overlap) and GSEA (leading_edge/members); pure SVG for export.
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { rangeColor } from '$lib/plot-colors';
 
   export interface TermRow {
     term_id: string;
@@ -60,14 +61,21 @@
     return m;
   });
 
+  const minNegLogQ = $derived.by(() => {
+    let m = Infinity;
+    for (const r of rows) {
+      const v = r.q <= 0 ? 300 : -Math.log10(r.q);
+      if (v < m) m = v;
+    }
+    return Number.isFinite(m) ? m : 0;
+  });
+
   function shade(rowIdx: number, present: boolean): string {
     if (!present) return 'transparent';
-    if (maxNegLogQ <= 0) return 'hsl(220 70% 60%)';
+    if (maxNegLogQ <= minNegLogQ) return rangeColor(1);
     const r = rows[rowIdx];
     const v = r.q <= 0 ? 300 : -Math.log10(r.q);
-    const t = Math.max(0, Math.min(1, v / maxNegLogQ));
-    const l = 85 - t * 45;
-    return `hsl(220 70% ${l.toFixed(0)}%)`;
+    return rangeColor((v - minNegLogQ) / (maxNegLogQ - minNegLogQ));
   }
 
   const LABEL_W = 220;
@@ -182,11 +190,11 @@
     </svg>
     <div class="mt-2 flex flex-wrap items-center gap-3 text-[0.6rem] text-muted-foreground">
       <span class="inline-flex items-center gap-1">
-        <span class="inline-block h-2 w-4" style="background: hsl(220 70% 80%)"></span>
+        <span class="inline-block h-2 w-4" style="background: {rangeColor(0)}"></span>
         weak (high q)
       </span>
       <span class="inline-flex items-center gap-1">
-        <span class="inline-block h-2 w-4" style="background: hsl(220 70% 40%)"></span>
+        <span class="inline-block h-2 w-4" style="background: {rangeColor(1)}"></span>
         strong (low q)
       </span>
       <span class="ml-auto font-mono">{rows.length} terms × {cols.length} genes</span>
