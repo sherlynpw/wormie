@@ -8,7 +8,7 @@
   import { resolve } from '$app/paths';
 
   import PlotExportMenu from './PlotExportMenu.svelte';
-  import { rangeColor } from '$lib/plot-colors';
+  import { rangeColor, fmtExpression } from '$lib/plot-colors';
   import { CENGEN_TRANSGENE_GENES, CENGEN_TRANSGENE_NOTE } from '$lib/cengen-caveats';
 
   type Props = {
@@ -171,7 +171,7 @@
             0.5,
           )}, {rangeColor(1)})"
         ></span>
-        <span class="font-mono">{Math.round(Math.expm1(maxLog)).toLocaleString()} TMM</span>
+        <span class="font-mono">{fmtExpression(Math.expm1(maxLog))} TMM</span>
       </span>
       <div class="ml-auto inline-flex overflow-hidden rounded-md border text-[0.65rem]">
         {#each [{ k: 'cluster', label: 'Cluster' }, { k: 'name', label: 'Alphabetical' }] as opt (opt.k)}
@@ -245,7 +245,9 @@
               stroke="hsl(var(--background))"
               stroke-width="0.5"
             >
-              <title>{r.gene_name ?? r.wormbase_gene} × {neuronOrder[j]}: TMM {v.toFixed(1)}</title>
+              <title
+                >{r.gene_name ?? r.wormbase_gene} × {neuronOrder[j]}: TMM {fmtExpression(v)}</title
+              >
             </rect>
           {/each}
         {/each}

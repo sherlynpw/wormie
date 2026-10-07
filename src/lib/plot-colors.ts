@@ -43,3 +43,11 @@ export function referenceFirst(groups: string[], reference?: string | null): str
   if (!reference || !groups.includes(reference)) return groups;
   return [reference, ...groups.filter((g) => g !== reference)];
 }
+
+/** Expression value with as many decimals as its size needs, so small values do not print as 0. */
+export function fmtExpression(v: number): string {
+  if (!Number.isFinite(v)) return 'NA';
+  if (v >= 100) return Math.round(v).toLocaleString();
+  if (v >= 10) return v.toFixed(1);
+  return v.toFixed(2);
+}
