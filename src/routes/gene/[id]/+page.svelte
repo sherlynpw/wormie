@@ -86,6 +86,7 @@
     prettySubclass as synaptoSubclass,
     refShortLabel as synaptoRefLabel,
   } from '$lib/synaptogenesis-references';
+  import { rangeColor, rangeTextColor } from '$lib/plot-colors';
 
   let gene = $state<GeneRow | null>(null);
   let wormcat = $state<WormcatAssignment | null>(null);
@@ -1446,10 +1447,12 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Neuronal expression (CeNGEN L4)
               <ControlHint id="gene-cengen" title="CeNGEN L4 expression">
-                Per-neuron-type TMM-normalized expression from the CeNGEN L4 integrated atlas
-                (Barrett et al. 2022, combines bulk + scRNA-seq). Mean across replicates of each
-                neuron type; threshold TMM &gt; 0.5. Use this for "is this gene expressed in neuron
-                X" answers; the Alliance Tissue expression card above is broader anatomy.
+                Bars show CeNGEN's integrated expression for the 52 neuron types sequenced in bulk
+                after sorting, with transcripts that leaked in from other cell types subtracted
+                using the single-cell atlas (Barrett et al. 2025); dots are the single-cell
+                threshold calls for all 128 classes. The bulk values are deeper but not the same
+                quantity as the per-neuron TPM in CeNGEN's single-cell app, so compare ranks within
+                a neuron rather than numbers.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -1669,10 +1672,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Co-expressions across neuron types
               <ControlHint id="gene-cengen-coexpr" title="CeNGEN co-expression">
-                Genes whose expression across CeNGEN's 41 neuron types best matches this gene
-                (Pearson on log1p TMM). A pair is kept only if it is significant at p &lt; 0.001 and
-                each gene is among the other's 200 strongest partners. Rows are ordered by mutual
-                rank, so #3/#4 is a tighter pair than #3/#180. A gene can appear here with no
+                Genes whose expression across CeNGEN's 52 bulk-sequenced neuron types best matches
+                this gene (Pearson on log1p TMM). A pair is kept only if it is significant at p &lt;
+                0.001 and each gene is among the other's 200 strongest partners. Rows are ordered by
+                mutual rank, so #3/#4 is a tighter pair than #3/#180. A gene can appear here with no
                 expression card above, which shows only values over 0.5 TMM.
               </ControlHint>
             </CardTitle>
@@ -1722,7 +1725,7 @@
               <div class="grid grid-cols-[auto_auto_1fr] items-baseline gap-x-3 gap-y-1 text-xs">
                 <span
                   class="cursor-help text-right text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  title="Pearson correlation on log1p(TMM) across CeNGEN’s 41 neuron types.&#10;Scale (higher = more similar expression pattern):&#10;  1.00&#9;identical pattern&#10;  0.8 – 0.99&#9;very tight: same neuron-type specificity&#10;  0.5 – 0.8&#9;strong: shared dominant neuron classes&#10;  0.3 – 0.5&#9;moderate: overlapping but distinct programs&#10;  0.1 – 0.3&#9;weak: barely above coincidence"
+                  title="Pearson correlation on log1p(expression) across CeNGEN’s 52 bulk-sequenced neuron types.&#10;Scale (higher = more similar expression pattern):&#10;  1.00&#9;identical pattern&#10;  0.8 – 0.99&#9;very tight: same neuron-type specificity&#10;  0.5 – 0.8&#9;strong: shared dominant neuron classes&#10;  0.3 – 0.5&#9;moderate: overlapping but distinct programs&#10;  0.1 – 0.3&#9;weak: barely above coincidence"
                 >
                   Pearson
                 </span>
@@ -1740,10 +1743,7 @@
                   {@const t = Math.max(0, Math.min(1, (n.pearson - 0.1) / 0.9))}
                   <span
                     class="rounded px-1.5 py-0.5 text-right font-mono tabular-nums"
-                    style="background-color: hsl(142 {50 + 35 * t}% {92 -
-                      32 * t}%); color: hsl(142 {Math.round(60 + 30 * t)}% {Math.round(
-                      28 - 10 * t,
-                    )}%);"
+                    style="background-color: {rangeColor(t)}; color: {rangeTextColor(t)};"
                     title="Pearson {n.pearson.toFixed(3)} (1.0 = identical pattern)"
                   >
                     {n.pearson.toFixed(3)}

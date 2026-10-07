@@ -1,9 +1,11 @@
 <script lang="ts">
   // CeNGEN L4 expression per neuron type (128 types).
   // Column 1: 4-dot call (FACS-calibrated thresholds 1=liberal..4=stringent; default view = threshold 2, the CeNGEN app default).
-  // Column 2: bulk TMM bar (log10(TMM+1), available for 41 of 128 types).
+  // Column 2: bulk expression bar (log10(value+1), available for 52 of 128 types).
   import type { CengenExpressionRow } from '$lib/queries';
   import ExternalLink from 'lucide-svelte/icons/external-link';
+  import { rangeColor } from '$lib/plot-colors';
+  import { CENGEN_TRANSGENE_GENES, CENGEN_TRANSGENE_NOTE } from '$lib/cengen-caveats';
 
   type Props = {
     gene: string;
@@ -32,11 +34,7 @@
   const logMax = $derived(Math.log10(maxTmm + 1) || 1);
 
   function tmmColor(tmm: number): string {
-    const t = Math.log10(tmm + 1) / logMax;
-    const h = 50 - t * 50;
-    const s = 70 + t * 25;
-    const l = 75 - t * 35;
-    return `hsl(${h.toFixed(0)} ${s.toFixed(0)}% ${l.toFixed(0)}%)`;
+    return rangeColor(Math.log10(tmm + 1) / logMax);
   }
 
   const cengenUrl = $derived(
@@ -65,6 +63,13 @@
   </div>
 {:else}
   <div class="space-y-2">
+    {#if CENGEN_TRANSGENE_GENES.has(gene)}
+      <div
+        class="rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+      >
+        {CENGEN_TRANSGENE_NOTE}
+      </div>
+    {/if}
     <!-- Threshold picker and limit selector -->
     <div class="flex flex-wrap items-baseline gap-3 text-xs text-muted-foreground">
       <div class="inline-flex overflow-hidden rounded-md border text-[0.65rem]">
@@ -137,6 +142,16 @@
     <div
       class="flex items-center justify-between gap-2 border-t pt-1 text-[0.65rem] text-muted-foreground"
     >
+      <span class="inline-flex items-center gap-1" title="log10(1 + TMM), low to high">
+        <span class="font-mono">0</span>
+        <span
+          class="inline-block h-2 w-16 rounded-sm"
+          style="background: linear-gradient(to right, {rangeColor(0)}, {rangeColor(
+            0.5,
+          )}, {rangeColor(1)})"
+        ></span>
+        <span class="font-mono">{maxTmm.toFixed(0)} TMM</span>
+      </span>
       <span>
         Dots: 1=liberal, 2=medium (CeNGEN app default), 3=conservative, 4=stringent. Bars: log<sub
           >10</sub

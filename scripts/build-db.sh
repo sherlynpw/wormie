@@ -50,9 +50,13 @@ ALLIANCE_BGI_URL="https://fms.alliancegenome.org/download/BGI_WB.json.gz"
 WBPHENO_OBO_URL="https://raw.githubusercontent.com/obophenotype/c-elegans-phenotype-ontology/master/wbphenotype.obo"
 WBBT_OBO_URL="https://raw.githubusercontent.com/obophenotype/c-elegans-gross-anatomy-ontology/master/wbbt.obo"
 BIOGRID_ZIP_URL="https://downloads.thebiogrid.org/Download/BioGRID/Latest-Release/BIOGRID-ORGANISM-LATEST.tab3.zip"
-# CeNGEN L4 integrated single-cell + bulk normalized counts (Barrett et al. 2022).
-CENGEN_URL="https://cengen.org/storage/Average_integrated_TMM_counts_lengthNormalized_111521.tsv"
-CENGEN_VERSION="2021-11-15-L4-integrated"
+# CeNGEN L4 integrated single-cell + bulk expression, contamination-subtracted (LittleBites) and
+# proportion-adjusted, one column per neuron type (Barrett et al. 2025 preprint, analysis repo).
+# The per-sample bulk TMM file is read only for the replicate count per neuron type.
+CENGEN_REPO="https://raw.githubusercontent.com/cengenproject/CeNGEN_integrated_analysis_2024/HEAD/Data"
+CENGEN_URL="$CENGEN_REPO/bsn12_subtracted_integrated_propadjust_071724.tsv.gz"
+CENGEN_BULK_URL="$CENGEN_REPO/bsn12_bulk_subtracted_TMM_051624.tsv.gz"
+CENGEN_VERSION="2024-07-17-L4-integrated-bsn12"
 # CeNGEN per-neuron binary expression calls at four thresholds
 CENGEN_T1_URL="https://cengen.org/storage/021821_liberal_threshold1.csv"
 CENGEN_T2_URL="https://cengen.org/storage/021821_medium_threshold2.csv"
@@ -72,7 +76,8 @@ WBPHENO_OBO="$CACHE/wbphenotype.obo"
 WBBT_OBO="$CACHE/wbbt.obo"
 BIOGRID_ZIP="$CACHE/BIOGRID-ORGANISM-LATEST.tab3.zip"
 BIOGRID_TAB="" # set after unzip
-CENGEN_TSV="$CACHE/cengen_L4_integrated_TMM.tsv"
+CENGEN_TSV="$CACHE/cengen_L4_integrated_2024.tsv.gz"
+CENGEN_BULK="$CACHE/cengen_bulk_TMM_2024.tsv.gz"
 CENGEN_T1="$CACHE/cengen_threshold1_liberal.csv"
 CENGEN_T2="$CACHE/cengen_threshold2_medium.csv"
 CENGEN_T3="$CACHE/cengen_threshold3_conservative.csv"
@@ -110,6 +115,7 @@ fetch "$WBPHENO_OBO_URL" "$WBPHENO_OBO"
 fetch "$WBBT_OBO_URL" "$WBBT_OBO"
 fetch "$BIOGRID_ZIP_URL" "$BIOGRID_ZIP"
 fetch "$CENGEN_URL" "$CENGEN_TSV"
+fetch "$CENGEN_BULK_URL" "$CENGEN_BULK"
 fetch "$CENGEN_T1_URL" "$CENGEN_T1"
 fetch "$CENGEN_T2_URL" "$CENGEN_T2"
 fetch "$CENGEN_T3_URL" "$CENGEN_T3"
@@ -149,16 +155,16 @@ if ! "${PY[@]}" -c 'import numpy' >/dev/null 2>&1; then
   exit 1
 fi
 
-"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" "$DEST_DIR" <<'PY'
+"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_BULK" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" "$DEST_DIR" <<'PY'
 import csv, gzip, json, math, re, sqlite3, sys
 from pathlib import Path
 
 (db_path, wormcat_csv, neuronal_csv, gaf_path, obo_path, ortho_gz,
  biogrid_tab, pheno_json_gz, wbpheno_obo, anatomy_obo, anatomy_assoc,
  bgi_json_gz, gene_ids_path, func_desc_path, xrefs_path, wb_pheno_gz,
- cengen_tsv, cengen_t1, cengen_t2, cengen_t3, cengen_t4, disease_tsv,
+ cengen_tsv, cengen_bulk, cengen_t1, cengen_t2, cengen_t3, cengen_t4, disease_tsv,
  rnai_pheno_gz, synapto_tsv, reference_json_gz, gene2pubmed_ce,
- paper_cache_dir, dest_dir) = sys.argv[1:29]
+ paper_cache_dir, dest_dir) = sys.argv[1:30]
 
 conn = sqlite3.connect(db_path)
 conn.executescript('PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL;')
@@ -1005,39 +1011,46 @@ CREATE INDEX idx_cengen_calls_gene ON cengen_calls(wormbase_gene);
 CREATE INDEX idx_cengen_calls_neuron ON cengen_calls(neuron_type);
 """)
 NEURON_RE = re.compile(r'^(.+?)r\d+$')
-# Despite the .tsv extension and text/tab-separated-values content-type the
-# CeNGEN integrated file is space-separated with quoted column names.
-with open(cengen_tsv, encoding='utf-8') as f:
-    header_tokens = next(f).rstrip('\n').split()
-    rep_cols = [h.strip('"') for h in header_tokens]
-    type_to_idx = {}
-    for i, h in enumerate(rep_cols):
-        m = NEURON_RE.match(h)
-        if not m: continue
-        nt = m.group(1)
-        type_to_idx.setdefault(nt, []).append(i)
-    expr_rows = []
-    for line in f:
-        toks = line.rstrip('\n').split()
-        if not toks: continue
-        wb = toks[0].strip('"')
-        if not wb.startswith('WBGene'): continue
-        vals = toks[1:]
-        for nt, idxs in type_to_idx.items():
-            tot = 0.0; n = 0
-            for i in idxs:
-                if i >= len(vals): continue
+# Wide tab-separated matrix: header is the neuron types, each row is WBGene then one value per
+# type. Values are already averaged per type, so no replicate aggregation happens here.
+def load_cengen_matrix(path):
+    opener = gzip.open if path.endswith('.gz') else open
+    with opener(path, 'rt', encoding='utf-8') as f:
+        types = [h.strip('"') for h in next(f).rstrip('\n').split('\t') if h.strip('"')]
+        genes, rows = [], []
+        for line in f:
+            toks = line.rstrip('\n').split('\t')
+            wb = toks[0].strip('"')
+            if not wb.startswith('WBGene'): continue
+            vals = []
+            for v in toks[1:1 + len(types)]:
                 try:
-                    v = float(vals[i])
+                    vals.append(float(v))
                 except ValueError:
-                    continue
-                tot += v; n += 1
-            if n == 0: continue
-            avg = tot / n
-            if avg < 0.5: continue
-            expr_rows.append((wb, nt, round(avg, 1)))
+                    vals.append(0.0)
+            if len(vals) < len(types): vals += [0.0] * (len(types) - len(vals))
+            genes.append(wb); rows.append(vals)
+    return types, genes, rows
+
+cengen_types, cengen_genes, cengen_rows = load_cengen_matrix(cengen_tsv)
+# Replicates per type come from the per-sample bulk header ("ADLr171", ...). DD and VD were sorted
+# separately but the single-cell atlas does not split them, so the integrated matrix carries VD_DD.
+rep_counts = {}
+with gzip.open(cengen_bulk, 'rt', encoding='utf-8') as f:
+    for h in next(f).rstrip('\n').split('\t'):
+        m = NEURON_RE.match(h.strip('"'))
+        if m: rep_counts[m.group(1)] = rep_counts.get(m.group(1), 0) + 1
+rep_counts['VD_DD'] = rep_counts.pop('VD', 0) + rep_counts.pop('DD', 0)
+type_to_idx = {nt: [0] * rep_counts.get(nt, 0) for nt in cengen_types}
+# Contamination subtraction leaves most absent genes near zero; below 0.1 is treated as not detected.
+CENGEN_MIN_VALUE = 0.1
+expr_rows = []
+for wb, vals in zip(cengen_genes, cengen_rows):
+    for nt, v in zip(cengen_types, vals):
+        if v < CENGEN_MIN_VALUE: continue
+        expr_rows.append((wb, nt, round(v, 2)))
 cur.executemany('INSERT INTO cengen_expression VALUES (?,?,?)', expr_rows)
-print(f'cengen_expression: {len(expr_rows)} rows, {len(type_to_idx)} neuron types with bulk TMM', file=sys.stderr)
+print(f'cengen_expression: {len(expr_rows)} rows, {len(cengen_types)} neuron types with bulk data', file=sys.stderr)
 
 # Binary thresholds: each CSV has the same 128-neuron schema. We track the
 # *highest* threshold passed per (gene, neuron) so the UI can render a 4-dot
@@ -1075,14 +1088,14 @@ print(f'cengen_calls: {len(calls_rows)} rows across {len(binary_neurons)} neuron
 
 # Union of neuron types from both sources. has_binary marks the 128 types
 # covered by the FACS-calibrated binary calls; n_replicates is non-zero only
-# for the 41 types with bulk TMM data.
+# for the types with bulk data (52, VD_DD merged).
 all_neurons = set(type_to_idx.keys()) | set(binary_neurons)
 neuron_rows = [
     (nt, len(type_to_idx.get(nt, [])), 1 if nt in binary_neurons else 0)
     for nt in sorted(all_neurons)
 ]
 cur.executemany('INSERT INTO cengen_neurons VALUES (?,?,?)', neuron_rows)
-print(f'cengen_neurons: {len(neuron_rows)} total ({len(binary_neurons)} with binary calls, {len(type_to_idx)} with bulk TMM)', file=sys.stderr)
+print(f'cengen_neurons: {len(neuron_rows)} total ({len(binary_neurons)} with binary calls, {len(type_to_idx)} with bulk data)', file=sys.stderr)
 
 # ---------- gene_rnai (WormBase rnai_phenotypes) ----------
 # 5-column TSV: WBGene  seq_name  phenotype_name  WBPhenotype:id  WBRNAi|WBPaper[ WBRNAi|WBPaper ...]
@@ -1254,34 +1267,11 @@ def pearson_critical_r(n, alpha):
     return hi
 
 import numpy as np
-# Re-read the integrated file to build a dense per-gene-per-neuron-type matrix.
-# Aggregate replicates per type at read time (mean), zero-fill missing values.
+# Dense per-gene-per-neuron-type matrix from the integrated file parsed above.
 print('Building CeNGEN co-expression neighbors...', file=sys.stderr)
-gene_ids = []
-rows = []
-type_order = sorted(type_to_idx.keys())
-with open(cengen_tsv, encoding='utf-8') as f:
-    next(f)  # header already parsed
-    for line in f:
-        toks = line.rstrip('\n').split()
-        if not toks: continue
-        wb = toks[0].strip('"')
-        if not wb.startswith('WBGene'): continue
-        vals = toks[1:]
-        row = []
-        for nt in type_order:
-            idxs = type_to_idx[nt]
-            tot = 0.0; n = 0
-            for i in idxs:
-                if i >= len(vals): continue
-                try:
-                    v = float(vals[i])
-                except ValueError:
-                    continue
-                tot += v; n += 1
-            row.append(tot / n if n else 0.0)
-        gene_ids.append(wb)
-        rows.append(row)
+type_order = list(cengen_types)
+gene_ids = list(cengen_genes)
+rows = cengen_rows
 M = np.asarray(rows, dtype=np.float32)
 # log1p so a few huge counts don't dominate the correlation.
 M = np.log1p(M)
@@ -2166,7 +2156,7 @@ cat >"$DEST_DIR/version.json" <<EOF
     "wormbase_phenotype": { "release": "$WB_RELEASE", "date": "$WB_DATE" },
     "alliance_expression": { "version": "$EXPR_VER" },
     "wbbt": { "date": "$WBBT_DATE" },
-    "cengen": { "release": "$CENGEN_VERSION", "citation": "Barrett et al. 2022 (eLife reviewed preprint 106183)" },
+    "cengen": { "release": "$CENGEN_VERSION", "citation": "Barrett et al. 2025 (bioRxiv 10.1101/2025.01.26.634951; eLife reviewed preprint 106183), contamination-subtracted integrated matrix from github.com/cengenproject/CeNGEN_integrated_analysis_2024" },
     "alliance_bibliography": { "source": "REFERENCE_WB", "note": "Alliance of Genome Resources bulk bibliography (WBPaper -> title/DOI/PMID)" },
     "gene2pubmed": { "source": "NCBI gene2pubmed", "note": "Gene-to-publication links (comprehensive per-gene literature)" }
   }
