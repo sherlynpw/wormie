@@ -409,9 +409,7 @@
                   </div>
                   <div class="grid grid-cols-3 gap-2">
                     <div class="rounded-md border bg-card p-2">
-                      <div
-                        class="mb-1 text-[0.65rem] font-semibold text-rose-600 dark:text-rose-400"
-                      >
+                      <div class="mb-1 text-[0.65rem] font-semibold text-[hsl(var(--plot-down))]">
                         Only {A.gene_name ?? A.wormbase_gene}
                       </div>
                       <div class="flex max-h-48 flex-wrap gap-1 overflow-y-auto">
@@ -445,9 +443,7 @@
                       </div>
                     </div>
                     <div class="rounded-md border bg-card p-2">
-                      <div
-                        class="mb-1 text-[0.65rem] font-semibold text-emerald-600 dark:text-emerald-400"
-                      >
+                      <div class="mb-1 text-[0.65rem] font-semibold text-[hsl(var(--plot-up))]">
                         Only {B.gene_name ?? B.wormbase_gene}
                       </div>
                       <div class="flex max-h-48 flex-wrap gap-1 overflow-y-auto">

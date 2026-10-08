@@ -33,6 +33,7 @@
   import { toast } from 'svelte-sonner';
   import { parseGeneList } from '$lib/gene-parse';
   import { downloadTsv } from '$lib/download';
+  import { signedText } from '$lib/plot-colors';
 
   type Mode = 'enrichment' | 'gsea';
 
@@ -725,9 +726,9 @@
                   </td>
                   <td class="px-3 py-1.5 text-right font-mono text-xs tabular-nums">{r.size}</td>
                   <td
-                    class="px-3 py-1.5 text-right font-mono text-xs tabular-nums {r.nes >= 0
-                      ? 'text-emerald-700 dark:text-emerald-400'
-                      : 'text-rose-700 dark:text-rose-400'}"
+                    class="px-3 py-1.5 text-right font-mono text-xs tabular-nums {signedText(
+                      r.nes,
+                    )}"
                   >
                     {r.nes.toFixed(2)}
                   </td>

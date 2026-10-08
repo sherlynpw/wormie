@@ -45,6 +45,7 @@
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import GseaEnrichmentPlot from '$lib/components/GseaEnrichmentPlot.svelte';
   import PlotExportMenu from '$lib/components/PlotExportMenu.svelte';
+  import { signedText } from '$lib/plot-colors';
 
   let {
     ranked,
@@ -934,9 +935,9 @@
                 {r.es.toFixed(3)}
               </td>
               <td
-                class="px-3 py-1.5 text-right align-top font-mono text-xs tabular-nums {r.nes >= 0
-                  ? 'text-emerald-700 dark:text-emerald-400'
-                  : 'text-rose-700 dark:text-rose-400'}"
+                class="px-3 py-1.5 text-right align-top font-mono text-xs tabular-nums {signedText(
+                  r.nes,
+                )}"
               >
                 {r.nes.toFixed(2)}
               </td>
