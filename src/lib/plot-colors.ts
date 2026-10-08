@@ -23,7 +23,7 @@ export const CATEGORICAL_PALETTE = [
 ];
 export const CONDITION_PALETTE = CATEGORICAL_PALETTE;
 
-/** GO namespaces: BP purple, MF orange, CC teal, anything else slate. */
+/** GO namespaces: BP purple, MF orange, CC indigo, anything else green. */
 export const NAMESPACE_COLOR: Record<string, string> = {
   BP: CATEGORICAL_PALETTE[0],
   MF: CATEGORICAL_PALETTE[1],
