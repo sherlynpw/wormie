@@ -25,14 +25,11 @@
   import { cn } from '$lib/utils';
   import { resolve } from '$app/paths';
   import Plus from 'lucide-svelte/icons/plus';
+  import { NAMESPACE_BADGE } from '$lib/plot-colors';
 
   let { data }: NodeProps<GoFlowNode> = $props();
 
-  const NS_BADGE: Record<string, string> = {
-    BP: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
-    MF: 'bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300',
-    CC: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
-  };
+  const NS_BADGE = NAMESPACE_BADGE;
 
   const cardClass = $derived(
     data.role === 'center'

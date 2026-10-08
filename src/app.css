@@ -23,6 +23,13 @@
     --plot-mid: 36 37% 89%;
     --plot-text-on-low: 240 20% 97%;
     --plot-text: 240 20% 10%;
+    /* Muted companions for categories beyond purple and orange. */
+    --plot-cat-3: 185 35% 38%;
+    --plot-cat-4: 350 45% 55%;
+    --plot-cat-5: 80 30% 40%;
+    --plot-cat-6: 215 35% 52%;
+    --plot-cat-7: 45 70% 45%;
+    --plot-cat-8: 25 35% 42%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 240 4.8% 95.9%;
@@ -63,6 +70,12 @@
     --plot-mid: 36 8% 32%;
     --plot-text-on-low: 240 20% 10%;
     --plot-text: 240 20% 94%;
+    --plot-cat-3: 185 40% 58%;
+    --plot-cat-4: 350 55% 70%;
+    --plot-cat-5: 80 35% 60%;
+    --plot-cat-6: 215 45% 68%;
+    --plot-cat-7: 45 75% 62%;
+    --plot-cat-8: 25 40% 62%;
     --primary-foreground: 290 30% 12%;
 
     --secondary: 240 3.7% 15.9%;

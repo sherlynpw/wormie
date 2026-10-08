@@ -6,6 +6,7 @@
   import type { GoAnnotation } from '$lib/queries';
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { NAMESPACE_COLOR } from '$lib/plot-colors';
 
   let {
     annotations,
@@ -52,11 +53,7 @@
     CC: 'Cellular component',
   };
   const NS_ORDER = ['BP', 'MF', 'CC'] as const;
-  const NS_COLOR: Record<string, string> = {
-    BP: 'hsl(280 60% 45%)',
-    MF: 'hsl(200 70% 40%)',
-    CC: 'hsl(150 55% 35%)',
-  };
+  const NS_COLOR = NAMESPACE_COLOR;
   // Evidence tier as a grey ramp: hue means namespace, value means evidence, so
   // the two rings encode different things and neither fades into the background.
   const TIER_GREY: Record<string, string> = {

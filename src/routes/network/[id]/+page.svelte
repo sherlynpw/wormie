@@ -26,6 +26,7 @@
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import Download from 'lucide-svelte/icons/download';
   import PageHint from '$lib/components/PageHint.svelte';
+  import { CATEGORICAL_PALETTE } from '$lib/plot-colors';
 
   const id = $derived(page.params.id ?? '');
   let center = $state<GeneRow | null>(null);
@@ -176,7 +177,7 @@
           id: `${focalId}-->${n.id}:reach`,
           source: focalId,
           target: n.id,
-          style: `stroke: hsl(280 60% 50%); stroke-width: 1.5; opacity: ${0.9 - Math.min(0.4, (n.hop - 1) * 0.15)}; ${dash}`,
+          style: `stroke: hsl(var(--plot-down)); stroke-width: 1.5; opacity: ${0.9 - Math.min(0.4, (n.hop - 1) * 0.15)}; ${dash}`,
           label: `${n.hop}h`,
           labelStyle: 'font-size: 9px; fill: var(--muted-foreground);',
         });
@@ -214,10 +215,10 @@
         physical && (genetic || other)
           ? 'hsl(240 4% 50% / 0.7)'
           : physical
-            ? 'hsl(290 60% 55%)'
+            ? CATEGORICAL_PALETTE[0]
             : genetic
-              ? 'hsl(150 55% 45%)'
-              : 'hsl(220 70% 55%)';
+              ? CATEGORICAL_PALETTE[1]
+              : CATEGORICAL_PALETTE[2];
       const dash =
         physical && !genetic && !other
           ? ''
@@ -245,9 +246,21 @@
   });
 
   const EDGE_LEGEND: { key: 'physical' | 'genetic' | 'other'; label: string; swatch: string }[] = [
-    { key: 'physical', label: 'Physical', swatch: 'border-t-2 border-solid border-primary' },
-    { key: 'genetic', label: 'Genetic', swatch: 'border-t-2 border-dashed border-emerald-500' },
-    { key: 'other', label: 'Other', swatch: 'border-t-2 border-dotted border-sky-500' },
+    {
+      key: 'physical',
+      label: 'Physical',
+      swatch: 'border-t-2 border-solid border-[hsl(var(--plot-down))]',
+    },
+    {
+      key: 'genetic',
+      label: 'Genetic',
+      swatch: 'border-t-2 border-dashed border-[hsl(var(--plot-up))]',
+    },
+    {
+      key: 'other',
+      label: 'Other',
+      swatch: 'border-t-2 border-dotted border-[hsl(var(--plot-cat-3))]',
+    },
   ];
 
   // String mirror of FilterSource for <select> option values.
