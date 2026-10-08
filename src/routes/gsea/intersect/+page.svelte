@@ -11,6 +11,7 @@
   import ControlHint from '$lib/components/ControlHint.svelte';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
+  import { signedText } from '$lib/plot-colors';
 
   type BundleTerm = {
     term_id: string;
@@ -388,9 +389,9 @@
                   >{row.hits}/{bundles.length}</td
                 >
                 <td
-                  class="px-2 py-1.5 text-right font-mono text-xs tabular-nums {row.medianNes >= 0
-                    ? 'text-emerald-700 dark:text-emerald-400'
-                    : 'text-rose-700 dark:text-rose-400'}"
+                  class="px-2 py-1.5 text-right font-mono text-xs tabular-nums {signedText(
+                    row.medianNes,
+                  )}"
                 >
                   {row.medianNes.toFixed(2)}
                 </td>

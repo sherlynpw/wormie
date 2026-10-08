@@ -7,7 +7,9 @@
   import { resolve } from '$app/paths';
   import PlotExportMenu from './PlotExportMenu.svelte';
   import { niceTicks } from '$lib/nice-ticks';
-  import { UP_COLOR, DOWN_COLOR } from '$lib/plot-colors';
+  import { UP_COLOR, DOWN_COLOR, CATEGORICAL_PALETTE } from '$lib/plot-colors';
+  // Highlighted genes take the third palette colour so they stay apart from up and down.
+  const HIGHLIGHT = CATEGORICAL_PALETTE[2];
 
   export type DeRow = {
     gene: string; // gene name or WBGene
@@ -123,7 +125,7 @@
 
   function colorFor(p: { lfc: number; padj: number; gene: string }): string {
     const isHighlight = highlight && (highlight.has(p.gene) || highlight.has(p.gene.toLowerCase()));
-    if (isHighlight) return 'hsl(45 95% 50%)'; // amber; overlay pass ensures always on top
+    if (isHighlight) return HIGHLIGHT; // overlay pass ensures always on top
     const sig = p.padj <= qThreshold && Math.abs(p.lfc) >= lfcThreshold;
     if (!sig) return 'hsl(0 0% 75% / 0.5)';
     return p.lfc > 0 ? UP_COLOR : DOWN_COLOR;
@@ -395,7 +397,7 @@
               cy={yFor(p)}
               r={radiusFor(p)}
               fill={colorFor(p)}
-              stroke="hsl(40 90% 30%)"
+              stroke="hsl(var(--plot-text))"
               stroke-width="1"
               data-gene={p.gene}
             />
@@ -431,7 +433,7 @@
     </span>
     {#if overlay.length > 0}
       <span class="inline-flex items-center gap-1">
-        <span class="inline-block h-2 w-2 rounded-full" style="background: hsl(45 95% 50%)"></span>
+        <span class="inline-block h-2 w-2 rounded-full" style="background: {HIGHLIGHT}"></span>
         highlighted ({overlay.length})
       </span>
     {/if}

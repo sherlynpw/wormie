@@ -82,9 +82,8 @@
 
   function sharedClass(count: number): string {
     if (count >= N && N > 1)
-      return 'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-700';
-    if (count >= 2)
-      return 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700';
+      return 'bg-[hsl(var(--plot-down)/0.15)] border-[hsl(var(--plot-down)/0.5)]';
+    if (count >= 2) return 'bg-[hsl(var(--plot-up)/0.12)] border-[hsl(var(--plot-up)/0.5)]';
     return 'bg-card border-border';
   }
 </script>
@@ -239,13 +238,13 @@
 <div class="flex items-center gap-3 border-t pt-1 text-[0.65rem] text-muted-foreground">
   <span class="inline-flex items-center gap-1">
     <span
-      class="inline-block h-2.5 w-2.5 rounded-sm border border-emerald-300 bg-emerald-100 dark:bg-emerald-900/40"
+      class="inline-block h-2.5 w-2.5 rounded-sm border border-[hsl(var(--plot-down)/0.5)] bg-[hsl(var(--plot-down)/0.15)]"
     ></span>
     shared by all {N}
   </span>
   <span class="inline-flex items-center gap-1">
     <span
-      class="inline-block h-2.5 w-2.5 rounded-sm border border-amber-300 bg-amber-50 dark:bg-amber-900/30"
+      class="inline-block h-2.5 w-2.5 rounded-sm border border-[hsl(var(--plot-up)/0.5)] bg-[hsl(var(--plot-up)/0.12)]"
     ></span>
     shared by ≥ 2
   </span>

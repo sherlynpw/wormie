@@ -67,3 +67,10 @@ export function fmtExpression(v: number): string {
   if (v >= 10) return v.toFixed(1);
   return v.toFixed(2);
 }
+
+/** Tailwind text classes for a signed value: orange when positive, purple when negative. */
+export const UP_TEXT = 'text-[hsl(var(--plot-up))]';
+export const DOWN_TEXT = 'text-[hsl(var(--plot-down))]';
+export function signedText(v: number): string {
+  return v >= 0 ? UP_TEXT : DOWN_TEXT;
+}

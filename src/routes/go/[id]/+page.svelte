@@ -184,7 +184,7 @@
 
   const EDGE_STYLES: Record<GoEdgeType, string> = {
     is_a: 'stroke: hsl(240 4% 50% / 0.6); stroke-width: 1.5;',
-    part_of: 'stroke: hsl(290 30% 55%); stroke-width: 1.75; stroke-dasharray: 6 3;',
+    part_of: 'stroke: hsl(var(--plot-cat-3)); stroke-width: 1.75; stroke-dasharray: 6 3;',
     regulates: 'stroke: hsl(240 4% 50%); stroke-width: 1.75; stroke-dasharray: 2 3;',
     positively_regulates: `stroke: ${UP_COLOR}; stroke-width: 1.75; stroke-dasharray: 2 3;`,
     negatively_regulates: `stroke: ${DOWN_COLOR}; stroke-width: 1.75; stroke-dasharray: 2 3;`,
@@ -206,7 +206,10 @@
 
   const EDGE_LABEL: Record<GoEdgeType, { label: string; swatch: string }> = {
     is_a: { label: 'is_a', swatch: 'border-t-2 border-solid border-muted-foreground' },
-    part_of: { label: 'part_of', swatch: 'border-t-2 border-dashed border-primary' },
+    part_of: {
+      label: 'part_of',
+      swatch: 'border-t-2 border-dashed border-[hsl(var(--plot-cat-3))]',
+    },
     regulates: { label: 'regulates', swatch: 'border-t-2 border-dotted border-zinc-500' },
     positively_regulates: {
       label: '+regulates',

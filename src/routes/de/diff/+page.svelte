@@ -21,7 +21,7 @@
   import { page } from '$app/state';
   import { handoff } from '$lib/pipeline-handoff';
   import { niceTicks } from '$lib/nice-ticks';
-  import { DOWN_COLOR } from '$lib/plot-colors';
+  import { DOWN_COLOR, signedText } from '$lib/plot-colors';
 
   type DeRow = { gene: string; padj: number | null; log2fc: number | null };
 
@@ -675,15 +675,11 @@
                 id={j.gene}
                 name={nameMap.get(j.gene) ?? (j.gene.startsWith('WBGene') ? null : j.gene)}
               />
-              <span
-                class={`font-mono tabular-nums ${j.lfcA > 0 ? 'text-rose-600' : 'text-sky-600'}`}
-              >
+              <span class={`font-mono tabular-nums ${signedText(j.lfcA)}`}>
                 {labelA}
                 {j.lfcA.toFixed(2)}
               </span>
-              <span
-                class={`font-mono tabular-nums ${j.lfcB > 0 ? 'text-rose-600' : 'text-sky-600'}`}
-              >
+              <span class={`font-mono tabular-nums ${signedText(j.lfcB)}`}>
                 {labelB}
                 {j.lfcB.toFixed(2)}
               </span>
