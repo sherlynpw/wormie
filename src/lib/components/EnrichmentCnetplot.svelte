@@ -8,6 +8,7 @@
   import { fmtP } from '$lib/format';
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import { NAMESPACE_COLOR } from '$lib/plot-colors';
 
   let {
     results,
@@ -59,10 +60,10 @@
   // Color terms by GO namespace; genes are neutral grey.
   function termColor(r: EnrichmentResult): string {
     const ns = r.namespace ?? '';
-    if (ns === 'BP' || ns === 'biological_process') return 'hsl(280 60% 45%)';
-    if (ns === 'MF' || ns === 'molecular_function') return 'hsl(200 70% 40%)';
-    if (ns === 'CC' || ns === 'cellular_component') return 'hsl(150 55% 35%)';
-    return 'hsl(20 75% 45%)';
+    if (ns === 'BP' || ns === 'biological_process') return NAMESPACE_COLOR.BP;
+    if (ns === 'MF' || ns === 'molecular_function') return NAMESPACE_COLOR.MF;
+    if (ns === 'CC' || ns === 'cellular_component') return NAMESPACE_COLOR.CC;
+    return NAMESPACE_COLOR.other;
   }
 
   const layout = $derived.by(() => {

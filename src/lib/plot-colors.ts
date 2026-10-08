@@ -6,20 +6,36 @@ export const DOWN_COLOR = 'hsl(var(--plot-down))';
 export const upAlpha = (a: number) => `hsl(var(--plot-up) / ${a})`;
 export const downAlpha = (a: number) => `hsl(var(--plot-down) / ${a})`;
 
-// One palette for every plot that colours samples by condition, so a condition keeps its colour
-// across the PCA, boxplots and per-gene strip plot. The first two entries are the same purple and
-// orange as the range scale and the direction pair, so one purple means one thing across the app;
-// callers put the reference level first (see referenceFirst) so wild type is always the purple one.
-export const CONDITION_PALETTE = [
+// One palette for every categorical encoding: samples by condition, GO namespaces, STRING
+// evidence channels, interaction types. Purple and orange first (the same two as the range scale
+// and the direction pair), then muted companions from app.css, so a category keeps its colour
+// across pages and both themes. Callers colouring conditions put the reference level first (see
+// referenceFirst) so wild type is always the purple one.
+export const CATEGORICAL_PALETTE = [
   DOWN_COLOR,
   UP_COLOR,
-  'hsl(180 60% 40%)',
-  'hsl(0 72% 50%)',
-  'hsl(220 70% 50%)',
-  'hsl(140 60% 40%)',
-  'hsl(320 60% 50%)',
-  'hsl(60 70% 45%)',
+  'hsl(var(--plot-cat-3))',
+  'hsl(var(--plot-cat-4))',
+  'hsl(var(--plot-cat-5))',
+  'hsl(var(--plot-cat-6))',
+  'hsl(var(--plot-cat-7))',
+  'hsl(var(--plot-cat-8))',
 ];
+export const CONDITION_PALETTE = CATEGORICAL_PALETTE;
+
+/** GO namespaces: BP purple, MF orange, CC teal, anything else slate. */
+export const NAMESPACE_COLOR: Record<string, string> = {
+  BP: CATEGORICAL_PALETTE[0],
+  MF: CATEGORICAL_PALETTE[1],
+  CC: CATEGORICAL_PALETTE[2],
+  other: CATEGORICAL_PALETTE[5],
+};
+/** Tailwind classes for the namespace badges, tinted from the same variables. */
+export const NAMESPACE_BADGE: Record<string, string> = {
+  BP: 'bg-[hsl(var(--plot-down)/0.15)] text-[hsl(var(--plot-down))]',
+  MF: 'bg-[hsl(var(--plot-up)/0.15)] text-[hsl(var(--plot-up))]',
+  CC: 'bg-[hsl(var(--plot-cat-3)/0.15)] text-[hsl(var(--plot-cat-3))]',
+};
 
 // Three-point scale for every plot that encodes a range of numbers: purple for low or negative,
 // a pale neutral midpoint, orange for high or positive. Mixed in CSS from the same variables as the

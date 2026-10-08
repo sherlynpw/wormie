@@ -2,6 +2,7 @@
   import type { StringInteraction } from '$lib/queries';
   import { resolve } from '$app/paths';
   import GeneHover from './GeneHover.svelte';
+  import { CATEGORICAL_PALETTE } from '$lib/plot-colors';
 
   type Props = { interactions: StringInteraction[] };
   let { interactions }: Props = $props();
@@ -23,43 +24,43 @@
       key: 'neighborhood',
       name: 'genomic neighborhood',
       desc: 'Genes repeatedly found near each other on genomes',
-      color: 'hsl(120 50% 45%)',
+      color: CATEGORICAL_PALETTE[0],
     },
     {
       key: 'fusion',
       name: 'gene fusion',
       desc: 'Fused into a single gene in some other species',
-      color: 'hsl(0 60% 55%)',
+      color: CATEGORICAL_PALETTE[1],
     },
     {
       key: 'cooccurrence',
       name: 'co-occurrence',
       desc: 'Present or absent together across species',
-      color: 'hsl(190 60% 45%)',
+      color: CATEGORICAL_PALETTE[2],
     },
     {
       key: 'coexpression',
       name: 'co-expression',
       desc: 'Expression levels correlated across experiments',
-      color: 'hsl(280 50% 55%)',
+      color: CATEGORICAL_PALETTE[3],
     },
     {
       key: 'experimental',
       name: 'experimental',
       desc: 'Direct interaction evidence from lab experiments',
-      color: 'hsl(40 80% 50%)',
+      color: CATEGORICAL_PALETTE[4],
     },
     {
       key: 'database',
       name: 'curated databases',
       desc: 'Association curated into pathway or complex databases',
-      color: 'hsl(210 60% 50%)',
+      color: CATEGORICAL_PALETTE[5],
     },
     {
       key: 'textmining',
       name: 'text mining',
       desc: 'Co-mentioned in the scientific literature',
-      color: 'hsl(160 35% 45%)',
+      color: CATEGORICAL_PALETTE[6],
     },
   ] as const;
 </script>

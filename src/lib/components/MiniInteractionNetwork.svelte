@@ -9,6 +9,7 @@
   import { applyLayout, type LayoutKind } from '$lib/components/graph/layout';
   import { theme } from '$lib/stores/theme.svelte';
   import type { Interaction } from '$lib/queries';
+  import { CATEGORICAL_PALETTE } from '$lib/plot-colors';
 
   let {
     focalId,
@@ -100,10 +101,10 @@
       const color = mixed
         ? 'hsl(240 4% 50% / 0.7)'
         : p.physical > 0
-          ? 'hsl(290 60% 55%)'
+          ? CATEGORICAL_PALETTE[0]
           : p.genetic > 0
-            ? 'hsl(150 55% 45%)'
-            : 'hsl(40 60% 50%)';
+            ? CATEGORICAL_PALETTE[1]
+            : CATEGORICAL_PALETTE[2];
       const width = (1 + Math.min(4, Math.sqrt(total))).toFixed(1);
       return {
         id: `${focalId}->${p.id}`,
@@ -154,11 +155,11 @@
     </div>
     <div class="flex flex-wrap justify-center gap-4 text-[0.65rem] text-muted-foreground">
       <div class="flex items-center gap-1.5">
-        <span class="inline-block h-0.5 w-3" style="background: hsl(290 60% 55%);"></span>
+        <span class="inline-block h-0.5 w-3" style="background: {CATEGORICAL_PALETTE[0]};"></span>
         physical
       </div>
       <div class="flex items-center gap-1.5">
-        <span class="inline-block h-0.5 w-3" style="background: hsl(150 55% 45%);"></span>
+        <span class="inline-block h-0.5 w-3" style="background: {CATEGORICAL_PALETTE[1]};"></span>
         genetic
       </div>
       <div class="flex items-center gap-1.5">
