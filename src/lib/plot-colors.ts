@@ -23,18 +23,18 @@ export const CATEGORICAL_PALETTE = [
 ];
 export const CONDITION_PALETTE = CATEGORICAL_PALETTE;
 
-/** GO namespaces: BP purple, MF orange, CC indigo, anything else green. */
+/** GO namespaces: BP purple, MF orange, CC maroon, anything else green. */
 export const NAMESPACE_COLOR: Record<string, string> = {
   BP: CATEGORICAL_PALETTE[0],
   MF: CATEGORICAL_PALETTE[1],
-  CC: CATEGORICAL_PALETTE[2],
+  CC: CATEGORICAL_PALETTE[3],
   other: CATEGORICAL_PALETTE[5],
 };
 /** Tailwind classes for the namespace badges, tinted from the same variables. */
 export const NAMESPACE_BADGE: Record<string, string> = {
   BP: 'bg-[hsl(var(--plot-down)/0.15)] text-[hsl(var(--plot-down))]',
   MF: 'bg-[hsl(var(--plot-up)/0.15)] text-[hsl(var(--plot-up))]',
-  CC: 'bg-[hsl(var(--plot-cat-3)/0.15)] text-[hsl(var(--plot-cat-3))]',
+  CC: 'bg-[hsl(var(--plot-cat-4)/0.15)] text-[hsl(var(--plot-cat-4))]',
 };
 
 // Three-point scale for every plot that encodes a range of numbers: purple for low or negative,
