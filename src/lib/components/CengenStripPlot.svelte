@@ -142,9 +142,12 @@
     </div>
 
     <div
-      class="flex items-center justify-between gap-2 border-t pt-1 text-[0.65rem] text-muted-foreground"
+      class="mt-3 flex items-center justify-between gap-3 border-t pt-2 text-[0.65rem] text-muted-foreground"
     >
-      <span class="inline-flex items-center gap-1" title="log10(1 + TMM), low to high">
+      <span
+        class="inline-flex flex-shrink-0 items-center gap-1"
+        title="log10(1 + TMM), low to high"
+      >
         <span class="font-mono">0</span>
         <span
           class="inline-block h-2 w-16 rounded-sm"
@@ -154,10 +157,9 @@
         ></span>
         <span class="font-mono">{fmtExpression(maxTmm)} TMM</span>
       </span>
-      <span>
-        Dots: 1=liberal, 2=medium (CeNGEN app default), 3=conservative, 4=stringent. Bars: log<sub
-          >10</sub
-        >(TMM+1) from the bulk + scRNA-seq integrated matrix.
+      <span class="flex flex-col gap-0.5">
+        <span>Dots: 1=liberal, 2=medium (CeNGEN app default), 3=conservative, 4=stringent.</span>
+        <span>Bars: log<sub>10</sub>(TMM+1) from the bulk + scRNA-seq integrated matrix.</span>
       </span>
       <!-- eslint-disable svelte/no-navigation-without-resolve -->
       <a
