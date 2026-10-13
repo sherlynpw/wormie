@@ -1,6 +1,7 @@
 // Pre-fit sample QC: library sizes, log2-CPM, sample correlation, PCA on a featureCounts-style counts matrix.
 
 import { prettySample } from '$lib/sample-names';
+import { parseCountsTable } from '$lib/deseq2/counts-table';
 
 export interface CountsMatrix {
   genes: string[];
@@ -9,22 +10,16 @@ export interface CountsMatrix {
 }
 
 export function parseFeatureCountsTsv(text: string): CountsMatrix {
-  const lines = text.split('\n').filter((l) => l.length && !l.startsWith('#'));
-  if (lines.length < 2) return { genes: [], samples: [], counts: new Float64Array(0) };
-  const header = lines[0].split('\t');
-  // featureCounts: Geneid + 5 meta cols then samples (detect via chr header); plain gene\tS1\tS2 also accepted.
-  const metaCols = header[1]?.toLowerCase() === 'chr' ? 6 : 1;
-  const samples = header.slice(metaCols).map(prettySample);
-  const G = lines.length - 1;
-  const S = samples.length;
-  const genes = new Array<string>(G);
-  const counts = new Float64Array(G * S);
-  for (let g = 0; g < G; g++) {
-    const f = lines[g + 1].split('\t');
-    genes[g] = f[0];
-    for (let s = 0; s < S; s++) counts[g * S + s] = Number(f[metaCols + s]) || 0;
+  let parsed: ReturnType<typeof parseCountsTable>;
+  try {
+    parsed = parseCountsTable(text);
+  } catch {
+    return { genes: [], samples: [], counts: new Float64Array(0) };
   }
-  return { genes, samples, counts };
+  const S = parsed.samples.length;
+  const counts = new Float64Array(parsed.genes.length * S);
+  parsed.counts.forEach((row, g) => counts.set(row, g * S));
+  return { genes: parsed.genes, samples: parsed.samples.map(prettySample), counts };
 }
 
 export function librarySizes(m: CountsMatrix): number[] {

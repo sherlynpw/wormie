@@ -48,6 +48,8 @@
   import GeneDetailPanel from '$lib/components/GeneDetailPanel.svelte';
   import CountsQcPanel from '$lib/components/CountsQcPanel.svelte';
   import { parseFeatureCountsTsv } from '$lib/qc';
+  import { countsSamples } from '$lib/deseq2/counts-table';
+  import { deseq2ErrorHint } from '$lib/deseq2/error-hints';
   import MethodsButton from '$lib/components/MethodsButton.svelte';
   import {
     parsePca,
@@ -82,15 +84,7 @@
   let countsName = $state('');
   let countsInput: HTMLInputElement | null = $state(null);
 
-  function detectSamples(tsv: string): string[] {
-    const lines = tsv.split('\n').filter((l) => l && !l.startsWith('#'));
-    if (lines.length < 1) return [];
-    const header = lines[0].split('\t');
-    if (header.length < 7) return [];
-    return header.slice(6);
-  }
-
-  const samples = $derived(detectSamples(countsText));
+  const samples = $derived(countsSamples(countsText));
   let design = $state<DESeq2DesignRow[]>([]);
   // Re-seed design rows when samples change; preserve existing conditions. untrack avoids self-trigger.
   // Conditions and reference set on /counts, applied once the handed-off samples appear.
@@ -145,6 +139,14 @@
   let extracting = $state(false);
   let runningAll = $state(false);
   let fitLog = $state<string[]>([]);
+  // A failed fit stays on the page until the next run, not only in a passing toast.
+  let fitError = $state<{ title: string; message: string; hint: string | null } | null>(null);
+  function failFit(title: string, e: unknown) {
+    const message = (e as Error)?.message ?? String(e);
+    fitError = { title, message, hint: deseq2ErrorHint(message) };
+    appendFitLog(`[error] ${title}: ${message}`);
+    toast.error(title, { description: message });
+  }
   let fitLogEl: HTMLPreElement | null = $state(null);
   let contrastLog = $state<string[]>([]);
   let contrastLogEl: HTMLPreElement | null = $state(null);
@@ -254,14 +256,20 @@
     loadCountsFile(f);
   }
 
-  const canRun = $derived.by(() => {
-    if (running || !countsText.trim()) return false;
-    if (samples.length === 0) return false;
-    if (design.some((d) => !d.condition.trim())) return false;
-    if (!reference || contrastPreview.length === 0) return false;
-    if (showBatch && design.some((d) => !(d.batch ?? '').trim())) return false;
-    return true;
+  // Why Run is disabled, shown next to the button so a blank cell is not a silent block.
+  const runBlocker = $derived.by((): string | null => {
+    if (!countsText.trim() || samples.length === 0) return 'Load a counts table first.';
+    const noCond = design.filter((d) => !d.condition.trim()).length;
+    if (noCond > 0) return `Give every sample a condition (${noCond} empty).`;
+    if (!reference) return 'Pick a reference level.';
+    if (contrastPreview.length === 0) return 'Needs at least two conditions to compare.';
+    const noBatch = showBatch ? design.filter((d) => !(d.batch ?? '').trim()).length : 0;
+    if (noBatch > 0) {
+      return `Fill in the batch for every sample (${noBatch} empty), or untick the batch covariate.`;
+    }
+    return null;
   });
+  const canRun = $derived(!running && runBlocker === null);
 
   async function rehydrate(file: File) {
     running = true;
@@ -270,6 +278,7 @@
     activeContrast = '';
     fitLog = [];
     contrastLog = [];
+    fitError = null;
     try {
       const blob = new Uint8Array(await file.arrayBuffer());
       fit = await rehydrateFromDdsBlob(blob, appendFitLog);
@@ -277,7 +286,7 @@
       reference = fit.levels[0];
       toast.success(`dds restored (${fit.levels.length} levels)`);
     } catch (e) {
-      toast.error('Could not load dds.rds', { description: (e as Error)?.message ?? String(e) });
+      failFit('Could not load dds.rds', e);
     } finally {
       running = false;
     }
@@ -297,6 +306,7 @@
     activeContrast = '';
     fitLog = [];
     contrastLog = [];
+    fitError = null;
     try {
       const designOut = design.map((d) => ({
         sample: d.sample,
@@ -309,7 +319,7 @@
       );
       toast.success(`Fit done in ${fit.elapsedSec.toFixed(1)}s`);
     } catch (e) {
-      toast.error('DESeq2 fit failed', { description: (e as Error)?.message ?? String(e) });
+      failFit('DESeq2 fit failed', e);
     } finally {
       running = false;
     }
@@ -887,13 +897,28 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             {running ? 'Running...' : 'Run DESeq2'}
           </Button>
         </div>
+        {#if !running && runBlocker}
+          <p class="text-right text-xs text-muted-foreground">{runBlocker}</p>
+        {/if}
       </CardContent>
     </Card>
   {/if}
 
-  {#if running || fitLog.length}
+  {#if running || fitLog.length || fitError}
     <Card>
-      <CardContent class="pt-6">
+      <CardContent class="space-y-3 pt-6">
+        {#if fitError && !running}
+          <div
+            role="alert"
+            class="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm"
+          >
+            <div class="font-medium text-destructive">{fitError.title}</div>
+            <div class="mt-0.5 whitespace-pre-wrap font-mono text-xs">{fitError.message}</div>
+            {#if fitError.hint}
+              <div class="mt-1.5 text-xs">{fitError.hint}</div>
+            {/if}
+          </div>
+        {/if}
         <pre
           bind:this={fitLogEl}
           class="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-xs">{fitLog.join(
@@ -1164,6 +1189,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
                   reference,
                   batch: showBatch,
                   minCount,
+                  shrinkage,
                 },
                 inputSummary: `${samples.length} samples, ${fit.levels.length} conditions`,
               }}

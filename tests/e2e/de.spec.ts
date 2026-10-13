@@ -3,7 +3,8 @@ import { resetClientStorage } from './helpers';
 
 function makeSyntheticCounts() {
   const samples = ['s1', 's2', 's3', 's4', 's5', 's6'];
-  const conditions = ['WT', 'WT', 'WT', 'TGFb', 'TGFb', 'TGFb'];
+  // A hyphenated level: resultsNames() rewrites it, which once made apeglm fail silently.
+  const conditions = ['WT', 'WT', 'WT', 'daf-2', 'daf-2', 'daf-2'];
   let seed = 1;
   const rand = () => {
     seed = (seed + 0x6d2b79f5) | 0;
@@ -23,7 +24,7 @@ function makeSyntheticCounts() {
     const row = [`g${g}`, 'I', '1', '1000', '+', '1000'];
     for (let s = 0; s < samples.length; s++) {
       let m = mu;
-      if (isDE && conditions[s] === 'TGFb') m *= 1.5 + rand() * 0.5;
+      if (isDE && conditions[s] === 'daf-2') m *= 1.5 + rand() * 0.5;
       const v = Math.max(0, Math.round(m + (rand() - 0.5) * Math.sqrt(m) * 4));
       row.push(String(v));
     }
@@ -114,10 +115,10 @@ test('synthetic fit produces a Results card with contrast chips', async ({ page 
   await page.getByRole('button', { name: /^Counts$/ }).click();
   await expect(page.locator('svg[aria-label="Counts boxplot"]')).toHaveCount(2);
 
-  const chip = page.locator('button:has-text("TGFb_vs_WT")').first();
+  const chip = page.locator('button:has-text("daf-2_vs_WT")').first();
   await expect(chip).toBeVisible();
   await chip.click();
-  await expect(page.getByText(/shrink: (apeglm|ashr|none)/i)).toBeVisible({ timeout: 5 * 60_000 });
+  await expect(page.getByText(/shrink: apeglm/i)).toBeVisible({ timeout: 5 * 60_000 });
 
   // Per-contrast viz is tabbed: Volcano (default) / MA / p-value hist.
   await expect(page.locator('svg[aria-label="Volcano plot"]')).toHaveCount(1);

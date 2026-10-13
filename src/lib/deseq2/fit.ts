@@ -4,27 +4,13 @@
 
 import { createWebRInstance, type WebRInstance } from './webr-instance';
 import type { DESeq2FitRequest, DESeq2FitResult } from './types';
+import { parseCountsTable } from './counts-table';
 
 export function rVec(arr: string[]) {
   return 'c(' + arr.map((s) => JSON.stringify(s)).join(',') + ')';
 }
 
-export function parseFeatureCountsTsv(tsv: string) {
-  const lines = tsv.split('\n').filter((l) => l && !l.startsWith('#'));
-  if (lines.length < 2) throw new Error('counts.tsv has no data rows');
-  const header = lines[0].split('\t');
-  const sampleStart = 6;
-  const samples = header.slice(sampleStart);
-  const genes: string[] = [];
-  const counts: number[][] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split('\t');
-    if (cols.length < sampleStart + 1) continue;
-    genes.push(cols[0]);
-    counts.push(cols.slice(sampleStart).map((s) => Number(s) || 0));
-  }
-  return { genes, samples, counts };
-}
+export const parseFeatureCountsTsv = parseCountsTable;
 
 /** Primary WebR instance singleton (the one that owns the fit). */
 let primaryPromise: Promise<WebRInstance> | null = null;

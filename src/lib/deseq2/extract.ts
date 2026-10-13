@@ -47,22 +47,38 @@ export async function runContrast(
   const effective: Shrinkage =
     shrinkage === 'none' ? 'none' : shrinkage === 'apeglm' && !shrinkable ? 'ashr' : shrinkage;
 
+  const alphaR = Number.isFinite(alpha) && alpha > 0 && alpha < 1 ? alpha : 0.05;
+  const contrastR = `c("condition", ${rStr(pair.treatment)}, ${rStr(pair.reference)})`;
+  // resultsNames() passes level names through make.names ("daf-2" -> "daf.2"), so the
+  // apeglm coefficient is looked up rather than pasted from the raw level names.
+  // res = res keeps p-values and padj from results() at the user's alpha; without it
+  // lfcShrink recomputes results() at DESeq2's default alpha = 0.1.
+  const onError = 'error = function(e) { shrink_ok <<- FALSE; res }';
+  const resR =
+    effective === 'apeglm'
+      ? `
+    want <- make.names(paste0("condition_", ${rStr(pair.treatment)}, "_vs_", ${rStr(pair.reference)}))
+    coef_name <- resultsNames(dds)[make.names(resultsNames(dds)) == want][1]
+    res <- if (is.na(coef_name)) results(dds, contrast = ${contrastR}, alpha = ${alphaR}) else results(dds, name = coef_name, alpha = ${alphaR})`
+      : `
+    res <- results(dds, contrast = ${contrastR}, alpha = ${alphaR})`;
   const shrinkR =
     effective === 'apeglm'
-      ? `tryCatch(lfcShrink(dds, coef = paste0("condition_", ${rStr(pair.treatment)}, "_vs_", ${rStr(pair.reference)}), type = "apeglm", quiet = TRUE), error = function(e) res)`
+      ? `tryCatch(lfcShrink(dds, coef = coef_name, res = res, type = "apeglm", quiet = TRUE), ${onError})`
       : effective === 'ashr'
-        ? `tryCatch(lfcShrink(dds, contrast = c("condition", ${rStr(pair.treatment)}, ${rStr(pair.reference)}), type = "ashr", quiet = TRUE), error = function(e) res)`
+        ? `tryCatch(lfcShrink(dds, contrast = ${contrastR}, res = res, type = "ashr", quiet = TRUE), ${onError})`
         : 'res';
 
   const script = `
     fmt <- function(x) ifelse(is.na(x), "NA", formatC(x, format = "g", digits = 6))
-    res <- results(dds, contrast = c("condition", ${rStr(pair.treatment)}, ${rStr(pair.reference)}), alpha = ${Number.isFinite(alpha) && alpha > 0 && alpha < 1 ? alpha : 0.05})
+    ${resR}
     stat_values <- res$stat
+    shrink_ok <- TRUE
     res <- ${shrinkR}
     df <- as.data.frame(res)
     df$gene <- rownames(df)
     df$stat <- stat_values
-    paste(c(
+    c(paste(c(
       "gene\\tbaseMean\\tlog2FoldChange\\tlfcSE\\tstat\\tpvalue\\tpadj",
       apply(df, 1, function(r) paste(
         r[["gene"]], fmt(as.numeric(r[["baseMean"]])),
@@ -71,17 +87,20 @@ export async function runContrast(
         fmt(as.numeric(r[["padj"]])),
         sep = "\\t"
       ))
-    ), collapse = "\\n")
+    ), collapse = "\\n"), if (shrink_ok) "ok" else "failed")
   `;
   const r = await webR.evalR(script, { captureStreams: false, captureConditions: false });
   const o = await r.toJs();
-  const tsv = (o.values as unknown as string[])[0] ?? '';
+  const values = o.values as unknown as string[];
+  const tsv = values[0] ?? '';
+  // A failed shrink falls back to the unshrunken results, so label them as such.
+  const applied: Shrinkage = values[1] === 'failed' ? 'none' : effective;
   return {
     name: `${pair.treatment}_vs_${pair.reference}`,
     treatment: pair.treatment,
     reference: pair.reference,
     rows: parseRows(tsv),
     tsv,
-    shrinkage: effective,
+    shrinkage: applied,
   };
 }

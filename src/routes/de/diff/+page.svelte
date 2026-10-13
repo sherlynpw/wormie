@@ -5,6 +5,7 @@
   import { getGeneNames } from '$lib/queries';
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
+  import { Input } from '$lib/components/ui/input';
   import { buildIdsQuery } from '$lib/share';
   import LoadDatasetPicker from '$lib/components/LoadDatasetPicker.svelte';
   import SaveDatasetButton from '$lib/components/SaveDatasetButton.svelte';
@@ -20,6 +21,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { handoff } from '$lib/pipeline-handoff';
+  import { downloadTsv } from '$lib/download';
   import { niceTicks } from '$lib/nice-ticks';
   import { DOWN_COLOR, signedText } from '$lib/plot-colors';
 
@@ -72,6 +74,17 @@
     padjB: number | null;
     flipped: boolean;
   };
+
+  // DESeq2's convention: significant means padj strictly below the cutoff.
+  let alpha = $state(0.05);
+  const isSig = (p: number | null) => p !== null && p < alpha;
+
+  // DESeq2 leaves log2FC NA for all-zero and outlier genes; they cannot be placed on
+  // the scatter, so they are counted rather than dropped silently.
+  const missingLfc = $derived({
+    a: rowsA?.filter((r) => r.log2fc === null).length ?? 0,
+    b: rowsB?.filter((r) => r.log2fc === null).length ?? 0,
+  });
 
   const joined = $derived.by<Joined[]>(() => {
     if (!rowsA || !rowsB) return [];
@@ -146,8 +159,8 @@
   }
   function colorFor(j: Joined): string {
     if (j.flipped) return FLIPPED;
-    const sigA = j.padjA !== null && j.padjA <= 0.05;
-    const sigB = j.padjB !== null && j.padjB <= 0.05;
+    const sigA = isSig(j.padjA);
+    const sigB = isSig(j.padjB);
     if (sigA && sigB) return 'hsl(0 0% 25%)';
     if (sigA || sigB) return 'hsl(0 0% 55%)';
     return 'hsl(0 0% 80% / 0.5)';
@@ -161,8 +174,8 @@
   // Each gene falls in exactly one bucket; tab counts sum to joined.length.
   function sigOf(j: Joined): 'flipped' | 'both' | 'aOnly' | 'bOnly' | 'ns' {
     if (j.flipped) return 'flipped';
-    const sigA = j.padjA !== null && j.padjA <= 0.05;
-    const sigB = j.padjB !== null && j.padjB <= 0.05;
+    const sigA = isSig(j.padjA);
+    const sigB = isSig(j.padjB);
     if (sigA && sigB) return 'both';
     if (sigA) return 'aOnly';
     if (sigB) return 'bOnly';
@@ -173,22 +186,27 @@
   const sigB = $derived(joined.filter((j) => sigOf(j) === 'bOnly'));
   const sigNS = $derived(joined.filter((j) => sigOf(j) === 'ns'));
 
+  // The Venn is drawn from the two significant sets themselves, independent of the
+  // tab buckets above (where "flipped" takes precedence and ignores significance).
+  const isSigA = (j: Joined) => isSig(j.padjA);
+  const isSigB = (j: Joined) => isSig(j.padjB);
+  const vennOnlyA = $derived(joined.filter((j) => isSigA(j) && !isSigB(j)));
+  const vennOnlyB = $derived(joined.filter((j) => isSigB(j) && !isSigA(j)));
+  const vennBoth = $derived(joined.filter((j) => isSigA(j) && isSigB(j)));
   const vennA = $derived({
     label: labelA,
-    up: sigA.filter((j) => j.lfcA > 0).length,
-    down: sigA.filter((j) => j.lfcA < 0).length,
+    up: vennOnlyA.filter((j) => j.lfcA > 0).length,
+    down: vennOnlyA.filter((j) => j.lfcA < 0).length,
   });
   const vennB = $derived({
     label: labelB,
-    up: sigB.filter((j) => j.lfcB > 0).length,
-    down: sigB.filter((j) => j.lfcB < 0).length,
+    up: vennOnlyB.filter((j) => j.lfcB > 0).length,
+    down: vennOnlyB.filter((j) => j.lfcB < 0).length,
   });
   const vennShared = $derived({
-    up: sigBoth.filter((j) => j.lfcA > 0 && j.lfcB > 0).length,
-    down: sigBoth.filter((j) => j.lfcA < 0 && j.lfcB < 0).length,
-    discordant:
-      sigBoth.filter((j) => j.lfcA * j.lfcB < 0).length +
-      joined.filter((j) => sigOf(j) === 'flipped').length,
+    up: vennBoth.filter((j) => j.lfcA > 0 && j.lfcB > 0).length,
+    down: vennBoth.filter((j) => j.lfcA < 0 && j.lfcB < 0).length,
+    discordant: vennBoth.filter((j) => j.lfcA * j.lfcB < 0).length,
   });
   let vennSvg = $state<SVGSVGElement | null>(null);
 
@@ -234,6 +252,25 @@
     },
   ]);
   const activeBucket = $derived(tabs.find((t) => t.key === activeTab) ?? tabs[0]);
+
+  // The on-page list is capped for rendering speed; the download always carries the whole group.
+  const LIST_CAP = 200;
+  function downloadGroup() {
+    const b = activeBucket;
+    const safe = (x: string) => x.replace(/[^a-z0-9._-]+/gi, '_');
+    downloadTsv(
+      `${safe(labelA)}_vs_${safe(labelB)}_${b.key}.tsv`,
+      [
+        { header: 'gene', get: (j) => j.gene },
+        { header: 'gene_name', get: (j) => nameMap.get(j.gene) ?? '' },
+        { header: `log2FC_${labelA}`, get: (j) => j.lfcA },
+        { header: `padj_${labelA}`, get: (j) => j.padjA ?? 'NA' },
+        { header: `log2FC_${labelB}`, get: (j) => j.lfcB },
+        { header: `padj_${labelB}`, get: (j) => j.padjB ?? 'NA' },
+      ],
+      b.rows,
+    );
+  }
 
   // Resolve gene tokens (WBGene, symbol, or sequence name) to display names; batched once per joined-set, cached in map.
   let nameMap = $state<Map<string, string | null>>(new Map());
@@ -400,6 +437,10 @@
     <span class="text-xs text-muted-foreground">
       Both contrasts are needed for the diff. Each pasted CSV/TSV is parsed independently.
     </span>
+    <label class="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
+      Significant at padj &lt;
+      <Input type="number" min="0.001" max="0.5" step="0.01" bind:value={alpha} class="h-8 w-20" />
+    </label>
   </div>
 
   {#if rowsA && rowsB && joined.length > 0}
@@ -420,6 +461,13 @@
           <div class="flex items-center gap-3">
             <div class="space-x-3 text-xs text-muted-foreground">
               <span><b>{joined.length.toLocaleString()}</b> shared genes</span>
+              {#if missingLfc.a + missingLfc.b > 0}
+                <span
+                  title="DESeq2 reports no log2 fold change for genes with all-zero counts or flagged outliers, so they cannot be placed on the plot."
+                  >{missingLfc.a.toLocaleString()} / {missingLfc.b.toLocaleString()} without a fold change
+                  left out</span
+                >
+              {/if}
               {#if pearson !== null}
                 <span>Pearson <span class="font-mono">{pearson.toFixed(3)}</span></span>
               {/if}
@@ -621,7 +669,8 @@
           >
           <span
             ><span class="inline-block h-2 w-2 rounded-full" style="background: hsl(0 0% 25%)"
-            ></span> sig in both (q ≤ 0.05)</span
+            ></span>
+            sig in both (padj &lt; {alpha})</span
           >
           <span
             ><span class="inline-block h-2 w-2 rounded-full" style="background: hsl(0 0% 55%)"
@@ -664,7 +713,7 @@
           <div
             class="grid grid-cols-[auto_auto_auto_auto_1fr] items-center gap-x-3 gap-y-1 text-xs"
           >
-            {#each activeBucket.rows.slice(0, 200) as j (j.gene)}
+            {#each activeBucket.rows.slice(0, LIST_CAP) as j (j.gene)}
               <!-- Bullet color matches the active bucket so each row ties back to the plot at a glance. -->
               <span
                 class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
@@ -688,11 +737,19 @@
               </span>
             {/each}
           </div>
-          {#if activeBucket.rows.length > 200}
-            <div class="mt-2 border-t pt-2 text-[0.65rem] italic text-muted-foreground">
-              Showing first 200 of {activeBucket.rows.length.toLocaleString()}.
-            </div>
-          {/if}
+          <div
+            class="mt-2 flex flex-wrap items-center gap-2 border-t pt-2 text-[0.65rem] text-muted-foreground"
+          >
+            {#if activeBucket.rows.length > LIST_CAP}
+              <span class="italic">
+                Showing the first {LIST_CAP} of {activeBucket.rows.length.toLocaleString()} genes. Download
+                the group for the complete list.
+              </span>
+            {/if}
+            <Button variant="outline" size="sm" class="ml-auto" onclick={downloadGroup}>
+              Download this group (TSV)
+            </Button>
+          </div>
         {/if}
       </CardContent>
     </Card>
