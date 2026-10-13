@@ -90,6 +90,9 @@ if (want("gsea")) {
     rk <- read.delim(dpath(g$ranked), header = FALSE)
     stats <- setNames(rk[[2]], rk[[1]])
     sets <- read_gmt(g$gmt)
+    # fgsea draws its permutations from R's RNG; seed it so the significant-set counts the
+    # manuscript quotes come out the same on every run.
+    set.seed(1337)
     run <- timed(
       fgseaSimple(pathways = sets, stats = stats, nperm = g$nperm,
                   minSize = 1, maxSize = 100000, scoreType = "std"),
@@ -105,6 +108,7 @@ if (want("gsea")) {
 
     # Multilevel arm at fgsea's defaults (eps = 1e-50, below which p is reported as eps),
     # the reference for WormIE's multilevel refinement below the permutation floor.
+    set.seed(1337)
     ml <- timed(
       fgseaMultilevel(pathways = sets, stats = stats, minSize = 1, maxSize = 100000,
                       scoreType = "std"),
