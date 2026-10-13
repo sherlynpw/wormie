@@ -49,11 +49,12 @@ test('overlap page computes intersections', async ({ page }) => {
 
   // q ≤ 0.05 makes GO:0001/0002/0003 sig in A (3) and 0001/0002/0005 sig in B (3),
   // shared: 0001 + 0002 = 2. A-only: 0003. B-only: 0005.
-  await expect(page.getByText(/Contrast A:\s*3\/4/)).toBeVisible();
-  await expect(page.getByText(/Contrast B:\s*3\/4/)).toBeVisible();
+  await expect(page.getByText(/List A:\s*3\/4/)).toBeVisible();
+  await expect(page.getByText(/UpSet needs 3 or more lists/)).toBeVisible();
+  await expect(page.getByText(/List B:\s*3\/4/)).toBeVisible();
 
-  // The intersections table should list a "Contrast A + Contrast B" combo of size 2,
-  // and "Contrast A" alone of size 1, "Contrast B" alone of size 1.
+  // The intersections table should list a "List A + List B" combo of size 2,
+  // and "List A" alone of size 1, "List B" alone of size 1.
   const intersectionsTable = page.locator('table').last();
   await expect(intersectionsTable).toContainText('2');
   await expect(intersectionsTable).toContainText('shared sig term 1');
@@ -105,4 +106,24 @@ test('overlap page supports adding and removing slots', async ({ page }) => {
   const removeBtns = page.locator('button[title="Remove slot"]');
   await removeBtns.nth(2).click();
   await expect(page.locator('textarea')).toHaveCount(2);
+});
+
+test('overlap page runs over-representation on pasted gene lists', async ({ page }) => {
+  await page.goto('/enrichment/overlap');
+  await expect(page.getByRole('heading', { name: 'Inputs' })).toBeVisible({ timeout: 30_000 });
+
+  // Insulin/IGF signaling genes split across two lists with partial membership overlap.
+  await page.locator('textarea').nth(0).fill('daf-2\ndaf-16\nage-1\npdk-1\nakt-1\nakt-2\nsgk-1');
+  await page.locator('textarea').nth(1).fill('daf-2, daf-16, aap-1, age-1, ist-1, daf-18');
+
+  await expect(page.getByText(/gene list: 7 genes; \d+ Gene Ontology terms tested/)).toBeVisible({
+    timeout: 120_000,
+  });
+  await expect(page.getByText(/gene list: 6 genes; \d+ Gene Ontology terms tested/)).toBeVisible({
+    timeout: 120_000,
+  });
+  await expect(page.getByRole('heading', { name: 'Overlap', exact: true })).toBeVisible();
+  if (process.env.SHOT_DIR)
+    await page.screenshot({ path: process.env.SHOT_DIR + '/overlap-genes.png', fullPage: true });
+  await expect(page.getByText(/List A:\s*\d+\/\d+/)).toBeVisible();
 });

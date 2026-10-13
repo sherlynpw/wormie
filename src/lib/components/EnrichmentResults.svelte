@@ -1,9 +1,14 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-  import { runEnrichment, type EnrichmentKind, type EnrichmentResult } from '$lib/enrichment';
+  import {
+    runEnrichment,
+    ALL_ENRICHMENT_KINDS,
+    ENRICHMENT_KINDS,
+    type EnrichmentKind,
+    type EnrichmentResult,
+  } from '$lib/enrichment';
   import { getGeneNames } from '$lib/queries';
-  import { KEGG_ENABLED } from '$lib/config';
   import EnrichmentDotPlot from '$lib/components/EnrichmentDotPlot.svelte';
   import EnrichmentHeatmap from '$lib/components/EnrichmentHeatmap.svelte';
   import GenePill from '$lib/components/GenePill.svelte';
@@ -84,19 +89,8 @@
     onResults(out);
   });
 
-  const ALL_KINDS: { key: EnrichmentKind; label: string }[] = [
-    { key: 'go', label: 'Gene Ontology' },
-    { key: 'phenotype', label: 'Phenotypes' },
-    { key: 'disease', label: 'Diseases' },
-    { key: 'wormcat', label: 'WormCat' },
-    { key: 'neuronal', label: 'Neuronal class' },
-    { key: 'tissue', label: 'Tissues' },
-    { key: 'cell-type', label: 'Neurons (CeNGEN)' },
-    { key: 'synaptogenesis', label: 'Synaptogenesis' },
-    { key: 'pathway', label: 'KEGG' },
-  ];
-  // KEGG excluded from the build drops the pathway category (license).
-  const KINDS = ALL_KINDS.filter((k) => KEGG_ENABLED || k.key !== 'pathway');
+  const ALL_KINDS = ALL_ENRICHMENT_KINDS;
+  const KINDS = ENRICHMENT_KINDS;
 
   let active = $state<EnrichmentKind>('go');
   let viewMode = $state<'table' | 'plot' | 'cnet' | 'heatmap'>('table');
@@ -126,7 +120,7 @@
     if (rows.length === 0) return;
     const top = rows
       .slice()
-      .sort((a, b) => a.q - b.q)
+      .sort((a, b) => a.p - b.p || a.q - b.q)
       .slice(0, 25);
     // eslint-disable-next-line svelte/prefer-svelte-reactivity
     const ids = new Set<string>();
