@@ -29,11 +29,11 @@
     return svgEl;
   }
 
-  // Top N by q (then p); skip empty-overlap terms (no edges).
+  // Top N in the table's order (p, then q); skip empty-overlap terms (no edges).
   const topTerms = $derived(
     [...results]
       .filter((r) => r.overlap && r.overlap.length > 0)
-      .sort((a, b) => a.q - b.q || a.p - b.p)
+      .sort((a, b) => a.p - b.p || a.q - b.q)
       .slice(0, nTerms),
   );
 

@@ -8,8 +8,11 @@
 // Algorithm (one-sided positive; mirror for negative):
 //   1. Sample M random gene sets of size k and compute ES.
 //   2. If >= M/2 exceed esObs, return direct fraction.
-//   3. Let z = median ES. Drop lower half; refill by MH-mutating the upper
-//      half (single-position swap), conditioning on ES > z.
+//   3. Let z = median ES. Drop lower half and refill it with copies of the upper
+//      half, then MH-mutate every sample (single-position swap), conditioning on
+//      ES > z. Mutating the survivors too, as fgsea does, matters: left untouched they
+//      seed every later level and the estimate drifts low (about 0.84x fgsea's when
+//      only the copies were mutated, against 1.1x, within noise, with all mutated).
 //   4. Each level multiplies p by 0.5. Continue until z >= esObs.
 //   5. Final p = 0.5^L * (count >= esObs) / M.
 //
@@ -18,9 +21,12 @@
 // replacement improve mixing.
 
 export interface MultilevelOpts {
-  M?: number; // population size per level. fgsea uses 1000 by default.
+  M?: number; // population size per level (fgseaMultilevel's own default is 101).
   mhSteps?: number; // MH steps per replacement; mixing quality.
-  maxLevels?: number; // safety cap to avoid runaway loops.
+  // Smallest p worth resolving, as fgseaMultilevel's eps (default 1e-50). Each level halves
+  // p, so the level cap follows from it; a set beyond it is reported at the bound.
+  eps?: number;
+  maxLevels?: number; // safety cap to avoid runaway loops; defaults to log2(1/eps).
   seed?: number;
 }
 
@@ -158,9 +164,10 @@ export function multilevelP(
   esObs: number,
   opts: MultilevelOpts = {},
 ): MultilevelResult {
-  const M = opts.M ?? 1000;
+  const M = opts.M ?? 500;
   const mhSteps = opts.mhSteps ?? 10;
-  const maxLevels = opts.maxLevels ?? 64;
+  const eps = opts.eps ?? 1e-50;
+  const maxLevels = opts.maxLevels ?? Math.ceil(Math.log2(1 / eps));
   const rng = makeRng(opts.seed ?? 0x9e37 + k * 31 + Math.round(esObs * 1e6));
 
   if (k <= 0 || k >= N || esObs === 0) return { p: 1, levels: 0, floorHit: false };
@@ -242,6 +249,23 @@ export function multilevelP(
       }
       for (let j = 0; j < k; j++) samples[targetOffset + j] = swap[j];
       es[target_i] = curES;
+    }
+
+    // Refresh the survivors as well, so the next level does not inherit their exact sets.
+    for (let i = half; i < M; i++) {
+      const slot = idx[i];
+      const offset = slot * k;
+      for (let j = 0; j < N; j++) membership[j] = 0;
+      for (let j = 0; j < k; j++) {
+        swap[j] = samples[offset + j];
+        membership[swap[j]] = 1;
+      }
+      let curES = es[slot];
+      for (let step = 0; step < mhSteps; step++) {
+        curES = mhSwap(swap, k, N, weights, z, curES, signPositive, membership, rng, scratch);
+      }
+      for (let j = 0; j < k; j++) samples[offset + j] = swap[j];
+      es[slot] = curES;
     }
 
     logP -= 1; // each level halves the conditional probability

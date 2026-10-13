@@ -19,6 +19,7 @@
   import PageHint from '$lib/components/PageHint.svelte';
   import ControlHint from '$lib/components/ControlHint.svelte';
   import { toast } from 'svelte-sonner';
+  import { detectDeseqTable } from '$lib/import-enrichment';
   import { onMount } from 'svelte';
   import {
     encodeBundle,
@@ -35,6 +36,7 @@
   let ranked = $state<GseaInput[]>([]);
   // Latest GSEA results bubbled up from GseaResults for session capture.
   let latestResults = $state<Record<string, unknown>>({});
+  let gseaParams = $state<Record<string, unknown>>({ nperm: 1000, multilevel: true });
   // Session-restored results to seed GseaResults on mount; ignored once a live ranked list is resolved.
   let importedFromSession = $state<Partial<Record<GseaKind, GseaResult[]>> | undefined>(undefined);
   let resolving = $state(false);
@@ -174,7 +176,9 @@
     return { gene, score };
   }
 
-  function detectColumns(headerLine: string): { gene: number; score: number } | null {
+  function detectColumns(
+    headerLine: string,
+  ): { gene: number; score: number; scoreName: string } | null {
     const cols = splitRow(headerLine).map((c) => c.toLowerCase());
     const geneCandidates = [
       'gene_id',
@@ -208,35 +212,50 @@
       if (si >= 0) break;
     }
     if (gi < 0 || si < 0) return null;
-    return { gene: gi + 1, score: si + 1 };
+    return { gene: gi + 1, score: si + 1, scoreName: cols[si] };
   }
 
-  async function parsePaste() {
+  // A full DE table goes through the same importer as Over-representation and Contrast
+  // comparison, which knows the DESeq2 / edgeR / limma column names and unnamed row-name
+  // columns; a plain gene + score list falls back to the column pickers.
+  function rowsFromPaste(): { gene: string; score: number }[] {
+    const de = detectDeseqTable(pasteText);
+    if (de?.stats) {
+      toast.success('Differential expression table detected', {
+        description: `Ranked by ${de.statSource}`,
+      });
+      return de.stats;
+    }
+    // Only trailing whitespace is trimmed: a leading tab marks an empty row-name header.
     const lines = pasteText
       .split(/\r?\n/)
-      .map((l) => l.trim())
-      .filter((l) => l && !l.startsWith('#'));
-    if (lines.length === 0) {
-      ranked = [];
-      return;
-    }
+      .map((l) => l.replace(/\s+$/, ''))
+      .filter((l) => l.trim() && !l.startsWith('#'));
+    if (lines.length === 0) return [];
     const detected = detectColumns(lines[0]);
     if (detected) {
       geneCol = String(detected.gene);
       scoreCol = String(detected.score);
       toast.success('Header detected', {
-        description: `gene column ${detected.gene}, score column ${detected.score} (Wald stat)`,
+        description: `gene column ${detected.gene}, score column ${detected.score} (${detected.scoreName})`,
       });
     }
     // Skip first line if it isn't numeric in the score column (i.e., it's a header)
-    const first = parseLine(lines[0]);
-    const startIdx = first === null ? 1 : 0;
-
+    const startIdx = parseLine(lines[0]) === null ? 1 : 0;
     const raw: { gene: string; score: number }[] = [];
     for (let i = startIdx; i < lines.length; i++) {
       const p = parseLine(lines[i]);
       if (p) raw.push(p);
     }
+    return raw;
+  }
+
+  async function parsePaste() {
+    if (!pasteText.trim()) {
+      ranked = [];
+      return;
+    }
+    const raw = rowsFromPaste();
     if (raw.length === 0) {
       toast.error('No parseable rows', {
         description: 'Check column indices and that the score column is numeric.',
@@ -260,6 +279,12 @@
       }
       ranked = resolved;
       if (resolved.length > 0) lastInputs.stash('ranked', pasteText);
+      const repeated = resolved.length - new Set(resolved.map((r) => r.gene)).size;
+      if (repeated > 0) {
+        toast.warning(`${repeated} gene${repeated === 1 ? '' : 's'} listed more than once`, {
+          description: 'Each keeps its strongest score (largest absolute value) in the ranking.',
+        });
+      }
       if (dropped.length) {
         toast.warning(`${dropped.length} gene${dropped.length === 1 ? '' : 's'} not resolved`, {
           description: dropped.slice(0, 5).join(', ') + (dropped.length > 5 ? '...' : ''),
@@ -475,7 +500,7 @@
 
   <div class="flex justify-end">
     <MethodsButton
-      ctx={{ tool: 'gsea', params: { nperm: 1000 }, inputSummary: `${ranked.length} ranked genes` }}
+      ctx={{ tool: 'gsea', params: gseaParams, inputSummary: `${ranked.length} ranked genes` }}
     />
   </div>
   <GseaResults
@@ -484,5 +509,6 @@
     {deeplinkTerm}
     imported={importedFromSession}
     onResults={(r) => (latestResults = r as Record<string, unknown>)}
+    onParams={(p) => (gseaParams = p)}
   />
 </div>

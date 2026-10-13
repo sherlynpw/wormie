@@ -12,17 +12,15 @@ export type EnrichmentKind =
   | 'synaptogenesis'
   | 'pathway';
 
-// CeNGEN binary calls live at four FACS-calibrated thresholds (1=liberal,
-// 2=medium, 3=conservative, 4=stringent). We expose cell-type enrichment at
-// the medium threshold by default; that's the same default the CeNGEN app
-// uses in its UI. Raising this would shrink each neuron's gene set toward
-// the most-confident expression calls.
-const CENGEN_MIN_THRESHOLD = 2;
+import { GO_POSITIVE, CENGEN_MIN_THRESHOLD } from './term-filters';
+import { buildWormcatTerms, WORMCAT_LEVEL_ROWS_SQL, type WormcatLevelRow } from './wormcat-terms';
 
-// NOT-qualified GO annotations are stored for the gene page but must not count
-// as positive evidence in enrichment (GAF qualifiers are pipe-separated, e.g.
-// NOT|involved_in; propagated rows carry NULL).
-export const GO_POSITIVE = "(qualifier IS NULL OR instr('|' || qualifier || '|', '|NOT|') = 0)";
+let wormcatTermsCache: Map<string, Set<string>> | null = null;
+function wormcatTerms(db: any): Map<string, Set<string>> {
+  wormcatTermsCache ??= buildWormcatTerms(execAll<WormcatLevelRow>(db, WORMCAT_LEVEL_ROWS_SQL));
+  return wormcatTermsCache;
+}
+export { GO_POSITIVE };
 
 export interface EnrichmentResult {
   term_id: string;
@@ -89,14 +87,8 @@ function loadBackground(db: any, kind: EnrichmentKind): BgInfo {
       'SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_phenotype',
     )[0].n;
   } else if (kind === 'wormcat') {
-    counts = execAll<{ term_id: string; df: number; name: string }>(
-      db,
-      `SELECT category AS term_id, COUNT(DISTINCT wormbase_gene) AS df, category AS name FROM (
-			    SELECT wormbase_gene, category_1 AS category FROM wormcat WHERE category_1 IS NOT NULL
-			    UNION ALL SELECT wormbase_gene, category_2 FROM wormcat WHERE category_2 IS NOT NULL
-			    UNION ALL SELECT wormbase_gene, category_3 FROM wormcat WHERE category_3 IS NOT NULL
-			 ) GROUP BY category`,
-    );
+    const terms = wormcatTerms(db);
+    counts = [...terms].map(([term_id, genes]) => ({ term_id, df: genes.size, name: term_id }));
     N = execAll<{ n: number }>(db, 'SELECT COUNT(DISTINCT wormbase_gene) AS n FROM wormcat')[0].n;
   } else if (kind === 'neuronal') {
     counts = execAll<{ term_id: string; df: number; name: string }>(
@@ -249,14 +241,10 @@ function loadAnnotationIndex(db: any, kind: EnrichmentKind): Map<string, string[
       'SELECT DISTINCT wormbase_gene, term_id FROM gene_phenotype',
     );
   } else if (kind === 'wormcat') {
-    rows = execAll<{ wormbase_gene: string; term_id: string }>(
-      db,
-      `SELECT DISTINCT wormbase_gene, category AS term_id FROM (
-			    SELECT wormbase_gene, category_1 AS category FROM wormcat WHERE category_1 IS NOT NULL
-			    UNION ALL SELECT wormbase_gene, category_2 FROM wormcat WHERE category_2 IS NOT NULL
-			    UNION ALL SELECT wormbase_gene, category_3 FROM wormcat WHERE category_3 IS NOT NULL
-			 )`,
-    );
+    rows = [];
+    for (const [term_id, genes] of wormcatTerms(db)) {
+      for (const wormbase_gene of genes) rows.push({ wormbase_gene, term_id });
+    }
   } else if (kind === 'neuronal') {
     rows = execAll<{ wormbase_gene: string; term_id: string }>(
       db,

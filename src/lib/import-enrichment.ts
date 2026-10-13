@@ -18,6 +18,8 @@ export interface DeseqExtract {
     stat: number | null;
   }[];
   stats: { gene: string; score: number }[] | null;
+  // Where the ranking score came from: a stat column's header, or 'signed -log10(p)'.
+  statSource: string | null;
   hasPadj: boolean;
   hasLog2fc: boolean;
 }
@@ -75,6 +77,9 @@ export function detectDeseqTable(text: string): DeseqExtract | null {
     .filter((l) => l.trim().length > 0 && !l.startsWith('#'));
   if (lines.length < 2) return null;
   const header = splitRow(lines[0]).map((h) => h.toLowerCase().replace(/^"+|"+$/g, ''));
+  // R's write.table() leaves the row-name column out of the header (edgeR topTags,
+  // limma topTable), so the header is one field short of the data rows.
+  if (header.length === splitRow(lines[1]).length - 1) header.unshift('');
   const idCandidates = [
     'gene_id',
     'wormbase_gene',
@@ -108,7 +113,9 @@ export function detectDeseqTable(text: string): DeseqExtract | null {
   //   limma            logFC          / adj.P.Val / t
   const lfcCol = firstOf('log2foldchange', 'log2fc', 'logfc');
   const padjCol = firstOf('padj', 'fdr', 'adj.p.val', 'adj.pval');
-  const statCol = firstOf('stat', 't', 'lr', 'f', 'b');
+  // limma's B is a log-odds of differential expression, unsigned and not a test
+  // statistic, so a table without t ranks by signed -log10(p) instead.
+  const statCol = firstOf('stat', 't', 'lr', 'f');
   const pvalCol = firstOf('pvalue', 'p.value', 'p_value', 'pval');
 
   // Term-level output (clusterProfiler and friends) is handled by the other
@@ -123,6 +130,7 @@ export function detectDeseqTable(text: string): DeseqExtract | null {
   if (gi < 0 || !looksDe || termLevel) return null;
   const rows: DeseqExtract['rows'] = [];
   const stats: { gene: string; score: number }[] = [];
+  let usedPval = false;
   const num = (s: string): number | null => {
     if (s === '' || s === 'NA' || s === 'NaN' || s === 'null') return null;
     const v = parseFloat(s);
@@ -142,7 +150,10 @@ export function detectDeseqTable(text: string): DeseqExtract | null {
     }
     if (stat === null && pvalCol >= 0 && log2fc !== null) {
       const p = num(parts[pvalCol]);
-      if (p !== null && p > 0) stat = -Math.log10(p) * (log2fc < 0 ? -1 : 1);
+      if (p !== null && p > 0) {
+        stat = -Math.log10(p) * (log2fc < 0 ? -1 : 1);
+        usedPval = true;
+      }
     }
     rows.push({ gene: g, padj, log2fc, stat });
     if (stat !== null) stats.push({ gene: g, score: stat });
@@ -150,6 +161,14 @@ export function detectDeseqTable(text: string): DeseqExtract | null {
   return {
     rows,
     stats: stats.length > 0 ? stats : null,
+    statSource:
+      stats.length === 0
+        ? null
+        : statCol >= 0 && !usedPval
+          ? header[statCol]
+          : statCol >= 0
+            ? `${header[statCol]}, else signed -log10(p)`
+            : 'signed -log10(p)',
     hasPadj: padjCol >= 0,
     hasLog2fc: lfcCol >= 0,
   };

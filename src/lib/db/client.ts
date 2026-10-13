@@ -148,6 +148,10 @@ export interface GseaResult {
   es: number;
   nes: number;
   p: number;
+  // Permutation p before any multilevel refinement; absent in results saved before it existed.
+  p_perm?: number;
+  // p holds the multilevel bound (1e-50); the true p-value is smaller.
+  p_at_bound?: boolean;
   q: number;
   leading_edge: string[];
   members: string[];

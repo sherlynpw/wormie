@@ -395,6 +395,7 @@
             sets={leadingEdgePerSlot.map((s) => ({ name: s.name, ids: s.ids }))}
             maxGroups={30}
             exportName="gsea-overlap-upset"
+            setNoun="contrast"
           />
         {:else}
           <CoOccurrenceHeatmap
