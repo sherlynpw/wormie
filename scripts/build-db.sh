@@ -47,6 +47,8 @@ ALLIANCE_PHENO_URL="https://fms.alliancegenome.org/download/PHENOTYPE_WB.json.gz
 ALLIANCE_EXPR_URL="https://fms.alliancegenome.org/download/EXPRESSION-ALLIANCE_WB.tsv"
 ALLIANCE_DISEASE_URL="https://fms.alliancegenome.org/download/DISEASE-ALLIANCE_WB.tsv.gz"
 ALLIANCE_BGI_URL="https://fms.alliancegenome.org/download/BGI_WB.json.gz"
+# WBVar id -> public allele name (e.g. e1370); the phenotype GAF carries only the WBVar id.
+ALLIANCE_ALLELE_URL="https://fms.alliancegenome.org/download/ALLELE_WB.json.gz"
 WBPHENO_OBO_URL="https://raw.githubusercontent.com/obophenotype/c-elegans-phenotype-ontology/master/wbphenotype.obo"
 WBBT_OBO_URL="https://raw.githubusercontent.com/obophenotype/c-elegans-gross-anatomy-ontology/master/wbbt.obo"
 BIOGRID_ZIP_URL="https://downloads.thebiogrid.org/Download/BioGRID/Latest-Release/BIOGRID-ORGANISM-LATEST.tab3.zip"
@@ -72,6 +74,7 @@ PHENO_JSON="$CACHE/PHENOTYPE_WB.json.gz"
 EXPR_TSV="$CACHE/EXPRESSION-ALLIANCE_WB.tsv"
 DISEASE_TSV="$CACHE/DISEASE-ALLIANCE_WB.tsv.gz"
 BGI_JSON="$CACHE/BGI_WB.json.gz"
+ALLELE_JSON="$CACHE/ALLELE_WB.json.gz"
 WBPHENO_OBO="$CACHE/wbphenotype.obo"
 WBBT_OBO="$CACHE/wbbt.obo"
 BIOGRID_ZIP="$CACHE/BIOGRID-ORGANISM-LATEST.tab3.zip"
@@ -111,6 +114,7 @@ fetch "$ALLIANCE_PHENO_URL" "$PHENO_JSON"
 fetch "$ALLIANCE_EXPR_URL" "$EXPR_TSV"
 fetch "$ALLIANCE_DISEASE_URL" "$DISEASE_TSV"
 fetch "$ALLIANCE_BGI_URL" "$BGI_JSON"
+fetch "$ALLIANCE_ALLELE_URL" "$ALLELE_JSON"
 fetch "$WBPHENO_OBO_URL" "$WBPHENO_OBO"
 fetch "$WBBT_OBO_URL" "$WBBT_OBO"
 fetch "$BIOGRID_ZIP_URL" "$BIOGRID_ZIP"
@@ -155,7 +159,7 @@ if ! "${PY[@]}" -c 'import numpy' >/dev/null 2>&1; then
   exit 1
 fi
 
-"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_BULK" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" "$DEST_DIR" <<'PY'
+"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_BULK" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" "$DEST_DIR" "$ALLELE_JSON" <<'PY'
 import csv, gzip, json, math, re, sqlite3, sys
 from pathlib import Path
 
@@ -164,7 +168,7 @@ from pathlib import Path
  bgi_json_gz, gene_ids_path, func_desc_path, xrefs_path, wb_pheno_gz,
  cengen_tsv, cengen_bulk, cengen_t1, cengen_t2, cengen_t3, cengen_t4, disease_tsv,
  rnai_pheno_gz, synapto_tsv, reference_json_gz, gene2pubmed_ce,
- paper_cache_dir, dest_dir) = sys.argv[1:30]
+ paper_cache_dir, dest_dir, allele_json_gz) = sys.argv[1:31]
 
 conn = sqlite3.connect(db_path)
 conn.executescript('PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL;')
@@ -907,6 +911,25 @@ cur.executemany('INSERT INTO gene_phenotype VALUES (?,?,?,?,?)', gp_rows)
 cur.executemany('INSERT OR IGNORE INTO allele_phenotype VALUES (?,?,?,?,?)', ap_rows)
 print(f'gene_phenotype: {len(gp_rows)} ({gp_alliance} from Alliance, {variant_remapped} variants remapped, {variant_unmapped} variants unmapped)', file=sys.stderr)
 print(f'allele_phenotype: {len(ap_rows)} (allele-mediated)', file=sys.stderr)
+
+# Public allele names, kept only for alleles that carry phenotypes. Alleles the
+# Alliance file does not name stay unnamed and the UI shows the WBVar id.
+cur.executescript("""
+CREATE TABLE allele_names (
+  allele_id TEXT PRIMARY KEY,
+  name      TEXT NOT NULL
+);
+""")
+_ap_ids = {r[0] for r in ap_rows}
+allele_name_rows = []
+with gzip.open(allele_json_gz, 'rt') as f:
+    for a in json.load(f).get('data', []):
+        aid = (a.get('primaryId') or '').removeprefix('WB:')
+        name = (a.get('symbolText') or a.get('symbol') or '').strip()
+        if aid in _ap_ids and name and name != aid:
+            allele_name_rows.append((aid, name))
+cur.executemany('INSERT OR IGNORE INTO allele_names VALUES (?,?)', allele_name_rows)
+print(f'allele_names: {len(allele_name_rows)} of {len(_ap_ids)} phenotyped alleles named', file=sys.stderr)
 
 # ---------- Anatomy (TEA) ----------
 cur.executescript("""
@@ -1661,8 +1684,13 @@ for wb, syn in cur.execute(
 ):
     pheno_per_gene.setdefault(wb, set()).add(syn)
 allele_per_gene = {}
-for wb, allele in cur.execute("SELECT wormbase_gene, allele_id FROM allele_phenotype"):
+for wb, allele, name in cur.execute(
+    "SELECT ap.wormbase_gene, ap.allele_id, an.name FROM allele_phenotype ap "
+    "LEFT JOIN allele_names an ON an.allele_id = ap.allele_id"
+):
     allele_per_gene.setdefault(wb, set()).add(allele)
+    if name:
+        allele_per_gene[wb].add(name)
 tissue_per_gene = {}
 for wb, name in cur.execute(
     "SELECT ga.wormbase_gene, COALESCE(at.name, ga.term_id) FROM gene_anatomy ga "
@@ -2087,7 +2115,7 @@ WBBT_DATE="$(file_mtime_date "$WBBT_OBO")"
 RECORDS_JSON="$("${PY[@]}" -c '
 import json, sqlite3, sys
 tables = ["annotations", "go_terms", "gene_go", "wormcat", "neuronal", "synaptogenesis",
-          "interactions", "gene_phenotype", "allele_phenotype", "cengen_expression",
+          "interactions", "gene_phenotype", "allele_phenotype", "allele_names", "cengen_expression",
           "cengen_coexpression", "gene_disease", "orthologs", "gene_paper", "paper_meta",
           "kegg_pathway", "gene_kegg_pathway"]
 con = sqlite3.connect(sys.argv[1])

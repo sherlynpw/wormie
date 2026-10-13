@@ -1525,6 +1525,8 @@ export interface PhenotypeRow {
 
 export interface AlleleRow {
   allele_id: string;
+  // Public allele name (e.g. e1370); falls back to the WBVar id when WormBase gives none.
+  name: string;
   n_phenotypes: number;
   phenotype_term_ids: string; // pipe-joined for compact transport
   phenotype_names: string;
@@ -1619,16 +1621,20 @@ export async function getPhenotypesFor(wormbase_gene: string): Promise<Phenotype
 
 // One row per allele with aggregated phenotypes for the allele x phenotype matrix.
 export async function getAllelesFor(wormbase_gene: string): Promise<AlleleRow[]> {
+  // allele_names arrived with a later build; older cached DBs fall back to the WBVar id.
+  const named = await hasTable('allele_names');
   return query<AlleleRow>(
     `SELECT ap.allele_id,
+		        ${named ? 'COALESCE(an.name, ap.allele_id)' : 'ap.allele_id'} AS name,
 		        COUNT(DISTINCT ap.term_id) AS n_phenotypes,
 		        GROUP_CONCAT(DISTINCT ap.term_id) AS phenotype_term_ids,
 		        GROUP_CONCAT(DISTINCT COALESCE(pt.name, ap.term_id)) AS phenotype_names
 		 FROM allele_phenotype ap
 		 LEFT JOIN phenotype_terms pt ON pt.term_id = ap.term_id
+		 ${named ? 'LEFT JOIN allele_names an ON an.allele_id = ap.allele_id' : ''}
 		 WHERE ap.wormbase_gene = ?
 		 GROUP BY ap.allele_id
-		 ORDER BY n_phenotypes DESC, ap.allele_id`,
+		 ORDER BY n_phenotypes DESC, name`,
     [wormbase_gene],
   );
 }
