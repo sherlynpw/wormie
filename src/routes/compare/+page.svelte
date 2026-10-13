@@ -72,6 +72,26 @@
   };
 
   let rows = $state<Row[]>([]);
+
+  // id -> display name per category, so overlap plots can list items by name.
+  const termLabels = $derived.by(() => {
+    /* eslint-disable svelte/prefer-svelte-reactivity */
+    const go = new Map<string, string>();
+    const phenotypes = new Map<string, string>();
+    const tissues = new Map<string, string>();
+    const orthologs = new Map<string, string>();
+    /* eslint-enable svelte/prefer-svelte-reactivity */
+    for (const r of rows) {
+      for (const a of r.go) go.set(a.go_id, a.name);
+      for (const p of r.phenotypes) phenotypes.set(p.term_id, p.name);
+      for (const t of r.anatomy) tissues.set(t.term_id, t.name);
+      for (const o of r.orthologs)
+        orthologs.set(`${o.taxon_id}|${o.ortholog_symbol}`, `${o.ortholog_symbol} (${o.species})`);
+    }
+    return { go, phenotypes, tissues, orthologs };
+  });
+  const goHref = (id: string) => `/go/${id}`;
+  const phenotypeHref = (id: string) => `/phenotype/${id}`;
   let loading = $state(true);
   let loadToken = 0;
 
@@ -213,12 +233,10 @@
     Note this compares genes to each other, not one list against another list: to see which genes
     two lists share, use
     <a href={resolve('/compare/lists')} class="underline underline-offset-2">Gene overlap</a>; to
-    ask whether two separate gene lists turn up the same biology, run
-    <a href={resolve('/enrichment')} class="underline underline-offset-2">over-representation</a>
-    on each and put the results side by side in
+    ask whether two separate gene lists turn up the same biology, paste them into
     <a href={resolve('/enrichment/overlap')} class="underline underline-offset-2"
-      >enrichment overlap</a
-    >.
+      >Enrichment overlap</a
+    >, which runs over-representation on each and compares the enriched terms.
   </PageHint>
 
   <div class="-mt-3 flex items-center justify-between gap-2">
@@ -491,6 +509,8 @@
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.go.map((a) => a.go_id),
               }))}
+              labels={termLabels.go}
+              href={goHref}
               exportName="compare-upset-go"
             />
             <UpSetPlot
@@ -499,6 +519,8 @@
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.phenotypes.map((p) => p.term_id),
               }))}
+              labels={termLabels.phenotypes}
+              href={phenotypeHref}
               exportName="compare-upset-phenotypes"
             />
             <UpSetPlot
@@ -507,6 +529,7 @@
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.anatomy.map((t) => t.term_id),
               }))}
+              labels={termLabels.tissues}
               exportName="compare-upset-tissues"
             />
             <UpSetPlot
@@ -515,6 +538,7 @@
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.orthologs.map((o) => `${o.taxon_id}|${o.ortholog_symbol}`),
               }))}
+              labels={termLabels.orthologs}
               exportName="compare-upset-orthologs"
             />
           </CardContent>
@@ -553,6 +577,8 @@
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.go.map((a) => a.go_id),
               }))}
+              labels={termLabels.go}
+              href={goHref}
             />
             <JaccardHeatmap
               title="Phenotypes"
@@ -560,6 +586,8 @@
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.phenotypes.map((p) => p.term_id),
               }))}
+              labels={termLabels.phenotypes}
+              href={phenotypeHref}
             />
             <JaccardHeatmap
               title="Tissues"
@@ -567,6 +595,7 @@
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.anatomy.map((t) => t.term_id),
               }))}
+              labels={termLabels.tissues}
             />
             <JaccardHeatmap
               title="Orthologs"
@@ -574,6 +603,7 @@
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.orthologs.map((o) => `${o.taxon_id}|${o.ortholog_symbol}`),
               }))}
+              labels={termLabels.orthologs}
             />
           </CardContent>
         </Card>

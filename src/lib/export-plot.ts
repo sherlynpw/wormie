@@ -34,6 +34,9 @@ function snapshot(svgEl: SVGSVGElement): SVGSVGElement {
     }
   }
 
+  // Interaction-only layers (hover hit areas, selection highlights) stay out of exports.
+  for (const el of clone.querySelectorAll('[data-export-skip]')) el.remove();
+
   // Explicit width/height required for rasterization and PDF print.
   const bb = svgEl.getBoundingClientRect();
   const vb = svgEl.getAttribute('viewBox');

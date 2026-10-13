@@ -90,6 +90,10 @@
   let selectedMask = $state<number | null>(null);
   const EXPANDED_CAP = 100;
 
+  const geneLabels = $derived(
+    new Map(Object.entries(geneNames).filter((e): e is [string, string] => !!e[1])),
+  );
+
   function displayName(id: string): string {
     return geneNames[id] ?? id;
   }
@@ -165,11 +169,10 @@
     enriched among the hits two screens share are one click away. To ask what a set of genes has in
     common biologically, send it to
     <a href={resolve('/compare')} class="underline underline-offset-2">Annotation overlap</a>; to
-    ask whether two lists turn up the same biology at the level of enriched terms, run
-    over-representation on each and compare the results in
+    ask whether two lists turn up the same biology at the level of enriched terms, paste them into
     <a href={resolve('/enrichment/overlap')} class="underline underline-offset-2"
       >Enrichment overlap</a
-    >.
+    >, which runs over-representation on each and compares the results.
   </PageHint>
 
   <Card>
@@ -284,6 +287,7 @@
         <JaccardHeatmap
           sets={resolved.map((r) => ({ name: r.name, ids: r.ids }))}
           title="Jaccard similarity between lists"
+          labels={geneLabels}
         />
 
         <UpSetPlot
@@ -291,6 +295,8 @@
           sets={resolved.map((r) => ({ name: r.name, ids: r.ids }))}
           maxGroups={30}
           exportName="compare-lists-upset"
+          labels={geneLabels}
+          setNoun="list"
         />
 
         <div class="space-y-2">
