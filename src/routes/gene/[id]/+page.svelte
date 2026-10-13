@@ -383,7 +383,7 @@
     ];
     const literature: TocLeaf[] = [
       { id: 'papers', label: 'References' },
-      { id: 'literature', label: 'All publications' },
+      { id: 'literature', label: 'All literature' },
     ];
 
     void allelesExpanded; // alleles use <details>; flagged here for parity if that changes
