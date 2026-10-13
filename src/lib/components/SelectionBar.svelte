@@ -1,6 +1,6 @@
 <script lang="ts">
   import { selection } from '$lib/stores/selection.svelte';
-  import { presets } from '$lib/stores/presets.svelte';
+  import { presets, resolveListIds } from '$lib/stores/presets.svelte';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import {
@@ -109,35 +109,54 @@
     void run(label, fn);
   }
 
-  function savePreset() {
+  const genes = (n: number) => `${n} gene${n === 1 ? '' : 's'}`;
+
+  // Clearing can throw away a hand-built selection, so it always offers an undo.
+  function clearSelection() {
+    const prev = [...selection.ids];
+    selection.clear();
+    toast('Selection cleared', {
+      description: genes(prev.length),
+      action: { label: 'Undo', onClick: () => selection.set(prev) },
+    });
+  }
+
+  // Saving marks the set as done, so the selection is released for the next one.
+  async function savePreset() {
     const name = presetName.trim();
     if (!name) return;
-    const p = presets.save(name, selection.ids);
-    toast.success('Selection saved', {
-      description: `${p.name} (${p.ids.length} gene${p.ids.length === 1 ? '' : 's'})`,
-    });
-    presetName = '';
-    presetUiOpen = false;
+    const prev = [...selection.ids];
+    try {
+      const p = await presets.save(name, prev);
+      selection.clear();
+      toast.success('Selection saved and cleared', {
+        description: `${p.name} (${genes(p.ids.length)}). Find it under Datasets or in any "From saved list" picker.`,
+        action: { label: 'Undo clear', onClick: () => selection.set(prev) },
+      });
+      presetName = '';
+      presetUiOpen = false;
+    } catch (e) {
+      toast.error('Could not save', { description: String(e) });
+    }
   }
 
-  function loadPreset(id: string) {
+  async function loadPreset(id: string) {
     const p = presets.get(id);
     if (!p) return;
-    selection.ids = [...p.ids];
-    try {
-      localStorage.setItem('wb_selection', JSON.stringify(p.ids));
-    } catch {
-      // noop
+    const ids = await resolveListIds(p.ids);
+    if (ids.length === 0) {
+      toast.error('No recognized genes in this list', { description: p.name });
+      return;
     }
-    toast.success('Selection loaded', {
-      description: `${p.name} (${p.ids.length} gene${p.ids.length === 1 ? '' : 's'})`,
-    });
+    selection.set(ids);
+    toast.success('Selection loaded', { description: `${p.name} (${genes(ids.length)})` });
     presetUiOpen = false;
   }
 
-  function deletePreset(id: string, name: string) {
-    presets.remove(id);
-    toast.success('Preset deleted', { description: name });
+  async function deletePreset(id: string, name: string) {
+    if (!confirm(`Delete the saved list "${name}"?`)) return;
+    await presets.remove(id);
+    toast.success('Saved list deleted', { description: name });
   }
 
   const tooFew = $derived(selection.ids.length < 2);
@@ -157,7 +176,7 @@
       {#if presetUiOpen}
         <div class="space-y-2 border-b p-3">
           <div class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Saved selections
+            Saved gene lists
           </div>
           <form
             onsubmit={(e) => {
@@ -200,7 +219,7 @@
                     type="button"
                     onclick={() => deletePreset(p.id, p.name)}
                     class="text-muted-foreground hover:text-destructive"
-                    title="Delete preset"
+                    title="Delete saved list"
                   >
                     <Trash class="h-3 w-3" />
                   </button>
@@ -208,7 +227,7 @@
               {/each}
             </div>
           {:else}
-            <div class="text-xs italic text-muted-foreground">No saved selections yet.</div>
+            <div class="text-xs italic text-muted-foreground">No saved gene lists yet.</div>
           {/if}
         </div>
       {/if}
@@ -407,15 +426,22 @@
           variant={presetUiOpen ? 'default' : 'outline'}
           size="sm"
           onclick={() => (presetUiOpen = !presetUiOpen)}
-          title="Saved selections"
+          title="Saved gene lists"
         >
           <Folder class="h-3 w-3" />
           {#if presets.items.length > 0}
             <span class="text-[0.65rem] tabular-nums">{presets.items.length}</span>
           {/if}
         </Button>
-        <Button variant="ghost" size="sm" onclick={() => selection.clear()} title="Clear selection">
+        <Button
+          variant="ghost"
+          size="sm"
+          onclick={clearSelection}
+          title="Unselect all genes"
+          disabled={selection.ids.length === 0}
+        >
           <X class="h-3 w-3" />
+          Clear
         </Button>
       </div>
     </div>

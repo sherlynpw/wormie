@@ -44,16 +44,22 @@ class DatasetStore {
   items = $state<Dataset[]>([]);
   loaded = $state(false);
 
-  async init() {
-    if (this.loaded) return;
-    try {
-      const all = await idbGetAll<Dataset>(STORE_DATASETS);
-      this.items = all.sort((a, b) => b.createdAt - a.createdAt);
-    } catch (e) {
-      console.warn('[datasets] init failed:', e);
-      this.items = [];
-    }
-    this.loaded = true;
+  private loading: Promise<void> | null = null;
+
+  // Memoized: concurrent callers share one read, so a late duplicate read cannot
+  // overwrite items added in between.
+  init(): Promise<void> {
+    this.loading ??= (async () => {
+      try {
+        const all = await idbGetAll<Dataset>(STORE_DATASETS);
+        this.items = all.sort((a, b) => b.createdAt - a.createdAt);
+      } catch (e) {
+        console.warn('[datasets] init failed:', e);
+        this.items = [];
+      }
+      this.loaded = true;
+    })();
+    return this.loading;
   }
 
   async add(input: Omit<Dataset, 'id' | 'createdAt'>): Promise<Dataset> {

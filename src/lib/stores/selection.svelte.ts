@@ -33,6 +33,11 @@ class SelectionStore {
     }
   }
 
+  set(ids: string[]) {
+    this.ids = [...new Set(ids)];
+    this.persist();
+  }
+
   clear() {
     this.ids = [];
     this.persist();
