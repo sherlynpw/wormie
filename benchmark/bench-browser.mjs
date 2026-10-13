@@ -91,6 +91,7 @@ const out = {
   deseqRepeats,
   deseq2: [],
   gsea: [],
+  gsea_ml: [],
   ora: [],
   ssgsea: [],
 };
@@ -112,8 +113,9 @@ const outPath = path.join(resultsDir, 'browser.json');
 if (fs.existsSync(outPath)) {
   try {
     const prev = JSON.parse(fs.readFileSync(outPath, 'utf8'));
-    for (const k of ['deseq2', 'gsea', 'ora', 'ssgsea']) {
-      if (!want(k) && Array.isArray(prev[k])) out[k] = prev[k];
+    for (const k of ['deseq2', 'gsea', 'gsea_ml', 'ora', 'ssgsea']) {
+      const arm = k === 'gsea_ml' ? 'gsea' : k;
+      if (!want(arm) && Array.isArray(prev[k])) out[k] = prev[k];
     }
   } catch {
     /* ignore unreadable prior results */
@@ -163,7 +165,9 @@ try {
             { countsTsv, design, reference: c.reference },
           );
           runs.push({ cold: i === 0, elapsedMs: last.elapsedMs });
-          console.log(`   run ${i}${i === 0 ? ' (cold)' : ''}: ${(last.elapsedMs / 1000).toFixed(1)}s`);
+          console.log(
+            `   run ${i}${i === 0 ? ' (cold)' : ''}: ${(last.elapsedMs / 1000).toFixed(1)}s`,
+          );
         } catch (e) {
           console.error(`   run ${i} FAILED: ${e?.message || e}`);
         }
@@ -191,9 +195,13 @@ try {
       for (let i = 0; i < repeats; i++) {
         try {
           last = await page.evaluate(
-            // multilevel: false matches bench-r.R's fgseaSimple.
+            // multilevel: false and sizes 1-100000 match bench-r.R's fgseaSimple call.
             async ({ ranked, sets, nperm }) =>
-              window.__bench.gsea({ ranked, sets, opts: { nperm, seed: 1337, multilevel: false } }),
+              window.__bench.gsea({
+                ranked,
+                sets,
+                opts: { nperm, seed: 1337, multilevel: false, minSize: 1, maxSize: 100000 },
+              }),
             { ranked, sets, nperm: g.nperm },
           );
           times.push(last.engineMs);
@@ -211,6 +219,36 @@ try {
         results: last?.results,
       });
       console.log(`-- gsea u${g.universe} n${g.nSets}: ${median(times).toFixed(0)}ms`);
+      save();
+
+      // Multilevel arm, against bench-r.R's fgseaMultilevel(eps = 0).
+      const mlTimes = [];
+      let ml;
+      for (let i = 0; i < Math.min(repeats, 3); i++) {
+        try {
+          ml = await page.evaluate(
+            async ({ ranked, sets, nperm }) =>
+              window.__bench.gsea({
+                ranked,
+                sets,
+                opts: { nperm, seed: 1337, multilevel: true, minSize: 1, maxSize: 100000 },
+              }),
+            { ranked, sets, nperm: g.nperm },
+          );
+          mlTimes.push(ml.engineMs);
+        } catch (e) {
+          console.error(`   gsea multilevel run ${i} FAILED: ${e?.message || e}`);
+        }
+      }
+      out.gsea_ml.push({
+        universe: g.universe,
+        nSets: g.nSets,
+        nperm: g.nperm,
+        engineMsMedian: median(mlTimes),
+        engineMsAll: mlTimes,
+        results: ml?.results,
+      });
+      console.log(`-- gsea multilevel u${g.universe} n${g.nSets}: ${median(mlTimes).toFixed(0)}ms`);
       save();
     }
   }
@@ -277,7 +315,9 @@ try {
         memBytes: last?.memBytes,
         results: last?.results,
       });
-      console.log(`-- ora u${o.universe} n${o.nSets} k${o.querySize}: ${median(times).toFixed(0)}ms`);
+      console.log(
+        `-- ora u${o.universe} n${o.nSets} k${o.querySize}: ${median(times).toFixed(0)}ms`,
+      );
       save();
     }
   }

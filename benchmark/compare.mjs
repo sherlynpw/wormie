@@ -145,6 +145,54 @@ for (const b of browser.gsea || []) {
 }
 lines.push('');
 
+lines.push('## GSEA multilevel (p-values below the permutation floor)', '');
+lines.push(
+  'WormIE with multilevel refinement against `fgseaMultilevel` at its defaults (eps = 1e-50). "Refined" sets are those whose permutation p sat within 3x of the floor, the ones WormIE re-estimates. Sets both tools report at the 1e-50 bound are counted separately and left out of the correlation and ratio.',
+  '',
+);
+lines.push(
+  '| universe | nSets | -log10(p) corr (all) | refined sets | at bound (both / WormIE only / R only) | -log10(p) corr (refined) | median p ratio (refined, WormIE/R) | sig sets (R) | recovered | added |',
+);
+lines.push('|---|---|---|---|---|---|---|---|---|---|');
+for (const b of browser.gsea_ml || []) {
+  const rc = (r.gsea_ml || []).find((x) => x.universe === b.universe && x.nSets === b.nSets);
+  if (!rc || !b.results) continue;
+  const rMap = new Map(rc.results.map((x) => [x.term_id, x]));
+  const all = [];
+  const refined = [];
+  const ratios = [];
+  const bound = { both: 0, wormie: 0, r: 0 };
+  for (const br of b.results) {
+    const rr = rMap.get(br.term_id);
+    if (!rr || !(br.p > 0) || !(rr.p > 0)) continue;
+    const bAt = br.p_at_bound === true;
+    const rAt = rr.p <= 1e-50;
+    if (bAt || rAt) {
+      bound[bAt && rAt ? 'both' : bAt ? 'wormie' : 'r']++;
+      continue;
+    }
+    const pair = [-Math.log10(br.p), -Math.log10(rr.p)];
+    all.push(pair);
+    if (finite(br.p_perm) && br.p_perm !== br.p) {
+      refined.push(pair);
+      ratios.push(br.p / rr.p);
+    }
+  }
+  const bSig = b.results.filter((x) => finite(x.q) && x.q < 0.05).map((x) => x.term_id);
+  const rSig = rc.results.filter((x) => finite(x.q) && x.q < 0.05).map((x) => x.term_id);
+  const rSet = new Set(rSig);
+  const bSet = new Set(bSig);
+  const sorted = [...ratios].sort((x, y) => x - y);
+  const medRatio = sorted.length ? sorted[Math.floor(sorted.length / 2)] : NaN;
+  lines.push(
+    `| ${b.universe} | ${b.nSets} | ${fmt(pearson(all))} | ${refined.length} | ` +
+      `${bound.both} / ${bound.wormie} / ${bound.r} | ${fmt(pearson(refined))} | ` +
+      `${fmt(medRatio, 2)} | ${rSet.size} | ${rSig.filter((t) => bSet.has(t)).length} | ` +
+      `${bSig.filter((t) => !rSet.has(t)).length} |`,
+  );
+}
+lines.push('');
+
 lines.push('## ORA (hypergeometric)', '');
 lines.push(
   '| universe | nSets | querySize | R (ms) | Browser (ms) | slowdown | -log10(p) corr | k exact-match | sig sets (R) | recovered | added |',
