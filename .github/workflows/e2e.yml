@@ -36,8 +36,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p static/data
-          curl -fsSL -o static/data/version.json https://wormie.rs.ht/data/version.json
-          curl -fsSL -o static/data/wormie.sqlite.gz https://wormie.rs.ht/data/wormie.sqlite.gz
+          retry=(--retry 4 --retry-delay 5 --retry-all-errors)
+          curl -fsSL "${retry[@]}" -o static/data/version.json https://wormie.rs.ht/data/version.json
+          curl -fsSL "${retry[@]}" -o static/data/wormie.sqlite.gz https://wormie.rs.ht/data/wormie.sqlite.gz
+          # version.json advertises the bundled annotation, so /counts offers it; serve it too.
+          curl -fsSL "${retry[@]}" -o static/data/annotation.saf.gz https://wormie.rs.ht/data/annotation.saf.gz
           ls -lh static/data/
 
       # The /de tests run real DESeq2 in WebR; the runtime and bundle live in

@@ -242,7 +242,7 @@ test('gene overlap segment -> Over-representation', async ({ page }) => {
   await areas.nth(0).fill('daf-2\ndaf-16\nage-1');
   await areas.nth(1).fill('daf-2\ndaf-16\nhsf-1');
   await page.getByRole('button', { name: 'Compare', exact: true }).click();
-  await expect(page.getByText('Intersections')).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText('Intersections', { exact: true })).toBeVisible({ timeout: 60_000 });
   await page.getByTitle('Run over-representation on these genes').first().click();
   await expect(page).toHaveURL(/\/enrichment\?(ids|gz)=/, { timeout: 15_000 });
   await expect(page.getByText(/of [\d,]+ resolved/)).toBeVisible({ timeout: 60_000 });

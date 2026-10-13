@@ -5,6 +5,8 @@ REPO_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 DEST="${REPO_DIR}/scripts/wasm-cran/webr-pthread/v0.5.9"
 UPSTREAM="https://webr.r-wasm.org/v0.5.9"
 LOCAL_BLAS="${REPO_DIR}/out-blas/libRblas.so"
+# Required downloads retry: one reset connection on the 94 MB bundle used to fail all of CI.
+RETRY=(--retry 4 --retry-delay 5 --retry-all-errors)
 
 mkdir -p "${DEST}"
 
@@ -12,7 +14,7 @@ FILES=(webr.mjs webr-worker.js R.js R.wasm libRblas.so libRlapack.so)
 
 for f in "${FILES[@]}"; do
   echo "  -> ${f}"
-  curl -fsSL --compressed -o "${DEST}/${f}.new" "${UPSTREAM}/${f}"
+  curl -fsSL "${RETRY[@]}" --compressed -o "${DEST}/${f}.new" "${UPSTREAM}/${f}"
   mv "${DEST}/${f}.new" "${DEST}/${f}"
 done
 
@@ -86,7 +88,7 @@ fi
 echo "==> fetching deseq2 bundle from ${SITE}"
 for f in deseq2-bundle.data deseq2-bundle.js.metadata deseq2-bundle.manifest.json; do
   echo "  -> ${f}"
-  curl -fsSL -o "${BUNDLE_DIR}/${f}.new" "${SITE}/${f}"
+  curl -fsSL "${RETRY[@]}" -o "${BUNDLE_DIR}/${f}.new" "${SITE}/${f}"
   mv "${BUNDLE_DIR}/${f}.new" "${BUNDLE_DIR}/${f}"
 done
 
@@ -94,7 +96,7 @@ echo "==> fetching featureCounts module from ${SITE}"
 mkdir -p "${BUNDLE_DIR}/featurecounts"
 for f in featureCounts.js featureCounts.wasm; do
   echo "  -> featurecounts/${f}"
-  curl -fsSL -o "${BUNDLE_DIR}/featurecounts/${f}.new" "${SITE}/featurecounts/${f}"
+  curl -fsSL "${RETRY[@]}" -o "${BUNDLE_DIR}/featurecounts/${f}.new" "${SITE}/featurecounts/${f}"
   mv "${BUNDLE_DIR}/featurecounts/${f}.new" "${BUNDLE_DIR}/featurecounts/${f}"
 done
 
