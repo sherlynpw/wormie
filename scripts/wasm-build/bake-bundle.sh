@@ -49,7 +49,7 @@ deps <- tools::package_dependencies(
 ## these (verified May 2026: PACKAGES file only lists ~50 higher-level pkgs,
 ## none of the foundational ones). We build them locally via build-pkgs.sh and
 ## list them explicitly here so the bake manifest picks them up even when
-## $(tools::package_dependencies) returns nothing for them.
+## tools::package_dependencies returns nothing for them.
 foundational_bioc <- c("BiocGenerics","S4Vectors","IRanges","XVector","zlibbioc",
                        "GenomeInfoDb","GenomeInfoDbData","GenomicRanges","Seqinfo",
                        "MatrixGenerics","DelayedArray","S4Arrays","SparseArray",
@@ -67,6 +67,13 @@ all_pkgs <- setdiff(all_pkgs, bundled)
 ## use match() so missing entries land as NA. The LOCAL detection loop below
 ## fills in the real version from the local .tgz filename.
 ap_idx <- match(all_pkgs, rownames(ap_all))
+# The source index follows CRAN, but WASM binaries lag behind it, so take
+# repo.r-wasm.org versions from the binary index or the download 404s.
+ap_bin <- tryCatch(
+  available.packages(contriburl = "https://repo.r-wasm.org/bin/emscripten/contrib/4.5"),
+  error = function(e) NULL
+)
+if (is.null(ap_bin)) stop("cannot read the repo.r-wasm.org binary index")
 manifest <- data.frame(
   name = all_pkgs,
   version = ap_all[ap_idx, "Version"],
@@ -75,6 +82,9 @@ manifest <- data.frame(
                 "https://repo.r-wasm.org"),
   stringsAsFactors = FALSE
 )
+in_bin <- !manifest\$repo %in% "https://bioc.r-universe.dev" &
+  manifest\$name %in% rownames(ap_bin)
+manifest\$version[in_bin] <- ap_bin[manifest\$name[in_bin], "Version"]
 # Mark any package as LOCAL when a built .tgz exists in our local repo.
 # Currently this auto-tags locfit (built via build-pkgs.sh) so
 # the bake reaches for the local copy first instead of a 404 on r-universe.
@@ -141,7 +151,7 @@ while IFS=$'\t' read -r name version repo; do
       if ! curl -fsSL -o "${WORK}/${name}.tgz" "${alt}"; then
         echo "  !! ${name} ${version}: 404 at ${url}" >&2
         echo "     check if it needs a local build (add to scripts/build-wasm-cran.sh)" >&2
-        continue
+        exit 1
       fi
     fi
     tar -xzf "${WORK}/${name}.tgz" -C "${LIB_DIR}"

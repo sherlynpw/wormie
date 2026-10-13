@@ -20,9 +20,9 @@ test('contrast comparison Venn is drawn from the two significant sets', async ({
   const genes: [string, number, number, number, number][] = [
     ['WBGene00000001', 2, 0.001, 2, 0.001], // shared up
     ['WBGene00000002', -2, 0.001, -2, 0.001], // shared down
-    ['WBGene00000003', 2, 0.001, -2, 0.001], // shared, opposite directions
-    ['WBGene00000004', 1, 0.5, -1, 0.5], // flipped, significant in neither: not in the Venn
-    ['WBGene00000005', 1.5, 0.001, -1, 0.5], // flipped, significant in A only: A-only up
+    ['WBGene00000003', 2, 0.001, -2, 0.001], // flipped: significant in both, opposite signs
+    ['WBGene00000004', 1, 0.5, -1, 0.5], // opposite signs but significant in neither: not flipped
+    ['WBGene00000005', 1.5, 0.001, -1, 0.5], // opposite signs, significant in A only: A-only up
     ['WBGene00000006', -1, 0.001, 0.1, 0.9], // A-only down
     ['WBGene00000007', 0.1, 0.9, 2, 0.001], // B-only up
   ];
@@ -39,11 +39,17 @@ test('contrast comparison Venn is drawn from the two significant sets', async ({
   const venn = page.locator('svg').filter({ hasText: 'Shared' }).first();
   await expect(venn).toBeVisible();
   const texts = (await venn.locator('text').allTextContents()).map((t) => t.trim());
-  // Left region, right region, then the shared counts.
-  expect(texts).toEqual(
-    expect.arrayContaining(['1 down', '1 up', '0 down', '1 ↑', '1 ↓', '(1 opposite)']),
-  );
-  expect(texts.filter((t) => t === '1 up')).toHaveLength(2);
+  // A only: 1 Down, 1 Up. B only: 0 Down, 1 Up. Shared: 1 Down, 1 Up, +1 flipped.
+  expect(texts).toEqual(expect.arrayContaining(['0 Down', '(+1 flipped)']));
+  expect(texts.filter((t) => t === '1 Up')).toHaveLength(3);
+  expect(texts.filter((t) => t === '1 Down')).toHaveLength(2);
+
+  // Scatter corners: category genes over all genes in the quadrant. Lower right holds the
+  // flipped gene, one significant in A only and one significant in neither.
+  const scatter = page.locator('svg[aria-label="log2FC diff scatter"]');
+  await expect(scatter.getByText('1 / 3')).toBeVisible();
+  await expect(scatter.getByText('(33%)')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Flipped\s*1/ })).toBeVisible();
 });
 
 test('ranked-list enrichment ranks an edgeR table by its signed test statistic', async ({
@@ -148,12 +154,12 @@ test('contrast comparison uses the significance cutoff the user sets', async ({ 
   await areas.nth(1).fill(table);
   await page.getByRole('button', { name: 'Parse', exact: true }).click();
   const venn = page.locator('svg').filter({ hasText: 'Shared' }).first();
-  await expect(venn.getByText('1 ↑')).toBeVisible();
-  await expect(venn.getByText('1 ↓')).toBeVisible();
+  await expect(venn.getByText('1 Up')).toBeVisible();
+  await expect(venn.getByText('1 Down')).toBeVisible();
   // At padj < 0.02 only the first gene stays significant in both.
   await page.getByLabel(/Significant at padj/).fill('0.02');
-  await expect(venn.getByText('0 ↓')).toBeVisible();
-  await expect(page.getByText('sig in both (padj < 0.02)')).toBeVisible();
+  await expect(venn.getByText('1 Down')).toHaveCount(0);
+  await expect(page.getByText('(significant in both at padj < 0.02)')).toBeVisible();
 });
 
 test('per-sample set scores offer the CeNGEN neuron-type collection', async ({ page }) => {
@@ -202,7 +208,7 @@ test('contrast comparison groups download in full', async ({ page }) => {
   await areas.nth(0).fill(table);
   await areas.nth(1).fill(table);
   await page.getByRole('button', { name: 'Parse', exact: true }).click();
-  await page.getByRole('button', { name: /Sig in both/i }).click();
+  await page.getByRole('button', { name: /Up in both/i }).click();
   await expect(page.getByText(/Showing the first 200 of 250 genes/)).toBeVisible();
   const [dl] = await Promise.all([
     page.waitForEvent('download'),

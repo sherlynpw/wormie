@@ -10,22 +10,28 @@
     a,
     b,
     shared,
+    title = '',
     svgEl = $bindable<SVGSVGElement | null>(null),
   }: {
     a: Side;
     b: Side;
+    /** discordant: significant in both contrasts with opposite signs ("flipped"). */
     shared: Shared;
+    /** Optional plot title, e.g. "L4 → D6", drawn above the circles and kept in exports. */
+    title?: string;
     svgEl?: SVGSVGElement | null;
   } = $props();
 
   const W = 560;
-  const H = 340;
+  const H = $derived(title ? 364 : 340);
+  // A title pushes the drawing down without changing the circles.
+  const OFF = $derived(title ? 24 : 0);
   const R = 118;
   const CX_A = 210;
   const CX_B = 350;
-  const CY = 180;
+  const CY = $derived(180 + OFF);
 
-  // Same red/blue the volcano uses for direction.
+  // Same direction pair the volcano uses.
   const UP = UP_COLOR;
   const DOWN = DOWN_COLOR;
 
@@ -48,38 +54,48 @@
     )}
   </title>
 
+  {#if title}
+    <text
+      x={W / 2}
+      y="22"
+      text-anchor="middle"
+      class="fill-foreground"
+      style="font-size: 17px; font-weight: 700;">{title}</text
+    >
+  {/if}
+
   <circle cx={CX_A} cy={CY} r={R} fill={downAlpha(0.18)} stroke={downAlpha(0.5)} />
   <circle cx={CX_B} cy={CY} r={R} fill={upAlpha(0.18)} stroke={upAlpha(0.5)} />
 
   <text
     x={CX_A - 40}
-    y="34"
+    y={34 + OFF}
     text-anchor="middle"
     class="fill-foreground"
-    style="font-size: 15px; font-weight: 600;">{a.label}</text
+    style="font-size: 15px; font-weight: 600;">{a.label} DEGs</text
   >
   <text
     x={CX_B + 40}
-    y="34"
+    y={34 + OFF}
     text-anchor="middle"
     class="fill-foreground"
-    style="font-size: 15px; font-weight: 600;">{b.label}</text
+    style="font-size: 15px; font-weight: 600;">{b.label} DEGs</text
   >
 
   <!-- left only -->
   <text x="112" y={CY - 8} text-anchor="middle" style="font-size: 13px; fill: {DOWN};">
-    {fmt(a.down)} down
+    {fmt(a.down)} Down
   </text>
   <text x="112" y={CY + 14} text-anchor="middle" style="font-size: 13px; fill: {UP};">
-    {fmt(a.up)} up
+    {fmt(a.up)} Up
   </text>
 
   <!-- right only -->
   <text x="448" y={CY - 8} text-anchor="middle" style="font-size: 13px; fill: {DOWN};">
-    {fmt(b.down)} down
+    {fmt(b.down)} Down
   </text>
   <text x="448" y={CY + 14} text-anchor="middle" style="font-size: 13px; fill: {UP};">
-    {fmt(b.up)} up
+    {fmt(b.up)} Up
   </text>
 
   <!-- intersection -->
@@ -90,14 +106,11 @@
     class="fill-foreground"
     style="font-size: 12px; font-weight: 600;">Shared</text
   >
-  <text x={(CX_A + CX_B) / 2} y={CY - 10} text-anchor="middle" style="font-size: 13px; fill: {UP};"
-    >{fmt(shared.up)} ↑</text
+  <text x={(CX_A + CX_B) / 2} y={CY - 8} text-anchor="middle" style="font-size: 13px; fill: {DOWN};"
+    >{fmt(shared.down)} Down</text
   >
-  <text
-    x={(CX_A + CX_B) / 2}
-    y={CY + 12}
-    text-anchor="middle"
-    style="font-size: 13px; fill: {DOWN};">{fmt(shared.down)} ↓</text
+  <text x={(CX_A + CX_B) / 2} y={CY + 14} text-anchor="middle" style="font-size: 13px; fill: {UP};"
+    >{fmt(shared.up)} Up</text
   >
   {#if shared.discordant > 0}
     <text
@@ -105,7 +118,7 @@
       y={CY + 32}
       text-anchor="middle"
       class="fill-muted-foreground"
-      style="font-size: 11px;">({fmt(shared.discordant)} opposite)</text
+      style="font-size: 11px;">(+{fmt(shared.discordant)} flipped)</text
     >
   {/if}
 
