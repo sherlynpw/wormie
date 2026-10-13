@@ -32,6 +32,7 @@
   );
   let threads = $state(DEFAULT_THREADS);
   let isPaired = $state(false);
+  let strand = $state<0 | 1 | 2>(0);
 
   let bamInput: HTMLInputElement | null = $state(null);
   let gtfInput: HTMLInputElement | null = $state(null);
@@ -81,12 +82,18 @@
     if (running || !e.dataTransfer) return;
     const files = Array.from(e.dataTransfer.files);
     const bams = files.filter((f) => /\.bam$/i.test(f.name));
-    const annot = files.find((f) => /\.(gtf|gff|gff3|saf|tsv)$/i.test(f.name));
+    const annot = files.find((f) => /\.(gtf|saf|tsv)$/i.test(f.name));
     if (bams.length) addBams(bams);
     if (annot) gtfFile = annot;
+    // featureCounts here reads GTF or SAF only; GFF3 lacks the gene_id attribute it groups by.
+    if (files.some((f) => /\.gff3?$/i.test(f.name))) {
+      toast.error('GFF3 is not supported', {
+        description: 'Use the GTF from the same release; WormBase publishes both.',
+      });
+    }
     const skipped = files.length - bams.length - (annot ? 1 : 0);
     if (skipped > 0) {
-      toast.message(`Ignored ${skipped} file(s) (only .bam / .gtf / .gff / .saf accepted)`);
+      toast.message(`Ignored ${skipped} file(s) (only .bam / .gtf / .saf accepted)`);
     }
   }
   // The bundled annotation is the WormBase canonical geneset for the release the
@@ -116,10 +123,19 @@
     try {
       const res = await fetch(`/data/${bundled.file}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      // featureCounts reads plain text, so unzip before staging it. The extension
-      // decides how the wrapper parses it, so it has to match the format shipped.
-      const stream = res.body?.pipeThrough(new DecompressionStream('gzip'));
-      const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+      // featureCounts reads plain text, so unzip before staging it. A server that sends
+      // Content-Encoding: gzip (the Vite dev server does for .gz) has the browser unzip it
+      // already, so only bytes that still carry the gzip magic number are decompressed.
+      // The extension decides how the wrapper parses it, so it has to match the format.
+      const raw = new Uint8Array(await res.arrayBuffer());
+      const gzipped = raw[0] === 0x1f && raw[1] === 0x8b;
+      const bytes = gzipped
+        ? new Uint8Array(
+            await new Response(
+              new Blob([raw]).stream().pipeThrough(new DecompressionStream('gzip')),
+            ).arrayBuffer(),
+          )
+        : raw;
       const ext = bundled.format === 'saf' ? 'saf' : 'gtf';
       gtfFile = new File([bytes], `c_elegans.${bundled.release}.canonical_geneset.${ext}`, {
         type: 'text/plain',
@@ -162,14 +178,39 @@
         readAll(bamFiles),
         readAll([gtfFile]).then((a) => a[0]),
       ]);
-      result = await activeClient.run({ bams, annotation, threads, isPaired }, (line) => {
+      result = await activeClient.run({ bams, annotation, threads, isPaired, strand }, (line) => {
         progressLines = [...progressLines, line];
       });
       toast.success(`featureCounts complete (${result.elapsedSec.toFixed(1)}s)`);
+      warnIfStrandLooksWrong(result.summaryTsv);
     } catch (e) {
       toast.error('featureCounts failed', { description: (e as Error)?.message ?? String(e) });
     } finally {
       running = false;
+    }
+  }
+
+  // Counting a stranded library the wrong way round does not fail; it just leaves most
+  // reads unassigned. A typical library assigns well over half its reads, so a stranded run
+  // that assigns under a fifth in some sample points at the strand setting.
+  function warnIfStrandLooksWrong(summaryTsv: string) {
+    if (strand === 0) return;
+    const lines = summaryTsv.split('\n').filter(Boolean);
+    const totals: number[] = [];
+    let assigned: number[] = [];
+    for (const l of lines.slice(1)) {
+      const cells = l.split('\t');
+      const vals = cells.slice(1).map((v) => Number(v) || 0);
+      vals.forEach((v, i) => (totals[i] = (totals[i] ?? 0) + v));
+      if (cells[0] === 'Assigned') assigned = vals;
+    }
+    const fractions = assigned.map((a, i) => (totals[i] ? a / totals[i] : 1));
+    const lowest = Math.min(...fractions);
+    if (fractions.length && lowest < 0.2) {
+      toast.warning(`Only ${(lowest * 100).toFixed(0)}% of reads were assigned in some samples`, {
+        description: `That is typical of counting with the wrong strandedness. Try ${strand === 1 ? 'reversely stranded' : 'stranded (forward)'} or unstranded, and compare the summary table.`,
+        duration: 15_000,
+      });
     }
   }
 
@@ -295,7 +336,7 @@
       <input
         bind:this={gtfInput}
         type="file"
-        accept=".gtf,.gff,.gff3,.saf,.tsv"
+        accept=".gtf,.saf,.tsv"
         onchange={onGtfPick}
         class="hidden"
       />
@@ -364,7 +405,7 @@
           <Button variant="outline" size="sm" onclick={() => gtfInput?.click()} disabled={running}>
             {bundled ? 'Or choose your own' : 'Choose annotation'}
           </Button>
-          <span class="text-xs text-muted-foreground">GTF, GFF3, or SAF</span>
+          <span class="text-xs text-muted-foreground">GTF or SAF</span>
           <ControlHint id="counts-gtf" title="What the annotation is and where to get one">
             The BAM says where each read landed; the annotation says where the genes are, so the two
             together give a count per gene. The <b>Use WormBase</b> button loads the canonical gene
@@ -421,6 +462,40 @@
           />
           Paired-end reads (count fragments)
         </label>
+        <div class="grid gap-1.5">
+          <label for="strand" class="inline-flex items-center gap-1.5 text-sm font-medium">
+            Strandedness
+            <ControlHint id="counts-strand" title="Which strand the reads come from">
+              Most library kits keep track of which DNA strand each RNA came from, and counting can
+              use that to tell apart genes that overlap on opposite strands. Check your kit or ask
+              the sequencing core.
+              <br /><br />
+              <b>Unstranded</b> counts a read on either strand. It never loses reads, and is the
+              right choice for unstranded kits or when unsure.
+              <br />
+              <b>Stranded</b> (featureCounts <code>-s 1</code>, htseq-count
+              <code>--stranded yes</code>, its default): read 1 lies on the gene's own strand, as in
+              Lexogen QuantSeq FWD.
+              <br />
+              <b>Reversely stranded</b> (<code>-s 2</code>, htseq-count
+              <code>--stranded reverse</code>): read 1 lies on the opposite strand, as in dUTP kits
+              such as Illumina TruSeq Stranded and NEBNext Ultra II Directional.
+              <br /><br />
+              The wrong stranded setting does not fail; it leaves most reads unassigned, which the summary
+              table shows and WormIE flags.
+            </ControlHint>
+          </label>
+          <select
+            id="strand"
+            bind:value={strand}
+            disabled={running}
+            class="h-9 max-w-56 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value={0}>Unstranded</option>
+            <option value={1}>Stranded (forward)</option>
+            <option value={2}>Reversely stranded</option>
+          </select>
+        </div>
       </div>
 
       <div class="flex items-center justify-between border-t pt-4">

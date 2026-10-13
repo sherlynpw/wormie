@@ -9,6 +9,8 @@ export interface FeatureCountsRequest {
   threads: number;
   /** Paired-end fragment counting. */
   isPaired: boolean;
+  /** featureCounts -s: 0 unstranded, 1 stranded (read 1 on the gene's strand), 2 reversely stranded. */
+  strand?: 0 | 1 | 2;
   /** Optional extra featureCounts CLI args (advanced users). */
   extraArgs?: string[];
 }

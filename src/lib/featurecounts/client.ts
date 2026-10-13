@@ -145,6 +145,7 @@ export function createFeatureCountsClient(opts?: { baseUrl?: string }): FeatureC
     ];
     if (!isSaf) args.push('-t', 'exon', '-g', 'gene_id');
     if (req.isPaired) args.push('-p', '--countReadPairs');
+    args.push('-s', String(req.strand ?? 0));
     if (req.extraArgs?.length) args.push(...req.extraArgs);
     for (const b of req.bams) args.push(`/${b.name}`);
 
