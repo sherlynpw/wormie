@@ -216,6 +216,8 @@ const bench = {
         es: r.es,
         nes: r.nes,
         p: r.p,
+        p_perm: r.p_perm,
+        p_at_bound: r.p_at_bound,
         q: r.q,
       })),
     };

@@ -117,7 +117,9 @@ test('saves enrichment session with results, loads into overlap', async ({ page 
   await page.goto('/enrichment/overlap');
   await expect(page.getByRole('heading', { name: 'Inputs' })).toBeVisible({ timeout: 30_000 });
 
-  const firstSlotSelect = page.locator('select').first();
+  const firstSlotSelect = page
+    .locator('select', { has: page.locator('option', { hasText: 'Load saved session' }) })
+    .first();
   await expect(firstSlotSelect).toBeVisible();
   await firstSlotSelect.selectOption({ label: 'enrich-with-results' });
 

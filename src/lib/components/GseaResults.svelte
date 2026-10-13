@@ -52,6 +52,7 @@
     deeplinkKind = null,
     deeplinkTerm = null,
     onResults,
+    onParams,
     imported,
   }: {
     ranked: GseaInput[];
@@ -59,6 +60,13 @@
     deeplinkTerm?: string | null;
     // Called whenever live results change for session-blob capture (restore + UpSet).
     onResults?: (results: Partial<Record<GseaKind, GseaResult[]>>) => void;
+    // Reports the run settings so the page's Methods text states what was actually used.
+    onParams?: (p: {
+      nperm: number;
+      multilevel: boolean;
+      minSize: number;
+      maxSize: number;
+    }) => void;
     // Pre-computed results from a saved Session; component skips running and renders directly
     // (mirrors EnrichmentResults imported flow). One-shot: subsequent live runs override.
     imported?: Partial<Record<GseaKind, GseaResult[]>>;
@@ -83,6 +91,7 @@
   let multilevel = $state<boolean>(true);
   let minSize = $state<number>(15);
   let maxSize = $state<number>(500);
+  $effect(() => onParams?.({ nperm, multilevel, minSize, maxSize }));
   let results = $state<Record<GseaKind, GseaResult[] | null>>({
     go: null,
     phenotype: null,
@@ -322,6 +331,8 @@
         { header: 'es', get: (row) => row.es.toFixed(4) },
         { header: 'nes', get: (row) => row.nes.toFixed(4) },
         { header: 'p', get: (row) => row.p.toExponential(3) },
+        { header: 'p_perm', get: (row) => row.p_perm?.toExponential(3) ?? '' },
+        { header: 'p_at_bound', get: (row) => (row.p_at_bound ? 'TRUE' : '') },
         { header: 'q', get: (row) => row.q.toExponential(3) },
         { header: 'leading_edge', get: (row) => row.leading_edge.join('|') },
         ...(collapsed
@@ -866,7 +877,8 @@
             >
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-              title="Raw permutation p-value, before correction for testing many sets.">p</th
+              title="p-value before correction for testing many sets. Permutation p, or the multilevel estimate where that resolves it below the permutation floor (marked *; hover for the permutation p)."
+              >p</th
             >
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
@@ -944,7 +956,19 @@
               <td
                 class="whitespace-nowrap px-3 py-1.5 text-right align-top font-mono text-xs tabular-nums"
               >
-                {fmtP(r.p)}
+                {#if r.p_at_bound}
+                  <span
+                    title="Beyond the multilevel bound: the p-value is below 1e-50, as fgsea reports it. Permutation p: {fmtP(
+                      r.p_perm ?? r.p,
+                    )}">&lt; {fmtP(r.p)}</span
+                  >
+                {:else if r.p_perm !== undefined && r.p_perm !== r.p}
+                  <span title="Multilevel estimate. Permutation p: {fmtP(r.p_perm)}"
+                    >{fmtP(r.p)}*</span
+                  >
+                {:else}
+                  {fmtP(r.p)}
+                {/if}
               </td>
               <td
                 class={cn(

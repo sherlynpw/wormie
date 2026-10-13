@@ -1,3 +1,4 @@
+import { countsLayout } from './counts-table';
 import type { PCAPoint } from '$lib/components/PCAScatter.svelte';
 import type { DispersionRow } from '$lib/components/DispersionPlot.svelte';
 import type { SampleBox } from '$lib/components/CountsBoxplot.svelte';
@@ -226,13 +227,12 @@ export function geneRowFromCountsTsv(tsv: string, gene: string): Map<string, num
 
 export function summarizeRawCountsFromFeatureCountsTsv(tsv: string, log = true): SampleBox[] {
   const lines = tsv.split('\n').filter((l) => l && !l.startsWith('#'));
-  if (lines.length < 2) return [];
-  const header = lines[0].split('\t');
-  const sampleStart = 6;
-  const samples = header.slice(sampleStart);
+  const layout = countsLayout(tsv);
+  if (lines.length < 2 || !layout) return [];
+  const { delim, header: samples, sampleStart } = layout;
   const cols: number[][] = samples.map(() => []);
   for (let i = 1; i < lines.length; i++) {
-    const c = lines[i].split('\t');
+    const c = lines[i].split(delim);
     for (let j = 0; j < samples.length; j++) {
       const v = Number(c[sampleStart + j]);
       if (!Number.isFinite(v)) continue;

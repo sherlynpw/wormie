@@ -397,6 +397,15 @@
     ];
   });
 
+  // Group label keyed by its first panel's id, so the in-page headings track the TOC grouping.
+  const groupStartLabels = $derived(
+    new Map(
+      tocEntries.flatMap((e) =>
+        'children' in e && e.children.length ? [[e.children[0].id, e.label] as const] : [],
+      ),
+    ),
+  );
+
   const xrefBundle = $derived.by(() => {
     /* eslint-disable svelte/prefer-svelte-reactivity */
     const uniprot = new Set<string>();
@@ -461,6 +470,16 @@
   class="mx-auto max-w-4xl p-4 md:p-6 xl:grid xl:max-w-6xl xl:grid-cols-[minmax(0,1fr)_192px] xl:gap-6"
 >
   <div class="min-w-0 space-y-4">
+    {#snippet groupHeading(firstId: string)}
+      {@const label = groupStartLabels.get(firstId)}
+      {#if label}
+        <h2
+          class="border-b pb-1 pt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+        >
+          {label}
+        </h2>
+      {/if}
+    {/snippet}
     <div class="flex flex-wrap items-center gap-2">
       <Button variant="ghost" size="sm" href="/">
         <ArrowLeft />
@@ -532,6 +551,7 @@
         </CardContent>
       </Card>
     {:else if gene}
+      {@render groupHeading('overview')}
       <Card id="overview">
         <CardHeader>
           <div class="flex flex-wrap items-baseline justify-between gap-4">
@@ -901,15 +921,16 @@
         />
       {/if}
 
+      {@render groupHeading('alleles')}
       {#if alleles.length > 0}
         <Card id="alleles">
           <CardHeader class="flex flex-row items-baseline justify-between pb-3">
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Alleles
               <ControlHint id="gene-alleles" title="Alleles">
-                Reported variants for this gene with their molecular nature (point mutation,
-                deletion, knockout etc) and any associated phenotypes. Drawn from WormBase variation
-                records.
+                Alleles of this gene with recorded phenotypes, by WormBase allele name (WBVar ID on
+                hover), with how many phenotypes each has. Each links to its WormBase variation
+                page, which describes the molecular change.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -960,8 +981,13 @@
                             rel="noopener"
                             class="font-mono text-[0.65rem] text-primary hover:underline"
                           >
-                            {a.allele_id}
+                            {a.name}
                           </a>
+                          {#if a.name !== a.allele_id}
+                            <span class="ml-1 font-mono text-[0.6rem] text-muted-foreground"
+                              >{a.allele_id}</span
+                            >
+                          {/if}
                         </td>
                         <td class="px-3 py-1.5 text-right font-mono text-xs tabular-nums"
                           >{a.n_phenotypes}</td
@@ -1151,6 +1177,7 @@
         />
       {/if}
 
+      {@render groupHeading('go')}
       {#if goAnnotations.length}
         <Card id="go">
           <CardHeader class="flex flex-row items-baseline justify-between pb-3">
@@ -1388,6 +1415,7 @@
         />
       {/if}
 
+      {@render groupHeading('tissues')}
       {#if anatomy.length > 0}
         <Card id="tissues">
           <CardHeader class="flex flex-row items-baseline justify-between pb-3">
@@ -1471,6 +1499,7 @@
         />
       {/if}
 
+      {@render groupHeading('interactions')}
       {#if interactions.length > 0}
         <Card id="interactions">
           <CardHeader class="flex flex-row items-baseline justify-between pb-3">
@@ -1788,6 +1817,7 @@
         />
       {/if}
 
+      {@render groupHeading('papers')}
       {#if papers.length > 0}
         <Card id="papers">
           <CardHeader class="flex flex-row items-baseline justify-between pb-3">

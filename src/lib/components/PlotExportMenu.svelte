@@ -7,9 +7,12 @@
   let {
     getSvg,
     baseName,
+    extra = [],
   }: {
     getSvg: () => SVGSVGElement | null;
     baseName: string;
+    /** Non-image exports (e.g. the data behind the plot) appended below the image formats. */
+    extra?: { label: string; title?: string; run: () => void }[];
   } = $props();
 
   let open = $state(false);
@@ -55,7 +58,7 @@
   {#if open}
     <div
       role="menu"
-      class="absolute right-0 z-50 mt-1 w-32 overflow-hidden rounded-md border bg-popover shadow-md"
+      class="absolute right-0 z-50 mt-1 w-36 overflow-hidden rounded-md border bg-popover shadow-md"
     >
       <button
         type="button"
@@ -79,6 +82,19 @@
       >
         PDF
       </button>
+      {#each extra as item (item.label)}
+        <button
+          type="button"
+          class="w-full border-t px-3 py-1.5 text-left text-sm hover:bg-accent"
+          title={item.title}
+          onclick={() => {
+            open = false;
+            item.run();
+          }}
+        >
+          {item.label}
+        </button>
+      {/each}
     </div>
   {/if}
 </div>

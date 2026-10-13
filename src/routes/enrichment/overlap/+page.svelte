@@ -15,14 +15,22 @@
   import { exportSvgBundle } from '$lib/export-plot';
   import ImageIcon from 'lucide-svelte/icons/image';
   import { toast } from 'svelte-sonner';
-  import { parseClusterProfilerCsv } from '$lib/import-enrichment';
-  import type { EnrichmentResult } from '$lib/db/client';
+  import { ENRICHMENT_KINDS, type EnrichmentKind, type EnrichmentResult } from '$lib/enrichment';
+  import {
+    looksLikeResultsTable,
+    parseTableSlot,
+    runGeneListSlot,
+    type SlotSource,
+  } from '$lib/enrichment-overlap-input';
+  import LoadDatasetPicker from '$lib/components/LoadDatasetPicker.svelte';
+  import { selection } from '$lib/stores/selection.svelte';
   import { computeUpSet, type UpSetInput } from '$lib/upset';
   import { datasets } from '$lib/stores/datasets.svelte';
   import { decodeSession } from '$lib/session';
   import { enrichmentResultsToCsv } from '$lib/results-to-paste';
   import { handoff } from '$lib/pipeline-handoff';
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
   import { CONDITION_PALETTE } from '$lib/plot-colors';
 
   onMount(() => {
@@ -34,6 +42,17 @@
       slot.body = h.csv;
       recompute();
       toast.success('Results loaded from Over-representation', { description: h.name });
+    }
+    // The Datasets page sends "Open in -> Enrichment overlap" as ?load=list&id=.
+    const params = page.url.searchParams;
+    const loadId = params.get('load') === 'list' ? params.get('id') : null;
+    if (loadId) {
+      void datasets.getById(loadId).then((ds) => {
+        if (!ds) return;
+        const slot = slots.find((s) => !s.body.trim()) ?? slots[0];
+        fillSlot(slot, ds.name, ds.body);
+        toast.success('Loaded', { description: ds.name });
+      });
     }
   });
 
@@ -66,31 +85,99 @@
 
   let nextId = 3;
   let slots = $state<Slot[]>([
-    { id: 1, name: 'Contrast A', body: '', dragOver: false },
-    { id: 2, name: 'Contrast B', body: '', dragOver: false },
+    { id: 1, name: 'List A', body: '', dragOver: false },
+    { id: 2, name: 'List B', body: '', dragOver: false },
   ]);
   let qCutoff = $state<number>(0.05);
+  // Every slot is compared on one annotation kind: gene lists are tested on it, tables filtered to it.
+  let annotationKind = $state<EnrichmentKind>('go');
+  const kindLabel = $derived(
+    ENRICHMENT_KINDS.find((k) => k.key === annotationKind)?.label ?? annotationKind,
+  );
+
+  // key = kind + body, so an unchanged slot is not re-run when another slot is edited.
+  type SlotState =
+    | { status: 'running'; key: string }
+    | { status: 'ok'; key: string; source: SlotSource }
+    | { status: 'error'; key: string; error: string };
+  let slotState = $state<Record<number, SlotState>>({});
+  let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Debounced so typing into a gene-list slot does not launch a run per keystroke.
+  function recompute() {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(refresh, 400);
+  }
+
+  async function refresh() {
+    const kind = annotationKind;
+    const live = new Set(slots.map((s) => s.id));
+    for (const id of Object.keys(slotState).map(Number)) {
+      if (!live.has(id)) delete slotState[id];
+    }
+    await Promise.all(
+      slots.map(async (s) => {
+        const body = s.body;
+        if (!body.trim()) {
+          delete slotState[s.id];
+          return;
+        }
+        const key = `${kind}\u0000${body}`;
+        if (slotState[s.id]?.key === key) return;
+        if (looksLikeResultsTable(body)) {
+          try {
+            slotState[s.id] = { status: 'ok', key, source: parseTableSlot(body, kind) };
+          } catch (e) {
+            slotState[s.id] = { status: 'error', key, error: (e as Error).message };
+          }
+          return;
+        }
+        slotState[s.id] = { status: 'running', key };
+        try {
+          const source = await runGeneListSlot(body, kind);
+          if (slotState[s.id]?.key === key) slotState[s.id] = { status: 'ok', key, source };
+        } catch (e) {
+          if (slotState[s.id]?.key === key) {
+            slotState[s.id] = { status: 'error', key, error: (e as Error).message };
+          }
+        }
+      }),
+    );
+  }
 
   type Parsed = { slotId: number; name: string; rows: EnrichmentResult[]; total: number };
-  let parsed = $state<Parsed[]>([]);
-  let parseError = $state<string | null>(null);
+  const parsed = $derived<Parsed[]>(
+    slots.flatMap((s) => {
+      const st = slotState[s.id];
+      if (st?.status !== 'ok') return [];
+      return [
+        {
+          slotId: s.id,
+          name: s.name || `Slot ${s.id}`,
+          rows: st.source.rows,
+          total: st.source.total,
+        },
+      ];
+    }),
+  );
+  const anyRunning = $derived(Object.values(slotState).some((st) => st.status === 'running'));
 
-  function recompute() {
-    parseError = null;
-    const out: Parsed[] = [];
-    for (const s of slots) {
-      if (!s.body.trim()) continue;
-      try {
-        const { results } = parseClusterProfilerCsv(s.body);
-        const rows: EnrichmentResult[] = [];
-        for (const arr of Object.values(results)) if (arr) rows.push(...arr);
-        out.push({ slotId: s.id, name: s.name || `Slot ${s.id}`, rows, total: rows.length });
-      } catch (e) {
-        parseError = `${s.name || `Slot ${s.id}`}: ${(e as Error).message}`;
-        return;
-      }
+  function slotStatus(st: SlotState | undefined): string {
+    if (!st) return 'empty';
+    if (st.status === 'running') return 'gene list: running over-representation...';
+    if (st.status === 'error') return st.error;
+    const src = st.source;
+    if (src.kind === 'genes') {
+      const missed = src.misses.length ? `, ${src.misses.length} not recognized` : '';
+      return `gene list: ${src.nGenes} genes${missed}; ${src.total} ${kindLabel} terms tested`;
     }
-    parsed = out;
+    if (src.total === 0) {
+      const has = ENRICHMENT_KINDS.filter((k) => src.byKind[k.key])
+        .map((k) => `${src.byKind[k.key]} ${k.label}`)
+        .join(', ');
+      return `results table: no ${kindLabel} terms${has ? ` (it has ${has})` : ''}`;
+    }
+    return `results table: ${src.total} ${kindLabel} terms`;
   }
 
   const significantPerSlot = $derived(
@@ -146,7 +233,12 @@
   function addSlot() {
     slots = [
       ...slots,
-      { id: nextId++, name: `Contrast ${slots.length + 1}`, body: '', dragOver: false },
+      {
+        id: nextId++,
+        name: `List ${String.fromCharCode(65 + slots.length)}`,
+        body: '',
+        dragOver: false,
+      },
     ];
   }
   function removeSlot(id: number) {
@@ -169,6 +261,12 @@
   }
 
   const nonEmptySlots = $derived(slots.filter((s) => s.body.trim().length > 0).length);
+
+  function fillSlot(slot: Slot, name: string, body: string) {
+    slot.name = name;
+    slot.body = body;
+    recompute();
+  }
 </script>
 
 <svelte:head><title>Enrichment overlap · wormie.rs.ht</title></svelte:head>
@@ -181,36 +279,65 @@
 
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Enrichment overlap</h1>
-    <p class="text-sm text-muted-foreground">Enrichment result tables compared term by term</p>
+    <p class="text-sm text-muted-foreground">
+      Two or more gene lists compared on the terms enriched in each
+    </p>
   </header>
 
   <PageHint id="overlap" title="Enrichment overlap (UpSet)">
-    This is how two gene lists are compared: run over-representation on each list, then put the
-    result tables side by side here. Paste 2+ enrichment result tables (clusterProfiler / topGO /
-    GSEApy CSV format) and compare which terms are significant in which contrasts. Choose a q-value
-    cutoff. The UpSet plot shows intersection sizes; click any bar to list the terms in that exact
-    combination. A result computed on the Over-representation page can be sent here directly with
-    its &ldquo;Send results to overlap&rdquo; button.
+    Paste a gene list into each slot, or load a saved list. Over-representation runs on every list
+    separately, against the whole annotated genome, the same test the Over-representation page runs,
+    and the significant terms are then compared across lists: two lists can share little membership
+    and still point at the same biology. Pick which annotation to compare on and a q-value cutoff.
+    The UpSet plot shows intersection sizes; click any bar to list the terms in that exact
+    combination. A slot also accepts a finished enrichment result table (clusterProfiler / topGO /
+    GSEApy CSV), and a result from the Over-representation page can be sent here with its
+    &ldquo;Send results to overlap&rdquo; button.
   </PageHint>
 
   <Card>
     <CardHeader>
       <CardTitle class="text-lg">Inputs</CardTitle>
       <div class="text-sm text-muted-foreground">
-        One enrichment result table per slot. Format: <code
+        One gene list per slot, in any identifiers (gene names, sequence names, WormBase or Entrez
+        IDs). A slot can instead hold an enrichment result table (<code
           >ID, Description, GeneRatio, BgRatio, pvalue, p.adjust, ...</code
-        >.
+        >), which is used as is.
       </div>
+      <label class="flex items-center gap-2 pt-1 text-sm">
+        <span class="text-muted-foreground">Compare on</span>
+        <select
+          bind:value={annotationKind}
+          onchange={recompute}
+          class="h-8 rounded border bg-background px-2 text-sm"
+        >
+          {#each ENRICHMENT_KINDS as k (k.key)}
+            <option value={k.key}>{k.label}</option>
+          {/each}
+        </select>
+      </label>
     </CardHeader>
     <CardContent class="space-y-3">
       {#each slots as slot (slot.id)}
         <div class="rounded-md border bg-card p-3">
           <div class="mb-2 flex items-center gap-2">
-            <Input bind:value={slot.name} placeholder="Slot name" class="h-8 max-w-xs text-sm" />
-            <span class="text-xs text-muted-foreground">
-              {slot.body.trim() ? `${slot.body.length.toLocaleString()} chars` : 'empty'}
-            </span>
-            <div class="ml-auto flex items-center gap-2">
+            <Input bind:value={slot.name} placeholder="List name" class="h-8 max-w-xs text-sm" />
+            <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+              {#if selection.ids.length > 0}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Fill this slot with your current selection"
+                  onclick={() => fillSlot(slot, slot.name, selection.ids.join('\n'))}
+                >
+                  From selection ({selection.ids.length})
+                </Button>
+              {/if}
+              <LoadDatasetPicker
+                type="gene-list"
+                label="From saved list"
+                onload={(ds) => fillSlot(slot, ds.name, ds.body)}
+              />
               {#if enrichmentSessions.length > 0}
                 <select
                   value=""
@@ -244,7 +371,7 @@
             bind:value={slot.body}
             oninput={recompute}
             rows="6"
-            placeholder="ID,Description,GeneRatio,BgRatio,pvalue,p.adjust,...&#10;GO:0006952,defense response,42/199,180/9826,1.2e-12,3.4e-10,...&#10;&#10;or drop a .csv/.tsv file here"
+            placeholder="daf-16&#10;lys-7&#10;WBGene00000912&#10;&#10;or an enrichment result table, or drop a file here"
             class="w-full resize-y rounded-md border bg-background px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring {slot.dragOver
               ? 'ring-2 ring-primary'
               : ''}"
@@ -257,24 +384,29 @@
             ondragleave={() => (slot.dragOver = false)}
             ondrop={(e) => onDrop(e, slot.id)}
           ></textarea>
+          {#if slot.body.trim()}
+            {@const st = slotState[slot.id]}
+            <div
+              class="mt-1 text-xs {st?.status === 'error'
+                ? 'text-destructive'
+                : 'text-muted-foreground'}"
+              title={st?.status === 'ok' && st.source.kind === 'genes' && st.source.misses.length
+                ? `Not recognized: ${st.source.misses.slice(0, 20).join(', ')}`
+                : undefined}
+            >
+              {slotStatus(st)}
+            </div>
+          {/if}
         </div>
       {/each}
       <Button variant="outline" size="sm" onclick={addSlot}>
         <Plus class="h-3 w-3" />
         Add input
       </Button>
-
-      {#if parseError}
-        <div
-          class="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
-        >
-          {parseError}
-        </div>
-      {/if}
     </CardContent>
   </Card>
 
-  {#if nonEmptySlots >= 2 && !parseError}
+  {#if parsed.length >= 2}
     <Card>
       <CardHeader>
         <CardTitle class="text-lg">Overlap</CardTitle>
@@ -304,6 +436,7 @@
           <JaccardHeatmap
             sets={significantPerSlot.map((s) => ({ name: s.name, ids: s.ids }))}
             title="Significant-term Jaccard between slots"
+            labels={termName}
           />
         {/if}
 
@@ -355,6 +488,8 @@
             sets={significantPerSlot.map((s) => ({ name: s.name, ids: s.ids }))}
             maxGroups={30}
             exportName="enrichment-overlap-upset"
+            labels={termName}
+            setNoun="list"
           />
         {:else}
           <CoOccurrenceHeatmap
@@ -447,9 +582,13 @@
         </div>
       </CardContent>
     </Card>
+  {:else if anyRunning}
+    <div class="rounded-md border bg-card px-3 py-4 text-sm text-muted-foreground">
+      Running over-representation...
+    </div>
   {:else if nonEmptySlots < 2}
     <div class="rounded-md border bg-card px-3 py-4 text-sm text-muted-foreground">
-      Add result tables to at least two slots to see the overlap.
+      Add gene lists or result tables to at least two slots to see the overlap.
     </div>
   {/if}
 </div>

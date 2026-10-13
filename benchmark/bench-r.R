@@ -51,7 +51,14 @@ timed <- function(expr, n, warmup = 1L) {
 }
 
 out <- list(generated = format(Sys.time(), "%Y-%m-%dT%H:%M:%S"), repeats = repeats,
-            deseq2 = list(), gsea = list(), ora = list(), ssgsea = list())
+            deseq2 = list(), gsea = list(), gsea_ml = list(), ora = list(), ssgsea = list())
+# Keep pipelines not selected by --only, so a partial run does not wipe earlier results.
+prevPath <- file.path(resultsDir, "r.json")
+if (file.exists(prevPath)) {
+  prev <- fromJSON(prevPath, simplifyVector = FALSE)
+  arm <- c(deseq2 = "deseq2", gsea = "gsea", gsea_ml = "gsea", ora = "ora", ssgsea = "ssgsea")
+  for (k in names(arm)) if (!want(arm[[k]]) && !is.null(prev[[k]])) out[[k]] <- prev[[k]]
+}
 
 if (want("deseq2")) {
   for (c in manifest$deseq2) {
@@ -95,6 +102,21 @@ if (want("gsea")) {
         term_id = fg$pathway[i], size = fg$size[i], es = fg$ES[i],
         nes = fg$NES[i], p = fg$pval[i], q = fg$padj[i])))
     cat(sprintf("-- gsea u%d n%d: %.0fms\n", g$universe, g$nSets, median(run$ms)))
+
+    # Multilevel arm at fgsea's defaults (eps = 1e-50, below which p is reported as eps),
+    # the reference for WormIE's multilevel refinement below the permutation floor.
+    ml <- timed(
+      fgseaMultilevel(pathways = sets, stats = stats, minSize = 1, maxSize = 100000,
+                      scoreType = "std"),
+      min(repeats, 3L))
+    fm <- ml$result
+    out$gsea_ml[[length(out$gsea_ml) + 1]] <- list(
+      universe = g$universe, nSets = g$nSets, nperm = g$nperm,
+      msMedian = median(ml$ms), msAll = ml$ms,
+      results = lapply(seq_len(nrow(fm)), function(i) list(
+        term_id = fm$pathway[i], size = fm$size[i], es = fm$ES[i],
+        nes = fm$NES[i], p = fm$pval[i], q = fm$padj[i])))
+    cat(sprintf("-- gsea multilevel u%d n%d: %.0fms\n", g$universe, g$nSets, median(ml$ms)))
   }
 }
 
@@ -137,6 +159,6 @@ if (want("ssgsea")) {
 }
 
 # digits = NA keeps full double precision; a fixed count would floor the comparison.
-write(toJSON(out, auto_unbox = TRUE, digits = NA, na = "null"),
+write(toJSON(out, auto_unbox = TRUE, digits = NA, na = "null", null = "null"),
       file.path(resultsDir, "r.json"))
 cat("==> wrote benchmark/results/r.json\n")

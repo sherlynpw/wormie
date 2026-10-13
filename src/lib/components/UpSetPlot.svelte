@@ -8,17 +8,27 @@
   }
 
   import PlotExportMenu from './PlotExportMenu.svelte';
+  import OverlapItemsPanel from './OverlapItemsPanel.svelte';
+  import { downloadTsv } from '$lib/download';
 
   let {
     sets,
     title,
     maxGroups = 18,
     exportName,
+    labels,
+    href,
+    setNoun = 'gene',
   }: {
     sets: GeneSets[];
     title: string;
     maxGroups?: number;
     exportName?: string;
+    /** Display names for item ids (e.g. GO id -> term name), used in the item list and TSV. */
+    labels?: ReadonlyMap<string, string>;
+    href?: (id: string) => string | null;
+    /** What each set is (gene, list, contrast); used in the fewer-than-three message. */
+    setNoun?: string;
   } = $props();
 
   let svgEl: SVGSVGElement | null = $state(null);
@@ -28,9 +38,11 @@
 
   const N = $derived(sets.length);
 
-  // Bitmask-encode each item's set membership, tally by mask, sort desc.
-  const groups = $derived.by(() => {
-    if (N < 2) return [] as { mask: number; count: number }[];
+  type Group = { mask: number; count: number; members: string[] };
+
+  // Bitmask-encode each item's set membership, group by mask, sort desc.
+  const allGroups = $derived.by(() => {
+    if (N < 2) return [] as Group[];
     /* eslint-disable svelte/prefer-svelte-reactivity */
     const itemMask = new Map<string, number>();
     for (let i = 0; i < N; i++) {
@@ -41,13 +53,58 @@
         itemMask.set(id, (itemMask.get(id) ?? 0) | (1 << i));
       }
     }
-    const tally = new Map<number, number>();
-    for (const mask of itemMask.values()) tally.set(mask, (tally.get(mask) ?? 0) + 1);
+    const byMask = new Map<number, string[]>();
+    for (const [id, mask] of itemMask) {
+      const list = byMask.get(mask);
+      if (list) list.push(id);
+      else byMask.set(mask, [id]);
+    }
     /* eslint-enable svelte/prefer-svelte-reactivity */
-    const arr = [...tally.entries()].map(([mask, count]) => ({ mask, count }));
+    const arr = [...byMask.entries()].map(([mask, members]) => ({
+      mask,
+      count: members.length,
+      members,
+    }));
     arr.sort((a, b) => b.count - a.count);
-    return arr.slice(0, maxGroups);
+    return arr;
   });
+  const groups = $derived(allGroups.slice(0, maxGroups));
+
+  let hoverMask = $state<number | null>(null);
+  let pinnedMask = $state<number | null>(null);
+  const activeGroup = $derived(groups.find((g) => g.mask === (hoverMask ?? pinnedMask)) ?? null);
+
+  function setNames(mask: number): string[] {
+    return sets.filter((_, i) => mask & (1 << i)).map((s) => s.name);
+  }
+
+  function groupHeading(mask: number): string {
+    const names = setNames(mask);
+    return names.length === 1 ? `${names[0]} only` : `Shared by ${names.join(' + ')} only`;
+  }
+
+  function togglePin(mask: number) {
+    pinnedMask = pinnedMask === mask ? null : mask;
+  }
+
+  // One row per item across every group (not just the plotted top N), so nothing is lost.
+  function exportItems() {
+    const rows = allGroups.flatMap((g) => {
+      const names = setNames(g.mask);
+      return g.members.map((id) => ({ names, size: g.count, id }));
+    });
+    downloadTsv(
+      `${exportName ?? 'upset'}-items.tsv`,
+      [
+        { header: 'sets', get: (r) => r.names.join(';') },
+        { header: 'n_sets', get: (r) => r.names.length },
+        { header: 'group_size', get: (r) => r.size },
+        { header: 'item_id', get: (r) => r.id },
+        { header: 'item_label', get: (r) => labels?.get(r.id) ?? '' },
+      ],
+      rows,
+    );
+  }
 
   const totalItems = $derived(groups.reduce((s, g) => s + g.count, 0));
   const maxCount = $derived(groups.reduce((m, g) => Math.max(m, g.count), 1));
@@ -69,7 +126,13 @@
   </div>
   {#if N < 3}
     <div class="text-xs italic text-muted-foreground">
-      UpSet shines at N ≥ 3. With only {N} gene{N === 1 ? '' : 's'}, use the pairwise overlap card.
+      {#if setNoun === 'gene'}
+        UpSet shines at N ≥ 3. With only {N} gene{N === 1 ? '' : 's'}, use the pairwise overlap
+        card.
+      {:else}
+        UpSet needs 3 or more {setNoun}s. With {N}, the Intersections table below shows the same
+        groups.
+      {/if}
     </div>
   {:else if groups.length === 0}
     <div class="text-xs italic text-muted-foreground">No items to plot.</div>
@@ -77,7 +140,17 @@
     <div class="relative overflow-x-auto">
       {#if exportName}
         <div class="absolute right-1 top-1 z-10">
-          <PlotExportMenu getSvg={() => svgEl} baseName={exportName} />
+          <PlotExportMenu
+            getSvg={() => svgEl}
+            baseName={exportName}
+            extra={[
+              {
+                label: 'Items (TSV)',
+                title: 'Every intersection group with its member items',
+                run: exportItems,
+              },
+            ]}
+          />
         </div>
       {/if}
       <svg
@@ -88,6 +161,19 @@
         role="img"
         aria-label="UpSet plot"
       >
+        {#if activeGroup}
+          {@const ai = groups.indexOf(activeGroup)}
+          <rect
+            data-export-skip
+            x={labelW + ai * colW + 2}
+            y={barAreaTop - 14}
+            width={colW - 4}
+            height={dotAreaTop + N * rowH - barAreaTop + 18}
+            rx="3"
+            fill="hsl(var(--muted))"
+          />
+        {/if}
+
         <!-- Group size bars -->
         {#each groups as g, ci (g.mask)}
           {@const x = labelW + ci * colW + colW / 2}
@@ -161,11 +247,50 @@
             />
           {/each}
         {/each}
+
+        <!-- Hit areas: hover previews a group's items, click pins the list -->
+        {#each groups as g, ci (g.mask)}
+          <rect
+            data-export-skip
+            x={labelW + ci * colW}
+            y={0}
+            width={colW}
+            height={dotAreaTop + N * rowH + 4}
+            fill="transparent"
+            class="cursor-pointer outline-none"
+            role="button"
+            tabindex="0"
+            aria-label="{groupHeading(g.mask)}: {g.count} items"
+            aria-pressed={pinnedMask === g.mask}
+            onmouseenter={() => (hoverMask = g.mask)}
+            onmouseleave={() => (hoverMask = null)}
+            onfocus={() => (hoverMask = g.mask)}
+            onblur={() => (hoverMask = null)}
+            onclick={() => togglePin(g.mask)}
+            onkeydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                togglePin(g.mask);
+              }
+            }}
+          />
+        {/each}
       </svg>
     </div>
     <div class="mt-1 text-[0.6rem] text-muted-foreground">
       {groups.length} intersection group{groups.length === 1 ? '' : 's'} shown, covering {totalItems}
-      unique items. Bars = group size; connected dots = which genes share that group.
+      unique items. Bars = group size; connected dots = which genes share that group. Hover or click a
+      column to list its items.
     </div>
+    {#if activeGroup}
+      <OverlapItemsPanel
+        heading={groupHeading(activeGroup.mask)}
+        ids={activeGroup.members}
+        {labels}
+        {href}
+        pinned={hoverMask === null && pinnedMask !== null}
+        onclose={() => (pinnedMask = null)}
+      />
+    {/if}
   {/if}
 </div>

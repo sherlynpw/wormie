@@ -1,2 +1,3 @@
 data/
-results/
+# The two reports the manuscript cites are tracked; the per-term JSON behind them is archived instead.
+results/*.json

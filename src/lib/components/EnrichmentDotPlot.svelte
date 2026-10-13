@@ -29,12 +29,13 @@
     svgEl?: SVGSVGElement | null;
   } = $props();
 
-  // Pick top `max` by q, then reorder within that pool by sortBy.
+  // Pick top `max` in the table's order (p, then q), then reorder within that pool by
+  // sortBy. GO's q is corrected per aspect, so q order can differ from p order across aspects.
   const top = $derived.by(() => {
-    const pool = [...results].sort((a, b) => a.q - b.q || a.p - b.p).slice(0, max);
+    const pool = [...results].sort((a, b) => a.p - b.p || a.q - b.q).slice(0, max);
     if (sortBy === 'fold') pool.sort((a, b) => b.fold - a.fold);
     else if (sortBy === 'k') pool.sort((a, b) => b.k - a.k);
-    else pool.sort((a, b) => a.q - b.q || a.p - b.p);
+    else pool.sort((a, b) => a.p - b.p || a.q - b.q);
     return pool;
   });
 

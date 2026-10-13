@@ -20,9 +20,9 @@
           target="_blank"
           rel="noopener"
           class="w-20 truncate font-mono text-[0.7rem] text-primary hover:underline"
-          title={a.allele_id}
+          title={a.name === a.allele_id ? a.allele_id : `${a.name} (${a.allele_id})`}
         >
-          {a.allele_id}
+          {a.name}
         </a>
         <div
           class="h-3.5 cursor-help rounded-sm bg-primary/70 transition-colors hover:bg-primary"

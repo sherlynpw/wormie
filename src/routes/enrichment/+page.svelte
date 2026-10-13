@@ -123,7 +123,7 @@
   const dePassing = $derived.by(() => {
     if (!deseqRows) return [] as DeseqRow[];
     return deseqRows.filter((r) => {
-      if (deseqHasPadj && (r.padj === null || r.padj > padjMax)) return false;
+      if (deseqHasPadj && (r.padj === null || r.padj >= padjMax)) return false;
       if (deseqHasLog2fc) {
         if (lfcMin > 0 && (r.log2fc === null || Math.abs(r.log2fc) < lfcMin)) return false;
         if (deDirection !== 'all') {
@@ -152,7 +152,8 @@
       if (h) {
         importText = h.tsv;
         mode = 'deseq2';
-        toast.success('Loaded DESeq2 results from /de');
+        // A hand-off is always a DE table, so go straight to the volcano and filter.
+        void parseImport();
       }
     }
 
@@ -444,7 +445,7 @@
       deseqRows = null;
       mode = 'paste';
       toast.success('Running enrichment', {
-        description: `${unique.length.toLocaleString()} DE genes (padj ≤ ${padjMax}${lfcMin > 0 ? `, |log2FC| ≥ ${lfcMin}` : ''}${deDirection !== 'all' ? `, ${deDirection}-regulated` : ''})`,
+        description: `${unique.length.toLocaleString()} DE genes (padj < ${padjMax}${lfcMin > 0 ? `, |log2FC| ≥ ${lfcMin}` : ''}${deDirection !== 'all' ? `, ${deDirection}-regulated` : ''})`,
       });
     } finally {
       resolving = false;
@@ -858,7 +859,7 @@
                     <span
                       class="mb-1 block text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
                     >
-                      padj ≤
+                      padj &lt;
                     </span>
                     <Input
                       bind:value={padjMax}

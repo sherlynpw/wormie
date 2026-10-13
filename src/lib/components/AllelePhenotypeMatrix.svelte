@@ -76,9 +76,9 @@
           rel="noopener"
           class="flex items-end justify-center font-mono text-sm text-muted-foreground hover:text-primary"
           style="writing-mode: vertical-rl; transform: rotate(180deg); height: {headerH}px; width: {cell}px;"
-          title={a.allele_id}
+          title={a.name === a.allele_id ? a.allele_id : `${a.name} (${a.allele_id})`}
         >
-          {alleleNumericName(a.allele_id)}
+          {a.name === a.allele_id ? alleleNumericName(a.allele_id) : a.name}
         </a>
       {/each}
 
@@ -101,7 +101,7 @@
             style="width: {cell}px; height: {cell}px; background: {on
               ? 'hsl(var(--accent))'
               : 'transparent'};"
-            title={on ? `${a.allele_id} → ${p.name}` : ''}
+            title={on ? `${a.name} → ${p.name}` : ''}
           ></div>
         {/each}
       {/each}

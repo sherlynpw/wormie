@@ -1,4 +1,11 @@
 import { query } from '$lib/db/client';
+import { GO_POSITIVE, CENGEN_MIN_THRESHOLD } from '$lib/db/term-filters';
+import {
+  buildWormcatTerms,
+  WORMCAT_LEVEL_ROWS_SQL,
+  type WormcatLevelRow,
+} from '$lib/db/wormcat-terms';
+import type { EnrichmentKind } from '$lib/db/client';
 import type { Gene } from '$lib/types';
 import {
   escapeFts,
@@ -1525,6 +1532,8 @@ export interface PhenotypeRow {
 
 export interface AlleleRow {
   allele_id: string;
+  // Public allele name (e.g. e1370); falls back to the WBVar id when WormBase gives none.
+  name: string;
   n_phenotypes: number;
   phenotype_term_ids: string; // pipe-joined for compact transport
   phenotype_names: string;
@@ -1619,16 +1628,20 @@ export async function getPhenotypesFor(wormbase_gene: string): Promise<Phenotype
 
 // One row per allele with aggregated phenotypes for the allele x phenotype matrix.
 export async function getAllelesFor(wormbase_gene: string): Promise<AlleleRow[]> {
+  // allele_names arrived with a later build; older cached DBs fall back to the WBVar id.
+  const named = await hasTable('allele_names');
   return query<AlleleRow>(
     `SELECT ap.allele_id,
+		        ${named ? 'COALESCE(an.name, ap.allele_id)' : 'ap.allele_id'} AS name,
 		        COUNT(DISTINCT ap.term_id) AS n_phenotypes,
 		        GROUP_CONCAT(DISTINCT ap.term_id) AS phenotype_term_ids,
 		        GROUP_CONCAT(DISTINCT COALESCE(pt.name, ap.term_id)) AS phenotype_names
 		 FROM allele_phenotype ap
 		 LEFT JOIN phenotype_terms pt ON pt.term_id = ap.term_id
+		 ${named ? 'LEFT JOIN allele_names an ON an.allele_id = ap.allele_id' : ''}
 		 WHERE ap.wormbase_gene = ?
 		 GROUP BY ap.allele_id
-		 ORDER BY n_phenotypes DESC, ap.allele_id`,
+		 ORDER BY n_phenotypes DESC, name`,
     [wormbase_gene],
   );
 }
@@ -2930,34 +2943,70 @@ export async function getNeuronalGenes(
  * ones say little about any individual sample.
  */
 export async function getTermSets(
-  kind: 'go' | 'phenotype' | 'wormcat' | 'neuronal' | 'tissue',
+  kind: EnrichmentKind,
   opts: { minSize?: number; maxSize?: number } = {},
 ): Promise<{ term_id: string; name: string; genes: string[] }[]> {
   const minSize = opts.minSize ?? 15;
   const maxSize = opts.maxSize ?? 500;
-  const SQL: Record<typeof kind, string> = {
-    go: `SELECT gg.go_id AS term_id, COALESCE(t.name, gg.go_id) AS name, gg.wormbase_gene AS gene
+  // Same membership rules as over-representation and ranked-list enrichment use.
+  const SQL: Record<Exclude<EnrichmentKind, 'wormcat'>, { sql: string; table: string }> = {
+    go: {
+      table: 'gene_go',
+      sql: `SELECT gg.go_id AS term_id, COALESCE(t.name, gg.go_id) AS name, gg.wormbase_gene AS gene
          FROM gene_go gg LEFT JOIN go_terms t ON t.go_id = gg.go_id
-         WHERE COALESCE(t.is_obsolete, 0) = 0`,
-    phenotype: `SELECT gp.term_id, COALESCE(pt.name, gp.term_id) AS name, gp.wormbase_gene AS gene
+         WHERE COALESCE(t.is_obsolete, 0) = 0 AND ${GO_POSITIVE}`,
+    },
+    phenotype: {
+      table: 'gene_phenotype',
+      sql: `SELECT gp.term_id, COALESCE(pt.name, gp.term_id) AS name, gp.wormbase_gene AS gene
          FROM gene_phenotype gp LEFT JOIN phenotype_terms pt ON pt.term_id = gp.term_id`,
-    wormcat: `SELECT category AS term_id, category AS name, wormbase_gene AS gene FROM (
-           SELECT wormbase_gene, category_1 AS category FROM wormcat WHERE category_1 IS NOT NULL
-           UNION ALL SELECT wormbase_gene, category_2 FROM wormcat WHERE category_2 IS NOT NULL
-           UNION ALL SELECT wormbase_gene, category_3 FROM wormcat WHERE category_3 IS NOT NULL
-         )`,
-    neuronal: `SELECT category AS term_id, category AS name, wormbase_gene AS gene
+    },
+    neuronal: {
+      table: 'neuronal',
+      sql: `SELECT category AS term_id, category AS name, wormbase_gene AS gene
          FROM neuronal WHERE category IS NOT NULL`,
-    tissue: `SELECT ga.term_id, COALESCE(at.name, ga.term_id) AS name, ga.wormbase_gene AS gene
+    },
+    tissue: {
+      table: 'gene_anatomy',
+      sql: `SELECT ga.term_id, COALESCE(at.name, ga.term_id) AS name, ga.wormbase_gene AS gene
          FROM gene_anatomy ga LEFT JOIN anatomy_terms at ON at.term_id = ga.term_id`,
+    },
+    disease: {
+      table: 'gene_disease',
+      sql: `SELECT do_id AS term_id, COALESCE(do_name, do_id) AS name, wormbase_gene AS gene
+         FROM gene_disease`,
+    },
+    'cell-type': {
+      table: 'cengen_calls',
+      sql: `SELECT neuron_type AS term_id, neuron_type AS name, wormbase_gene AS gene
+         FROM cengen_calls WHERE max_threshold >= ${CENGEN_MIN_THRESHOLD}`,
+    },
+    synaptogenesis: {
+      table: 'synaptogenesis',
+      sql: `SELECT class AS term_id, class AS name, wormbase_gene AS gene
+         FROM synaptogenesis WHERE class IS NOT NULL`,
+    },
+    pathway: {
+      table: 'gene_kegg_pathway',
+      sql: `SELECT gkp.pathway_id AS term_id, COALESCE(p.name, gkp.pathway_id) AS name,
+                gkp.wormbase_gene AS gene
+         FROM gene_kegg_pathway gkp LEFT JOIN kegg_pathway p ON p.pathway_id = gkp.pathway_id`,
+    },
   };
-  const rows = await query<{ term_id: string; name: string; gene: string }>(SQL[kind]);
   const byTerm = new Map<string, { term_id: string; name: string; genes: Set<string> }>();
-  for (const r of rows) {
-    if (!r.term_id || !r.gene) continue;
-    let e = byTerm.get(r.term_id);
-    if (!e) byTerm.set(r.term_id, (e = { term_id: r.term_id, name: r.name, genes: new Set() }));
-    e.genes.add(r.gene);
+  if (kind === 'wormcat') {
+    const terms = buildWormcatTerms(await query<WormcatLevelRow>(WORMCAT_LEVEL_ROWS_SQL));
+    for (const [term_id, genes] of terms) byTerm.set(term_id, { term_id, name: term_id, genes });
+  } else {
+    const { sql, table } = SQL[kind];
+    // Optional tables (KEGG, synaptogenesis) are absent from some builds.
+    if (!(await hasTable(table))) return [];
+    for (const r of await query<{ term_id: string; name: string; gene: string }>(sql)) {
+      if (!r.term_id || !r.gene) continue;
+      let e = byTerm.get(r.term_id);
+      if (!e) byTerm.set(r.term_id, (e = { term_id: r.term_id, name: r.name, genes: new Set() }));
+      e.genes.add(r.gene);
+    }
   }
   const out: { term_id: string; name: string; genes: string[] }[] = [];
   for (const e of byTerm.values()) {

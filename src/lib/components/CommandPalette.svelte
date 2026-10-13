@@ -21,7 +21,7 @@
   import { selection } from '$lib/stores/selection.svelte';
   import { pwaInstall } from '$lib/stores/pwa-install.svelte';
   import Download from 'lucide-svelte/icons/download';
-  import { presets } from '$lib/stores/presets.svelte';
+  import { presets, resolveListIds } from '$lib/stores/presets.svelte';
   import { suggestGenes, type SuggestRow } from '$lib/queries';
   import { openHelp } from '$lib/components/ShortcutsHelp.svelte';
   import { toast } from 'svelte-sonner';
@@ -469,22 +469,18 @@
               <div
                 class="px-2 py-1.5 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                Saved selections
+                Saved gene lists
               </div>
               {#each presets.items as p (p.id)}
                 <CommandPrimitive.Item
                   value="preset-{p.id}"
-                  onSelect={() => {
-                    selection.ids = [...p.ids];
-                    try {
-                      localStorage.setItem('wb_selection', JSON.stringify(p.ids));
-                    } catch {
-                      /* noop */
-                    }
-                    toast.success('Selection loaded', {
-                      description: `${p.name} (${p.ids.length} gene${p.ids.length === 1 ? '' : 's'})`,
-                    });
+                  onSelect={async () => {
                     closePalette();
+                    const ids = await resolveListIds(p.ids);
+                    selection.set(ids);
+                    toast.success('Selection loaded', {
+                      description: `${p.name} (${ids.length} gene${ids.length === 1 ? '' : 's'})`,
+                    });
                   }}
                   class={cn(
                     'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',

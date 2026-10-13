@@ -5,7 +5,8 @@
 
 import { multilevelP } from './fgsea-multilevel';
 import { bhFdr } from './stats';
-import { GO_POSITIVE } from './enrichment-worker';
+import { GO_POSITIVE, CENGEN_MIN_THRESHOLD } from './term-filters';
+import { buildWormcatTerms, WORMCAT_LEVEL_ROWS_SQL, type WormcatLevelRow } from './wormcat-terms';
 // Permutation strategy: gene-set permutation (random samples of size |S| from
 // the ranked background), standard for preranked GSEA without sample labels.
 
@@ -20,9 +21,8 @@ export type GseaKind =
   | 'synaptogenesis'
   | 'pathway';
 
-// Mirror enrichment-worker's CeNGEN threshold: medium (>=2) FACS-calibrated
-// calls, same default as the CeNGEN web app.
-const CENGEN_MIN_THRESHOLD = 2;
+// fgseaMultilevel's default eps: p-values below it are reported as this bound.
+const MULTILEVEL_EPS = 1e-50;
 
 export interface GseaResult {
   term_id: string;
@@ -31,8 +31,14 @@ export interface GseaResult {
   size: number; // |S| in ranked list (after intersection)
   es: number; // enrichment score (-1..+1)
   nes: number; // normalized enrichment score
-  p: number; // permutation p-value
-  q: number; // BH-adjusted
+  p: number; // reported p: multilevel estimate when refined, else p_perm
+  // Permutation p, conditional on the sign of ES (fgseaSimple). Absent in results saved
+  // before it was recorded, where p is the permutation p unless multilevel replaced it.
+  p_perm?: number;
+  // True when the set is beyond the multilevel bound and p holds that bound (fgsea's eps),
+  // so the true p-value is smaller still.
+  p_at_bound?: boolean;
+  q: number; // BH-adjusted, from p
   leading_edge: string[]; // genes contributing up to the |ES| peak
   members: string[]; // all set members present in the ranked list (for plotting)
 }
@@ -185,24 +191,8 @@ function loadTermSets(db: any, kind: GseaKind): TermSet[] {
     return [...sets.values()];
   }
   if (kind === 'wormcat') {
-    const rows = execAll<{ term_id: string; wormbase_gene: string }>(
-      db,
-      `SELECT category AS term_id, wormbase_gene FROM (
-			    SELECT wormbase_gene, category_1 AS category FROM wormcat WHERE category_1 IS NOT NULL
-			    UNION ALL SELECT wormbase_gene, category_2 FROM wormcat WHERE category_2 IS NOT NULL
-			    UNION ALL SELECT wormbase_gene, category_3 FROM wormcat WHERE category_3 IS NOT NULL
-			 )`,
-    );
-    const sets = new Map<string, TermSet>();
-    for (const r of rows) {
-      let s = sets.get(r.term_id);
-      if (!s) {
-        s = { term_id: r.term_id, name: r.term_id, genes: [] };
-        sets.set(r.term_id, s);
-      }
-      s.genes.push(r.wormbase_gene);
-    }
-    return [...sets.values()];
+    const terms = buildWormcatTerms(execAll<WormcatLevelRow>(db, WORMCAT_LEVEL_ROWS_SQL));
+    return [...terms].map(([term_id, genes]) => ({ term_id, name: term_id, genes: [...genes] }));
   }
   if (kind === 'neuronal') {
     const rows = execAll<{ term_id: string; wormbase_gene: string }>(
@@ -462,7 +452,7 @@ export async function runGseaSync(
     // When true (default), refines p-values at the permutation floor (p ~ 1/(nperm+1))
     // via Korotkevich's adaptive multilevel estimator (~M*log2(1/p) extra work per term).
     multilevel?: boolean;
-    multilevelM?: number; // population size per level (default 1000).
+    multilevelM?: number; // population size per level (default 500).
     multilevelMhSteps?: number; // MH mixing steps per replacement (default 10).
   } = {},
   report?: ReportFn,
@@ -473,15 +463,15 @@ export async function runGseaSync(
   const nperm = opts.nperm ?? 1000;
   const seed = opts.seed ?? 1337;
 
-  // Deduplicate by gene, keep first occurrence's score.
-  const seen = new Set<string>();
-  const cleaned: GseaInput[] = [];
+  // A gene listed twice (two aliases resolving to one WBGene, or a duplicated row)
+  // keeps its strongest score, so input order never changes the ranking.
+  const best = new Map<string, number>();
   for (const r of ranked) {
-    if (!r.gene || seen.has(r.gene)) continue;
-    if (!Number.isFinite(r.score)) continue;
-    seen.add(r.gene);
-    cleaned.push({ gene: r.gene, score: r.score });
+    if (!r.gene || !Number.isFinite(r.score)) continue;
+    const prev = best.get(r.gene);
+    if (prev === undefined || Math.abs(r.score) > Math.abs(prev)) best.set(r.gene, r.score);
   }
+  const cleaned: GseaInput[] = [...best].map(([gene, score]) => ({ gene, score }));
   cleaned.sort((a, b) => b.score - a.score);
   if (cleaned.length < 10) return [];
 
@@ -582,7 +572,10 @@ export async function runGseaSync(
     partials = [runPermInline(weights, N, bucketSizes, nperm, seed)];
   }
 
-  const nullByBucket = new Map<number, { pos: Float64Array; neg: Float64Array }>();
+  const nullByBucket = new Map<
+    number,
+    { pos: Float64Array; neg: Float64Array; nPos: number; nNeg: number }
+  >();
   for (let b = 0; b < bucketKeys.length; b++) {
     let posLen = 0;
     let negLen = 0;
@@ -600,12 +593,17 @@ export async function runGseaSync(
       neg.set(p.negArrays[b], no);
       no += p.negArrays[b].length;
     }
-    nullByBucket.set(bucketKeys[b], { pos, neg });
+    nullByBucket.set(bucketKeys[b], { pos, neg, nPos: posLen, nNeg: negLen });
   }
   report?.('Computing NES and FDR...');
 
-  function nesForSize(es: number, k: number): { nes: number; pval: number } {
+  // signFrac is fgsea's denomProb: the share of null ES with the observed sign. The
+  // permutation p is conditional on that sign, so the unconditional multilevel
+  // estimate is divided by it to put both on the same scale.
+  function nesForSize(es: number, k: number): { nes: number; pval: number; signFrac: number } {
     const buckets = nullByBucket.get(bucketKeyForSize(k))!;
+    const nAll = buckets.nPos + buckets.nNeg;
+    const signFrac = ((es >= 0 ? buckets.nPos : buckets.nNeg) + 1) / (nAll + 1);
     if (es >= 0) {
       let sum = 0;
       for (const v of buckets.pos) sum += v;
@@ -615,7 +613,7 @@ export async function runGseaSync(
       let more = 0;
       for (const v of buckets.pos) if (v >= es) more++;
       const pval = (more + 1) / (buckets.pos.length + 1);
-      return { nes, pval };
+      return { nes, pval, signFrac };
     } else {
       let sum = 0;
       for (const v of buckets.neg) sum += v;
@@ -625,12 +623,14 @@ export async function runGseaSync(
       let more = 0;
       for (const v of buckets.neg) if (v <= es) more++;
       const pval = (more + 1) / (buckets.neg.length + 1);
-      return { nes, pval };
+      return { nes, pval, signFrac };
     }
   }
 
+  const signFracs: number[] = [];
   const enriched: GseaResult[] = candidates.map((c) => {
-    const { nes, pval } = nesForSize(c.es, c.positions.length);
+    const { nes, pval, signFrac } = nesForSize(c.es, c.positions.length);
+    signFracs.push(signFrac);
     // Leading edge: positions <= peak (positive ES) or >= peak (negative ES).
     let leading: number[];
     if (c.es >= 0) leading = c.positions.filter((x) => x <= c.peak);
@@ -645,6 +645,7 @@ export async function runGseaSync(
       es: c.es,
       nes,
       p: pval,
+      p_perm: pval,
       q: 0,
       leading_edge: leadingGenes,
       members,
@@ -656,7 +657,7 @@ export async function runGseaSync(
   // that reaches p << 1/nperm without additional permutations.
   const useMultilevel = opts.multilevel !== false;
   if (useMultilevel) {
-    const M_ml = opts.multilevelM ?? 1000;
+    const M_ml = opts.multilevelM ?? 500;
     const mhSteps = opts.multilevelMhSteps ?? 10;
     const refineCutoff = 3 / (nperm + 1);
     const toRefine: number[] = [];
@@ -669,13 +670,21 @@ export async function runGseaSync(
         const i = toRefine[r];
         const c = candidates[i];
         const ml = multilevelP(N, c.positions.length, weights, c.es, {
+          eps: MULTILEVEL_EPS,
           M: M_ml,
           mhSteps,
           seed: seed + 0x515a + i * 137,
         });
-        // Only adopt if smaller and non-zero; larger values indicate MC noise above the floor.
-        if (ml.p > 0 && ml.p < enriched[i].p) {
-          enriched[i].p = ml.p;
+        if (ml.floorHit) {
+          enriched[i].p = MULTILEVEL_EPS;
+          enriched[i].p_at_bound = true;
+        } else {
+          const pMl = Math.max(MULTILEVEL_EPS, Math.min(1, ml.p / signFracs[i]));
+          // Only adopt if smaller and non-zero; larger values indicate MC noise above the floor.
+          if (pMl > 0 && pMl < enriched[i].p) {
+            enriched[i].p = pMl;
+            if (pMl <= MULTILEVEL_EPS) enriched[i].p_at_bound = true;
+          }
         }
         if (r % 8 === 7 || r === toRefine.length - 1) {
           report?.('Multilevel refinement', r + 1, toRefine.length);

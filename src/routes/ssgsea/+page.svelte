@@ -5,7 +5,8 @@
   import PageHint from '$lib/components/PageHint.svelte';
   import ControlHint from '$lib/components/ControlHint.svelte';
   import { toast } from 'svelte-sonner';
-  import { getTermSets } from '$lib/queries';
+  import { getTermSets, bulkLookup } from '$lib/queries';
+  import { ENRICHMENT_KINDS, type EnrichmentKind } from '$lib/enrichment';
   import { resolve } from '$app/paths';
   import { Button } from '$lib/components/ui/button';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
@@ -41,16 +42,11 @@
   // Sets can come from the shipped annotations or a GMT; the maths is identical,
   // only the definition of a set differs.
   let setSource = $state<'builtin' | 'gmt'>('builtin');
-  let builtinKind = $state<'go' | 'wormcat' | 'phenotype' | 'tissue' | 'neuronal'>('wormcat');
+  let builtinKind = $state<EnrichmentKind>('wormcat');
+  // Same collections as over-representation and ranked-list enrichment.
+  const BUILTIN_KINDS = ENRICHMENT_KINDS;
   let minSize = $state(15);
   let maxSize = $state(500);
-  const BUILTIN_KINDS = [
-    { key: 'wormcat', label: 'WormCat' },
-    { key: 'go', label: 'Gene Ontology' },
-    { key: 'phenotype', label: 'Phenotypes' },
-    { key: 'tissue', label: 'Tissues' },
-    { key: 'neuronal', label: 'Neuronal class' },
-  ] as const;
   let alpha = $state(0.25);
   let normalize = $state(true);
   let running = $state(false);
@@ -68,12 +64,53 @@
     const genes: string[] = [];
     const buf: number[] = [];
     for (let i = 1; i < lines.length; i++) {
-      const f = lines[i].split(/\t|,/);
+      const f = lines[i].split(/\t|,/).map((x) => x.trim().replace(/^"+|"+$/g, ''));
       if (f.length < samples.length + 1) continue;
+      const vals = f.slice(1, samples.length + 1).map(Number);
+      // An NA cell would make the per-sample ranking undefined; drop the gene instead.
+      if (!vals.every(Number.isFinite)) continue;
       genes.push(f[0]);
-      for (let j = 1; j <= samples.length; j++) buf.push(Number(f[j]));
+      buf.push(...vals);
     }
     return { genes, samples, matrix: Float64Array.from(buf) };
+  }
+
+  // Built-in gene sets are keyed by WBGene ID, so a matrix keyed by names, sequence
+  // names or aliases is resolved first. Two rows resolving to one gene keep the row
+  // with the higher mean expression.
+  async function resolveExprGenes(expr: {
+    genes: string[];
+    samples: string[];
+    matrix: Float64Array;
+  }): Promise<{ genes: string[]; samples: string[]; matrix: Float64Array; unmatched: number }> {
+    if (expr.genes.every((g) => /^WBGene\d+$/.test(g))) return { ...expr, unmatched: 0 };
+    const { hits } = await bulkLookup(expr.genes);
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    const toWb = new Map<string, string>();
+    for (const h of hits)
+      if (!toWb.has(h.input.toLowerCase())) toWb.set(h.input.toLowerCase(), h.wormbase_gene);
+    const S = expr.samples.length;
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    const best = new Map<string, { row: number; mean: number }>();
+    let unmatched = 0;
+    expr.genes.forEach((g, i) => {
+      const wb = toWb.get(g.toLowerCase());
+      if (!wb) {
+        unmatched++;
+        return;
+      }
+      let sum = 0;
+      for (let s = 0; s < S; s++) sum += expr.matrix[i * S + s];
+      const prev = best.get(wb);
+      if (!prev || sum / S > prev.mean) best.set(wb, { row: i, mean: sum / S });
+    });
+    const genes = [...best.keys()];
+    const matrix = new Float64Array(genes.length * S);
+    genes.forEach((wb, k) => {
+      const i = best.get(wb)!.row;
+      matrix.set(expr.matrix.subarray(i * S, i * S + S), k * S);
+    });
+    return { genes, samples: expr.samples, matrix, unmatched };
   }
 
   function parseGmt(text: string): CustomTermSet[] {
@@ -102,18 +139,33 @@
   }
 
   async function run() {
-    const expr = parseExpr(exprText);
-    if (!expr || expr.genes.length === 0) {
+    const parsed = parseExpr(exprText);
+    if (!parsed || parsed.genes.length === 0) {
       toast.error('No expression matrix detected');
       return;
     }
     running = true;
+    const expr = setSource === 'gmt' ? { ...parsed, unmatched: 0 } : await resolveExprGenes(parsed);
+    if (expr.genes.length === 0) {
+      running = false;
+      toast.error('No genes in the matrix were recognized', {
+        description: 'The first column should hold gene names, sequence names or WormBase IDs.',
+      });
+      return;
+    }
+    if (expr.unmatched > 0) {
+      toast.warning(`${expr.unmatched} of ${parsed.genes.length} genes not recognized`, {
+        description: 'They are left out of the scores.',
+      });
+    }
     let sets: CustomTermSet[];
     try {
+      // Size limits apply to the genes each set has in the matrix, as GSVA filters them,
+      // so the built-in sets are fetched unfiltered and sized in the worker.
       sets =
         setSource === 'gmt'
           ? parseGmt(gmtText)
-          : await getTermSets(builtinKind, { minSize, maxSize });
+          : await getTermSets(builtinKind, { minSize: 1, maxSize: Number.MAX_SAFE_INTEGER });
     } catch (e) {
       running = false;
       toast.error('Could not build gene sets', {
@@ -128,13 +180,26 @@
     }
     const t0 = performance.now();
     try {
-      const res = await runCustomSsgsea(expr, sets, { alpha, normalize });
+      const res = await runCustomSsgsea(
+        { genes: expr.genes, samples: expr.samples, matrix: expr.matrix },
+        sets,
+        setSource === 'gmt' ? { alpha, normalize } : { alpha, normalize, minSize, maxSize },
+      );
       results = res.results;
       sampleNames = res.sampleNames;
       elapsed = performance.now() - t0;
-      toast.success(
-        `Per-sample set scores: ${res.results.length} sets · ${(elapsed / 1000).toFixed(1)}s`,
-      );
+      if (res.results.length === 0) {
+        toast.error('No gene set shares genes with the matrix', {
+          description:
+            setSource === 'gmt'
+              ? 'Check that the GMT and the matrix use the same gene identifiers.'
+              : `Each set needs ${minSize} to ${maxSize} of its genes present in the matrix.`,
+        });
+      } else {
+        toast.success(
+          `Per-sample set scores: ${res.results.length} sets · ${(elapsed / 1000).toFixed(1)}s`,
+        );
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
     } finally {

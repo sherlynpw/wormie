@@ -11,6 +11,8 @@
   import { toast } from 'svelte-sonner';
   import { parseGeneList } from '$lib/gene-parse';
   import { decodeSession, sessionToolLabel, sessionToolPath } from '$lib/session';
+  import { selection } from '$lib/stores/selection.svelte';
+  import { resolveListIds } from '$lib/stores/presets.svelte';
 
   type Param =
     | 'paste'
@@ -29,6 +31,7 @@
       { path: '/enrichment', param: 'paste', label: 'Over-representation' },
       { path: '/enrichment', param: 'deseq2', label: 'Over-representation (DE table / volcano)' },
       { path: '/compare/lists', param: 'list', label: 'Gene overlap' },
+      { path: '/enrichment/overlap', param: 'list', label: 'Enrichment overlap' },
     ],
     ranked: [
       { path: '/gsea', param: 'ranked', label: 'Ranked-list enrichment' },
@@ -59,6 +62,20 @@
   function openIn(ds: Dataset, t: Target) {
     // Pass id via URL; destination reads body from IndexedDB to avoid sessionStorage's ~5 MB quota.
     window.location.href = `${t.path}?load=${t.param}&id=${encodeURIComponent(ds.id)}`;
+  }
+
+  async function useAsSelection(ds: Dataset) {
+    const ids = await resolveListIds(parseGeneList(ds.body));
+    if (ids.length === 0) {
+      toast.error('No recognized genes in this list', { description: ds.name });
+      return;
+    }
+    const prev = [...selection.ids];
+    selection.set(ids);
+    toast.success('Selection loaded', {
+      description: `${ds.name} (${ids.length} gene${ids.length === 1 ? '' : 's'})`,
+      action: prev.length ? { label: 'Undo', onClick: () => selection.set(prev) } : undefined,
+    });
   }
 
   function openInTool(ds: Dataset) {
@@ -276,6 +293,16 @@
                     >{fmtTime(ds.createdAt)}</td
                   >
                   <td class="space-x-1 whitespace-nowrap px-3 py-2 text-right align-middle">
+                    {#if ds.type === 'gene-list'}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onclick={() => useAsSelection(ds)}
+                        title="Make this list the current gene selection"
+                      >
+                        Use as selection
+                      </Button>
+                    {/if}
                     {#if targetsFor(ds).length > 0}
                       {@const dsTargets = targetsFor(ds)}
                       {#each dsTargets as t (t.path + t.param)}
