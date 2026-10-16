@@ -22,11 +22,11 @@ kcnl-2,WBGene00008570,Potassium channels,Ion channels
 kcnl-3,WBGene00015387,Potassium channels,Ion channels
 kcnl-4,WBGene00008265,Potassium channels,Ion channels
 egl-23,WBGene00001190,Potassium channels,Ion channels
-twk-41,,Potassium channels,Ion channels
+twk-41,WBGene00001190,Potassium channels,Ion channels
 sup-9,WBGene00006318,Potassium channels,Ion channels
-twk-38,,Potassium channels,Ion channels
+twk-38,WBGene00006318,Potassium channels,Ion channels
 unc-58,WBGene00006792,Potassium channels,Ion channels
-unc-110,,Potassium channels,Ion channels
+unc-110,WBGene00006672,Potassium channels,Ion channels
 twk-18,WBGene00006672,Potassium channels,Ion channels
 twk-1,WBGene00006656,Potassium channels,Ion channels
 twk-2,WBGene00006657,Potassium channels,Ion channels
@@ -36,13 +36,13 @@ twk-5,WBGene00006660,Potassium channels,Ion channels
 twk-6,WBGene00006661,Potassium channels,Ion channels
 twk-7,WBGene00006662,Potassium channels,Ion channels
 twk-8,WBGene00006663,Potassium channels,Ion channels
-twk-19,,Potassium channels,Ion channels
+twk-19,WBGene00006663,Potassium channels,Ion channels
 twk-9,WBGene00006664,Potassium channels,Ion channels
 twk-10,WBGene00006665,Potassium channels,Ion channels
 twk-11,WBGene00006666,Potassium channels,Ion channels
 twk-12,WBGene00006667,Potassium channels,Ion channels
 twk-13,WBGene00006668,Potassium channels,Ion channels
-twk-15,,Potassium channels,Ion channels
+twk-15,WBGene00006668,Potassium channels,Ion channels
 twk-14,WBGene00006669,Potassium channels,Ion channels
 twk-16,WBGene00006670,Potassium channels,Ion channels
 twk-17,WBGene00006671,Potassium channels,Ion channels
@@ -83,8 +83,6 @@ mps-4,WBGene00017323,Candidate auxiliary subunits for various types of ion chann
 sssh-1,WBGene00044138,Candidate auxiliary subunits for various types of ion channels,Ion channels
 ncs-6,WBGene00021116,Candidate auxiliary subunits for various types of ion channels,Ion channels
 ncs-7,WBGene00015867,Candidate auxiliary subunits for various types of ion channels,Ion channels
-ncs-8,,Candidate auxiliary subunits for various types of ion channels,Ion channels
-ncs-9,,Candidate auxiliary subunits for various types of ion channels,Ion channels
 dpf-1,WBGene00001054,Candidate auxiliary subunits for various types of ion channels,Ion channels
 dpf-2,WBGene00001055,Candidate auxiliary subunits for various types of ion channels,Ion channels
 dpf-3,WBGene00001056,Candidate auxiliary subunits for various types of ion channels,Ion channels
@@ -143,7 +141,7 @@ sto-6,WBGene00006068,Candidate auxiliary subunits for various types of ion chann
 egl-19,WBGene00001187,Voltage-gated calcium channels,Ion channels
 unc-2,WBGene00006742,Voltage-gated calcium channels,Ion channels
 cca-1,WBGene00000367,Voltage-gated calcium channels,Ion channels
-nca-1,,Voltage-gated calcium channels,Ion channels
+nca-1,WBGene00006809,Voltage-gated calcium channels,Ion channels
 nca-2,WBGene00003558,Voltage-gated calcium channels,Ion channels
 unc-36,WBGene00006772,Voltage-gated calcium channels,Ion channels
 tag-180,WBGene00007041,Voltage-gated calcium channels,Ion channels
@@ -297,7 +295,7 @@ acr-25,WBGene00043066,nAChR-type ligand-gated ion channels of the Cys-loop LGIC 
 cup-4,WBGene00000845,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 deg-3,WBGene00000951,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 des-2,WBGene00000955,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
-acr-4,,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+acr-4,WBGene00000955,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 eat-2,WBGene00001133,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lev-1,WBGene00002974,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 unc-29,WBGene00006765,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
@@ -305,9 +303,9 @@ unc-38,WBGene00006774,nAChR-type ligand-gated ion channels of the Cys-loop LGIC 
 unc-63,WBGene00006797,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-1,WBGene00020236,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 pbo-5,WBGene00012857,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
-lgc-2,,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-2,WBGene00012857,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 pbo-6,WBGene00017375,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
-lgc-3,,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+lgc-3,WBGene00017375,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-4,WBGene00017580,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-5,WBGene00017543,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-6,WBGene00017544,nAChR-type ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
@@ -350,7 +348,7 @@ lgc-52,WBGene00013517,Other ligand-gated ion channels of the Cys-loop LGIC super
 lgc-53,WBGene00020657,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-54,WBGene00020528,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-55,WBGene00013746,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
-ggr-3,,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+ggr-3,WBGene00001588,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 avr-14,WBGene00000232,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 avr-15,WBGene00000233,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 glc-1,WBGene00001591,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
@@ -369,7 +367,7 @@ lgc-32,WBGene00020569,Other ligand-gated ion channels of the Cys-loop LGIC super
 lgc-33,WBGene00021941,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-34,WBGene00020836,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 ggr-1,WBGene00001586,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
-ggr-2,,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
+ggr-2,WBGene00001587,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-39,WBGene00017314,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-40,WBGene00020767,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
 lgc-41,WBGene00008022,Other ligand-gated ion channels of the Cys-loop LGIC superfamily,Ion channels
@@ -474,7 +472,7 @@ qdpr-1,WBGene00011398,Neurotransmitter synthesis and degradation,Neurotransmitte
 tdc-1,WBGene00006562,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
 bas-1,WBGene00000239,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
 hdl-1,WBGene00001839,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
-tag-19,,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
+tag-19,WBGene00006409,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
 basl-1,WBGene00015467,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
 anat-1,WBGene00015938,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
 homt-1,WBGene00022277,Neurotransmitter synthesis and degradation,Neurotransmitter pathways
@@ -561,14 +559,14 @@ nlp-33,WBGene00003771,Neuropeptide-encoding genes,Neuropeptides
 nlp-34,WBGene00015046,Neuropeptide-encoding genes,Neuropeptides
 nlp-35,WBGene00007881,Neuropeptide-encoding genes,Neuropeptides
 nlp-36,WBGene00007185,Neuropeptide-encoding genes,Neuropeptides
-nlp-37,,Neuropeptide-encoding genes,Neuropeptides
+nlp-37,WBGene00018590,Neuropeptide-encoding genes,Neuropeptides
 nlp-38,WBGene00007219,Neuropeptide-encoding genes,Neuropeptides
 nlp-39,WBGene00008295,Neuropeptide-encoding genes,Neuropeptides
 nlp-40,WBGene00022276,Neuropeptide-encoding genes,Neuropeptides
 nlp-41,WBGene00007316,Neuropeptide-encoding genes,Neuropeptides
 nlp-42,WBGene00013588,Neuropeptide-encoding genes,Neuropeptides
 nlp-43,WBGene00016684,Neuropeptide-encoding genes,Neuropeptides
-nlp-44,,Neuropeptide-encoding genes,Neuropeptides
+nlp-44,WBGene00021268,Neuropeptide-encoding genes,Neuropeptides
 nlp-45,WBGene00020136,Neuropeptide-encoding genes,Neuropeptides
 nlp-46,WBGene00012145,Neuropeptide-encoding genes,Neuropeptides
 nlp-47,WBGene00018117,Neuropeptide-encoding genes,Neuropeptides
@@ -613,7 +611,6 @@ nep-23,WBGene00013785,Metabolism of neuropeptides,Neuropeptides
 nep-24,WBGene00013786,Metabolism of neuropeptides,Neuropeptides
 nep-25,WBGene00022874,Metabolism of neuropeptides,Neuropeptides
 nep-26,WBGene00014171,Metabolism of neuropeptides,Neuropeptides
-nep-27,,Metabolism of neuropeptides,Neuropeptides
 dpf-1,WBGene00001054,Metabolism of neuropeptides,Neuropeptides
 dpf-2,WBGene00001055,Metabolism of neuropeptides,Neuropeptides
 dpf-3,WBGene00001056,Metabolism of neuropeptides,Neuropeptides
@@ -679,7 +676,7 @@ irld-50,WBGene00020431,Insulin/EGF receptor-like proteins,Neuropeptides
 irld-51,WBGene00077759,Insulin/EGF receptor-like proteins,Neuropeptides
 irld-52,WBGene00012043,Insulin/EGF receptor-like proteins,Neuropeptides
 irld-53,WBGene00021222,Insulin/EGF receptor-like proteins,Neuropeptides
-irld-54,,Insulin/EGF receptor-like proteins,Neuropeptides
+irld-54,WBGene00021232,Insulin/EGF receptor-like proteins,Neuropeptides
 irld-55,WBGene00012541,Insulin/EGF receptor-like proteins,Neuropeptides
 irld-56,WBGene00012542,Insulin/EGF receptor-like proteins,Neuropeptides
 irld-57,WBGene00012401,Insulin/EGF receptor-like proteins,Neuropeptides
@@ -1051,7 +1048,7 @@ syx-6,WBGene00015789,Synaptic vesicle proteins and their homologs,Presynaptic ma
 nbet-1,WBGene00043064,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 use-1,WBGene00022460,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 ric-4,WBGene00004364,Synaptic vesicle proteins and their homologs,Presynaptic machinery
-snap-25,,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+snap-25,WBGene00004364,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 aex-4,WBGene00006454,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 snap-29,WBGene00019305,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 sng-1,WBGene00004912,Synaptic vesicle proteins and their homologs,Presynaptic machinery
@@ -1068,7 +1065,7 @@ unc-18,WBGene00006757,Synaptic vesicle proteins and their homologs,Presynaptic m
 unc-13,WBGene00006752,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 unc-26,WBGene00006763,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 unc-57,WBGene00006791,Synaptic vesicle proteins and their homologs,Presynaptic machinery
-erp-1,,Synaptic vesicle proteins and their homologs,Presynaptic machinery
+erp-1,WBGene00001335,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 cpx-1,WBGene00022271,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 cpx-2,WBGene00010520,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 tom-1,WBGene00006594,Synaptic vesicle proteins and their homologs,Presynaptic machinery
@@ -1076,7 +1073,7 @@ unc-31,WBGene00006767,Synaptic vesicle proteins and their homologs,Presynaptic m
 ida-1,WBGene00002048,Synaptic vesicle proteins and their homologs,Presynaptic machinery
 mpz-1,WBGene00003404,PDZ domain proteins,PDZ proteins
 par-3,WBGene00003918,PDZ domain proteins,PDZ proteins
-mpz-2,,PDZ domain proteins,PDZ proteins
+mpz-2,WBGene00006438,PDZ domain proteins,PDZ proteins
 mpz-3,WBGene00017559,PDZ domain proteins,PDZ proteins
 mpz-4,WBGene00019165,PDZ domain proteins,PDZ proteins
 mpz-5,WBGene00011241,PDZ domain proteins,PDZ proteins
@@ -1095,7 +1092,7 @@ magu-3,WBGene00016841,PDZ domain proteins,PDZ proteins
 magu-4,WBGene00009678,PDZ domain proteins,PDZ proteins
 zoo-1,WBGene00013683,PDZ domain proteins,PDZ proteins
 magi-1,WBGene00010444,PDZ domain proteins,PDZ proteins
-frm-5,,PDZ domain proteins,PDZ proteins
+frm-5,WBGene00001492,PDZ domain proteins,PDZ proteins
 frm-8,WBGene00001494,PDZ domain proteins,PDZ proteins
 ptp-1,WBGene00004213,PDZ domain proteins,PDZ proteins
 cnk-1,WBGene00000564,PDZ domain proteins,PDZ proteins
@@ -1124,7 +1121,7 @@ shn-1,WBGene00006444,PDZ domain proteins,PDZ proteins
 inx-1,WBGene00002123,Gap junction proteins - the innexins,Gap junctions
 inx-2,WBGene00002124,Gap junction proteins - the innexins,Gap junctions
 inx-3,WBGene00002125,Gap junction proteins - the innexins,Gap junctions
-inx-4,,Gap junction proteins - the innexins,Gap junctions
+inx-4,WBGene00000488,Gap junction proteins - the innexins,Gap junctions
 inx-5,WBGene00002127,Gap junction proteins - the innexins,Gap junctions
 inx-6,WBGene00002128,Gap junction proteins - the innexins,Gap junctions
 inx-7,WBGene00002129,Gap junction proteins - the innexins,Gap junctions
@@ -1156,7 +1153,7 @@ klp-6,WBGene00002218,Kinesin-like Motor Proteins,Motor proteins
 klp-12,WBGene00002223,Kinesin-like Motor Proteins,Motor proteins
 klp-19,WBGene00002229,Kinesin-like Motor Proteins,Motor proteins
 bmk-1,WBGene00000257,Kinesin-like Motor Proteins,Motor proteins
-klp-14,,Kinesin-like Motor Proteins,Motor proteins
+klp-14,WBGene00000257,Kinesin-like Motor Proteins,Motor proteins
 zen-4,WBGene00006974,Kinesin-like Motor Proteins,Motor proteins
 klp-10,WBGene00002221,Kinesin-like Motor Proteins,Motor proteins
 klp-18,WBGene00002228,Kinesin-like Motor Proteins,Motor proteins
@@ -1166,7 +1163,7 @@ klp-15,WBGene00002225,Kinesin-like Motor Proteins,Motor proteins
 klp-16,WBGene00002226,Kinesin-like Motor Proteins,Motor proteins
 klp-17,WBGene00002227,Kinesin-like Motor Proteins,Motor proteins
 vab-8,WBGene00006874,Kinesin-like Motor Proteins,Motor proteins
-klp-8,,Kinesin-like Motor Proteins,Motor proteins
+klp-8,WBGene00002220,Kinesin-like Motor Proteins,Motor proteins
 klp-13,WBGene00002224,Kinesin-like Motor Proteins,Motor proteins
 dhc-1,WBGene00000962,Dynein motors,Motor proteins
 che-3,WBGene00000485,Dynein motors,Motor proteins
@@ -1302,7 +1299,7 @@ slt-1,WBGene00004854,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (
 tol-1,WBGene00006593,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
 pan-1,WBGene00003915,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
 let-4,WBGene00002282,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
-sym-5,,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
+sym-5,WBGene00002282,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
 egg-6,WBGene00010621,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
 dma-1,WBGene00011345,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
 lron-1,WBGene00008093,Extracellular Immunoglobulin (Ig) and Leucine rich repeat (LRR) domain-containing proteins,Neuronal recognition and adhesion
@@ -1326,9 +1323,9 @@ hmr-1,WBGene00001980,Cadherins,Neuronal recognition and adhesion
 cdh-3,WBGene00000395,Cadherins,Neuronal recognition and adhesion
 cdh-4,WBGene00000396,Cadherins,Neuronal recognition and adhesion
 fmi-1,WBGene00001475,Cadherins,Neuronal recognition and adhesion
-cdh-6,,Cadherins,Neuronal recognition and adhesion
+cdh-6,WBGene00001475,Cadherins,Neuronal recognition and adhesion
 casy-1,WBGene00000403,Cadherins,Neuronal recognition and adhesion
-cdh-11,,Cadherins,Neuronal recognition and adhesion
+cdh-11,WBGene00000403,Cadherins,Neuronal recognition and adhesion
 cdh-1,WBGene00019994,Cadherins,Neuronal recognition and adhesion
 cdh-5,WBGene00000397,Cadherins,Neuronal recognition and adhesion
 cdh-7,WBGene00000399,Cadherins,Neuronal recognition and adhesion

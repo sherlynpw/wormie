@@ -1,5 +1,5 @@
 // Static reference + class metadata for the curated synaptogenesis panel
-// (source: celegans-pipeline:SYNAPTOGENESIS.txt v4; references checked against
+// (source: celegans-pipeline:SYNAPTOGENESIS.txt v5; references checked against
 // Crossref and PubMed, with the per-reference reading record in that file).
 // Gene-to-class membership is in the SQLite `synaptogenesis` table; this module
 // carries only the bibliographic and per-class editorial layer surfaced by the UI.
@@ -22,14 +22,6 @@ export interface PanelClass {
 }
 
 export const SYNAPTOGENESIS_REFERENCES: PanelReference[] = [
-  {
-    id: 'R1',
-    authors: 'Hobert O, Kratsios P',
-    year: 2019,
-    title: 'Neuronal identity control by terminal selectors in worms, flies, and chordates',
-    journal: 'Curr Opin Neurobiol 56:97-105',
-    doi: '10.1016/j.conb.2018.12.006',
-  },
   {
     id: 'R2',
     authors: 'Yee C, Xiao Y, Chen H, et al.',
@@ -116,14 +108,6 @@ export const SYNAPTOGENESIS_REFERENCES: PanelReference[] = [
     doi: '10.1016/j.cell.2004.12.017',
   },
   {
-    id: 'R12',
-    authors: 'Hobert O',
-    year: 2008,
-    title: 'Regulatory logic of neuronal diversity: terminal selector genes and selector motifs',
-    journal: 'PNAS 105(51):20067-20071',
-    doi: '10.1073/pnas.0806070105',
-  },
-  {
     id: 'R13',
     authors: 'Patel MR, Lehrman EK, Poon VY, et al.',
     year: 2006,
@@ -140,32 +124,6 @@ export const SYNAPTOGENESIS_REFERENCES: PanelReference[] = [
     doi: '10.15252/embr.202153267',
   },
   {
-    id: 'R15',
-    authors: 'Hobert O',
-    year: 2016,
-    title: 'Terminal Selectors of Neuronal Identity',
-    journal: 'Curr Top Dev Biol 116:455-475',
-    doi: '10.1016/bs.ctdb.2015.12.007',
-  },
-  {
-    id: 'R16',
-    authors: 'Senti G, Swoboda P',
-    year: 2008,
-    title:
-      'Distinct Isoforms of the RFX Transcription Factor DAF-19 Regulate Ciliogenesis and Maintenance of Synaptic Activity',
-    journal: 'Mol Biol Cell 19(12):5517-5528',
-    doi: '10.1091/mbc.E08-04-0416',
-  },
-  {
-    id: 'R18',
-    authors: 'Li Y, Osuma A, Correa E, et al.',
-    year: 2020,
-    title:
-      'Establishment and maintenance of motor neuron identity via temporal modularity in terminal selector function',
-    journal: 'eLife 9:e59464',
-    doi: '10.7554/eLife.59464',
-  },
-  {
     id: 'R19',
     authors: 'Nolan KM, Sarafi-Reinach TR, Horne JG, Saffer AM, Sengupta P',
     year: 2002,
@@ -173,15 +131,6 @@ export const SYNAPTOGENESIS_REFERENCES: PanelReference[] = [
       'The DAF-7 TGF-beta signaling pathway regulates chemosensory receptor gene expression in C. elegans',
     journal: 'Genes Dev 16(23):3061-3073',
     doi: '10.1101/gad.1027702',
-  },
-  {
-    id: 'R20',
-    authors: 'Cochella L, Hobert O',
-    year: 2012,
-    title:
-      'Embryonic priming of a miRNA locus predetermines postmitotic neuronal left-right asymmetry in C. elegans',
-    journal: 'Cell 151(6):1229-1242',
-    doi: '10.1016/j.cell.2012.10.049',
   },
   {
     id: 'R21',
@@ -217,103 +166,6 @@ export const SYNAPTOGENESIS_REFERENCES: PanelReference[] = [
       'Active Zone Trafficking of CaV2/UNC-2 Channels Is Independent of β/CCB-1 and α2δ/UNC-36 Subunits',
     journal: 'J Neurosci 43(28):5142-5157',
     doi: '10.1523/JNEUROSCI.2264-22.2023',
-  },
-  {
-    id: 'R25',
-    authors: 'Patel T, Hobert O',
-    year: 2017,
-    title: 'Coordinated control of terminal differentiation and restriction of cellular plasticity',
-    journal: 'eLife 6:e24100',
-    doi: '10.7554/eLife.24100',
-  },
-  {
-    id: 'R26',
-    authors: 'Hallam S, Singer E, Waring D, Jin Y',
-    year: 2000,
-    title:
-      'The C. elegans NeuroD homolog cnd-1 functions in multiple aspects of motor neuron fate specification',
-    journal: 'Development 127(19):4239-52',
-    doi: '10.1242/dev.127.19.4239',
-  },
-  {
-    id: 'R27',
-    authors: 'Aquino-Nunez W, Mielko ZE, Dunn T, et al.',
-    year: 2020,
-    title:
-      'cnd-1/NeuroD1 Functions with the Homeobox Gene ceh-5/Vax2 and Hox Gene ceh-13/labial To Specify Aspects of RME and DD Neuron Fate in Caenorhabditis elegans',
-    journal: 'G3 (Bethesda) 10(9):3071-3085',
-    doi: '10.1534/g3.120.401515',
-  },
-  {
-    id: 'R28',
-    authors: 'Nakano S, Ellis RE, Horvitz HR',
-    year: 2010,
-    title:
-      'Otx-dependent expression of proneural bHLH genes establishes a neuronal bilateral asymmetry in C. elegans',
-    journal: 'Development 137(23):4017-27',
-    doi: '10.1242/dev.058834',
-  },
-  {
-    id: 'R29',
-    authors: 'Christensen EL, Beasley A, Radchuk J, et al.',
-    year: 2020,
-    title:
-      'ngn-1/neurogenin Activates Transcription of Multiple Terminal Selector Transcription Factors in the Caenorhabditis elegans Nervous System',
-    journal: 'G3 (Bethesda) 10(6):1949-1962',
-    doi: '10.1534/g3.120.401126',
-  },
-  {
-    id: 'R30',
-    authors: 'Doonan R, Hatzold J, Raut S, Conradt B, Alfonso A',
-    year: 2008,
-    title:
-      'HLH-3 is a C. elegans Achaete/Scute protein required for differentiation of the hermaphrodite-specific motor neurons',
-    journal: 'Mech Dev 125(9-10):883-93',
-    doi: '10.1016/j.mod.2008.06.002',
-  },
-  {
-    id: 'R31',
-    authors: 'Wrischnik LA, Kenyon CJ',
-    year: 1997,
-    title:
-      'The role of lin-22, a hairy/enhancer of split homolog, in patterning the peripheral nervous system of C. elegans',
-    journal: 'Development 124(15):2875-88',
-    doi: '10.1242/dev.124.15.2875',
-  },
-  {
-    id: 'R32',
-    authors: 'Frank CA, Hawkins NC, Guenther C, Horvitz HR, Garriga G',
-    year: 2005,
-    title:
-      'C. elegans HAM-1 positions the cleavage plane and regulates apoptosis in asymmetric neuroblast divisions',
-    journal: 'Dev Biol 284(2):301-10',
-    doi: '10.1016/j.ydbio.2005.05.026',
-  },
-  {
-    id: 'R33',
-    authors: 'Sarafi-Reinach TR, Sengupta P',
-    year: 2000,
-    title: 'The forkhead domain gene unc-130 generates chemosensory neuron diversity in C. elegans',
-    journal: 'Genes Dev 14(19):2472-85',
-    doi: '10.1101/gad.832300',
-  },
-  {
-    id: 'R34',
-    authors: 'Aguilar GR, Vidal B, Ji H, et al.',
-    year: 2025,
-    title:
-      'Functional analysis of conserved C. elegans bHLH family members uncovers lifespan control by a peptidergic hub neuron',
-    journal: 'PLoS Biol 23(1):e3002979',
-    doi: '10.1371/journal.pbio.3002979',
-  },
-  {
-    id: 'R35',
-    authors: 'Kim K, Kim R, Sengupta P',
-    year: 2010,
-    title:
-      'The HMX/NKX homeodomain protein MLS-2 specifies the identity of the AWC sensory neuron type via regulation of the ceh-36 Otx gene in C. elegans',
-    journal: 'Development 137(6):963-74',
-    doi: '10.1242/dev.044719',
   },
   {
     id: 'R36',
@@ -602,28 +454,14 @@ export const SYNAPTOGENESIS_REFERENCES: PanelReference[] = [
 // Class-level editorial layer keyed by the `class` column in the DB.
 export const SYNAPTOGENESIS_CLASSES: PanelClass[] = [
   {
-    id: '01_proneural_fate',
-    label: 'Proneural / fate-specifying TFs',
-    description:
-      'Transcription factors that act upstream of neurogenesis and specify neuroblast identity.',
-    refIds: ['R1', 'R7', 'R20', 'R26', 'R27', 'R28', 'R29', 'R30', 'R31', 'R32', 'R33'],
-  },
-  {
-    id: '02_terminal_selector',
-    label: 'Terminal selector TFs',
-    description:
-      'Transcription factors that regulate aspects of neuron identity and directly activate effector gene batteries.',
-    refIds: ['R7', 'R12', 'R15', 'R1', 'R16', 'R18', 'R25', 'R34', 'R35'],
-  },
-  {
-    id: '03_activity_regulated',
+    id: '01_activity_regulated',
     label: 'Activity-regulated / feed-forward synaptogenesis TFs',
     description:
       'Transcription factors, with their co-activators and homeobox cofactors, that promote the transcription of synaptic genes in response to neuronal activity.',
     refIds: ['R2'],
   },
   {
-    id: '04_remodeling',
+    id: '02_remodeling',
     label: 'Remodeling-specific TFs + factors',
     description:
       'Transcription factors and their modulators and regulators that act on synaptic remodeling, with the dauer signaling genes that trigger synaptic rewiring on dauer entry.',
@@ -631,28 +469,28 @@ export const SYNAPTOGENESIS_CLASSES: PanelClass[] = [
     note: 'DAUER-RELEVANT',
   },
   {
-    id: '05_adhesion_specificity',
+    id: '03_adhesion_specificity',
     label: 'Synaptic specificity / cell adhesion',
     description:
       'Genes encoding proteins that direct synapses to the correct partner cell and hold them there.',
     refIds: ['R4', 'R9', 'R5', 'R21', 'R50', 'R51', 'R52', 'R53', 'R54'],
   },
   {
-    id: '06_active_zone',
+    id: '04_active_zone',
     label: 'Active zone scaffolding',
     description:
       'Genes encoding the core active zone scaffolds and the kinases and phosphatases that act on them.',
     refIds: ['R4', 'R5', 'R13', 'R22', 'R37'],
   },
   {
-    id: '07_SV_release',
+    id: '05_SV_release',
     label: 'Synaptic vesicle / release machinery',
     description:
       'Genes encoding components essential for synaptic vesicle formation and the release machinery.',
     refIds: ['R4', 'R6', 'R14', 'R23', 'R24', 'R60', 'R61', 'R62', 'R63', 'R67'],
   },
   {
-    id: '08_innexin',
+    id: '06_innexin',
     label: 'Electrical synapse / innexins',
     description:
       'Genes encoding the 15 innexins shown to be expressed in the nervous system and to rewire under stress and in dauer.',
@@ -660,34 +498,34 @@ export const SYNAPTOGENESIS_CLASSES: PanelClass[] = [
     note: 'DAUER-REMODELED',
   },
   {
-    id: '09_postsynaptic',
+    id: '07_postsynaptic',
     label: 'Postsynaptic receptors / clustering',
     description:
       'Genes encoding postsynaptic receptors of every receptor class, with the enzymes and scaffolds that cluster the receptors at their correct positions.',
     refIds: ['R3', 'R7', 'R41', 'R42', 'R43', 'R44', 'R45', 'R46', 'R47', 'R48', 'R49'],
   },
   {
-    id: '10_mRNA_export',
+    id: '08_mRNA_export',
     label: 'RNA export and processing',
     description:
       'Genes encoding proteins involved in the export and processing of synaptic transcripts.',
     refIds: ['R6'],
   },
   {
-    id: '11_PHR_MAPK',
+    id: '09_PHR_MAPK',
     label: 'Synapse growth control',
     description: 'Genes that limit synapse formation and terminate axon growth.',
     refIds: ['R10', 'R11', 'R4', 'R13', 'R36', 'R66'],
   },
   {
-    id: '12_wnt_morphogen',
+    id: '10_wnt_morphogen',
     label: 'Synapse positioning',
     description:
       'Genes encoding components of the Wnt pathway (ligands, receptors and transducers) that restrict synapse placement to the correct region along the axon.',
     refIds: ['R9', 'R38', 'R39', 'R40'],
   },
   {
-    id: '13_NT_identity',
+    id: '11_NT_identity',
     label: 'Neurotransmitter identity',
     description:
       'Genes encoding the components that give a neuron its neurotransmitter identity (cholinergic, GABAergic and so on).',
@@ -713,13 +551,6 @@ export function doiHref(doi: string): string {
 // A subclass is the gene's role within its class (TSV subclass column), from a
 // fixed list per class. Keyed by the TSV slug.
 const SUBCLASS_LABELS: Record<string, string> = {
-  proneural_bhlh_factors: 'Proneural bHLH factors',
-  neuroblast_fate_regulators: 'Neuroblast fate regulators',
-  left_right_asymmetry_regulators: 'Left-right asymmetry regulators',
-  sensory_specific_selectors: 'Sensory-specific selectors',
-  motor_specific_selectors: 'Motor-specific selectors',
-  interneuron_specific_selectors: 'Interneuron-specific selectors',
-  multi_class_selectors: 'Multi-class selectors',
   activity_induced_factors: 'Activity-induced factors',
   homeobox_cofactors: 'Homeobox cofactors',
   coactivators_and_chromatin_remodelers: 'Co-activators and chromatin remodelers',
@@ -757,7 +588,7 @@ const SUBCLASS_LABELS: Record<string, string> = {
   neuropeptide_ligands: 'Neuropeptide ligands',
 };
 
-// TSV uses underscores throughout (`01_proneural_fate`, `dauer_signaling`).
+// TSV uses underscores throughout (`01_activity_regulated`, `dauer_signaling`).
 // prettySubclass falls back to replacing _ with a space for a slug with no
 // label yet; prettyClass also strips the numeric prefix.
 export function prettySubclass(value: string | null | undefined): string {

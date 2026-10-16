@@ -266,8 +266,6 @@
     {
       group: 'Synaptogenesis',
       chips: [
-        { q: 'syn:"proneural fate"', label: 'Proneural / fate TFs' },
-        { q: 'syn:"terminal selector"', label: 'Terminal selector TFs' },
         { q: 'syn:"activity regulated"', label: 'Activity-regulated TFs' },
         { q: 'syn:remodeling', label: 'Remodeling (dauer)' },
         { q: 'syn:adhesion', label: 'Adhesion / specificity' },

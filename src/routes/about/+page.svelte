@@ -197,7 +197,7 @@
       url: 'https://github.com/rayandrew/celegans-pipeline',
       license: 'project-internal',
       description:
-        'A 220-gene panel grouped into 13 functional classes (proneural fate, terminal selector, active zone, SV release, innexins, postsynaptic, synapse positioning, synapse growth control, etc.). Curated by the Richardson Lab from 65 publications. Drives the Synaptogenesis enrichment/GSEA tab and the gene-page panel card.',
+        'A 171-gene panel grouped into 11 functional classes (activity-regulated TFs, remodeling, adhesion, active zone, SV release, innexins, postsynaptic, synapse positioning, synapse growth control, etc.). Curated by the Richardson Lab from 49 publications. Drives the Synaptogenesis enrichment/GSEA tab and the gene-page panel card.',
     },
   ]);
 

@@ -1322,10 +1322,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Synaptogenesis panel
               <ControlHint id="gene-synaptogenesis" title="Synaptogenesis panel">
-                220 genes in 13 functional classes, from proneural fate through to synaptic
-                machinery. References are held per class, not per gene, so the same list shows for
-                every gene in a class; a paper supporting this gene specifically is named in its own
-                note.
+                171 genes in 11 functional classes, from activity-regulated transcription through to
+                synaptic machinery. References are held per class, not per gene, so the same list
+                shows for every gene in a class; a paper supporting this gene specifically is named
+                in its own note.
               </ControlHint>
             </CardTitle>
             <div class="text-xs text-muted-foreground">
