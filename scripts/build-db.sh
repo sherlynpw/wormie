@@ -370,8 +370,8 @@ if Path(neuronal_csv).is_file():
             wb = (row.get('wormbase_id') or '').strip()
             name = (row.get('gene_name') or '').strip()
             if not wb and name:
-                # The curation uses literature aliases for some rows; resolve
-                # like the synaptogenesis panel instead of dropping them.
+                # A panel supplied as names only (a lab substituting its own)
+                # resolves through canonical names and Alliance synonyms.
                 wb = sym_to_wb.get(name.lower()) or ''
             if not wb:
                 neuronal_skipped.append(name or '<blank row>')
@@ -385,7 +385,7 @@ if Path(neuronal_csv).is_file():
     cur.executemany('INSERT OR REPLACE INTO neuronal VALUES (?,?,?,?)', n_rows)
     msg = f'neuronal: {len(n_rows)} rows'
     if neuronal_skipped:
-        msg += f' ({len(neuronal_skipped)} rows skipped: blank wormbase_id)'
+        msg += f' ({len(neuronal_skipped)} rows skipped: no wormbase_id and the name resolved against neither source)'
     print(msg, file=sys.stderr)
 
 # ---------- Synaptogenesis panel ----------
@@ -401,26 +401,27 @@ CREATE TABLE synaptogenesis (
 CREATE INDEX idx_synapto_class ON synaptogenesis(class);
 CREATE INDEX idx_synapto_subclass ON synaptogenesis(subclass);
 """)
-# Resolved against the shared sym_to_wb built after the BGI ingest above
-# (canonical names first, Alliance synonyms as fallback).
+# Keyed by the curated wormbase_id column when present; a panel supplied as
+# names only (a lab substituting its own) falls back to sym_to_wb above.
 syn_rows = []
 syn_unresolved = []
 if Path(synapto_tsv).is_file():
     with open(synapto_tsv, encoding='utf-8') as f:
-        header_seen = False
+        header = None
         for line in f:
             if not line.strip() or line.startswith('#'): continue
-            if not header_seen:
-                header_seen = True
-                continue  # skip header
             parts = line.rstrip('\n').split('\t')
+            if header is None:
+                header = [h.strip() for h in parts]
+                continue
             if len(parts) < 2: continue
-            symbol = parts[0].strip()
-            klass = parts[1].strip()
-            subclass = parts[2].strip() if len(parts) > 2 else None
-            notes = parts[3].strip() if len(parts) > 3 else None
+            row = dict(zip(header, (v.strip() for v in parts)))
+            symbol = row.get('symbol', '')
+            klass = row.get('class', '')
+            subclass = row.get('subclass') or None
+            notes = row.get('notes') or None
             if not symbol or not klass: continue
-            wb = sym_to_wb.get(symbol.lower())
+            wb = row.get('wormbase_id') or sym_to_wb.get(symbol.lower())
             if not wb:
                 syn_unresolved.append(symbol)
                 continue
@@ -440,8 +441,8 @@ if Path(synapto_tsv).is_file():
 # stderr summaries above truncate; this file does not.
 with open(Path(dest_dir) / 'unresolved-symbols.txt', 'w', encoding='utf-8') as rf:
     rf.write('# Curated panel rows skipped by this build.\n')
-    rf.write('# synaptogenesis: symbol resolved against neither WormBase names nor Alliance synonyms.\n')
-    rf.write('# neuronal: blank wormbase_id and the gene name resolved against neither source.\n')
+    rf.write('# A row is skipped when it carries no wormbase_id and its name resolved\n')
+    rf.write('# against neither WormBase names nor Alliance synonyms.\n')
     for s in syn_unresolved:
         rf.write(f'synaptogenesis\t{s}\n')
     for s in neuronal_skipped:
@@ -2039,7 +2040,7 @@ MIN_ROWS = {
     'wormcat': 15000,              # 31389
     'wormcat_term_freq': 350,      # 750
     'neuronal': 600,               # 1313
-    'synaptogenesis': 120,         # 242
+    'synaptogenesis': 120,         # 171
     'interactions': 25000,         # 49087
     'cengen_expression': 250000,   # 507574
     'cengen_coexpression': 500000, # 2104706
