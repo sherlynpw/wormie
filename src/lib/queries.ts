@@ -1589,14 +1589,16 @@ export interface SynaptogenesisAssignment {
   class: string;
   subclass: string | null;
   notes: string | null;
-  refs: string | null;
+  /** Absent on builds before the refs column was added. */
+  refs?: string | null;
 }
 
 export async function getSynaptogenesisFor(
   wormbase_gene: string,
 ): Promise<SynaptogenesisAssignment[]> {
   return query<SynaptogenesisAssignment>(
-    'SELECT class, subclass, notes, refs FROM synaptogenesis WHERE wormbase_gene = ? ORDER BY class',
+    // SELECT * rather than naming refs: a database built before that column exists must still load.
+    'SELECT * FROM synaptogenesis WHERE wormbase_gene = ? ORDER BY class',
     [wormbase_gene],
   );
 }
@@ -2279,7 +2281,7 @@ export interface SynaptoGene {
   wormbase_gene: string;
   gene_name: string | null;
   notes: string | null;
-  refs: string | null;
+  refs?: string | null;
   concise_description: string | null;
 }
 
@@ -2304,7 +2306,7 @@ export async function getSynaptogenesisGenes(
     }
   }
   return query<SynaptoGene>(
-    `SELECT s.wormbase_gene, a.gene_name, s.notes, s.refs, a.concise_description
+    `SELECT s.*, a.gene_name, a.concise_description
 		 FROM synaptogenesis s
 		 LEFT JOIN annotations a ON a.wormbase_gene = s.wormbase_gene
 		 WHERE ${conds.join(' AND ')}
