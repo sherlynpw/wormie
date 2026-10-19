@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bake a prebuilt WebR filesystem image containing DESeq2 + apeglm + ashr + all deps,
+# Bake a prebuilt WebR filesystem image containing DESeq2 + apeglm + ashr + limma + all deps,
 # including our locally-built locfit. The resulting deseq2-bundle.data /
 # deseq2-bundle.js.metadata pair is mounted at the WebR client via
 # FS.mount('WORKERFS', ...), giving zero install time on every visit.
@@ -14,6 +14,8 @@ set -euo pipefail
 PIN_DESeq2="${PIN_DESeq2:-1.52.0}"
 PIN_apeglm="${PIN_apeglm:-1.34.0}"
 PIN_ashr="${PIN_ashr:-2.2-63}"
+# limma backs the trend test on per-sample set scores (/ssgsea); no hard deps.
+PIN_limma="${PIN_limma:-3.68.5}"
 
 OUT=/out
 LOCAL_REPO_DIR="${OUT}/bin/emscripten/contrib/4.5"
@@ -23,7 +25,7 @@ FILE_PACKAGER=/opt/emsdk/upstream/emscripten/tools/file_packager
 
 MOUNT_PATH="/usr/lib/R/library"
 
-echo "==> step 1: enumerate full WASM package set for DESeq2 + apeglm"
+echo "==> step 1: enumerate full WASM package set for DESeq2 + apeglm + limma"
 "${RSCRIPT}" - <<RSCRIPT
 ap_cran <- tryCatch(
   available.packages(repos = "https://repo.r-wasm.org/", type = "source"),
@@ -39,7 +41,7 @@ ap_all <- if (is.null(ap_bioc)) ap_cran else rbind(
   ap_bioc[!rownames(ap_bioc) %in% rownames(ap_cran), , drop = FALSE]
 )
 deps <- tools::package_dependencies(
-  c("DESeq2", "apeglm", "ashr"),
+  c("DESeq2", "apeglm", "ashr", "limma"),
   db = ap_all,
   which = c("Depends","Imports"),
   recursive = TRUE
@@ -54,7 +56,7 @@ foundational_bioc <- c("BiocGenerics","S4Vectors","IRanges","XVector","zlibbioc"
                        "GenomeInfoDb","GenomeInfoDbData","GenomicRanges","Seqinfo",
                        "MatrixGenerics","DelayedArray","S4Arrays","SparseArray",
                        "Biobase","BiocParallel","SummarizedExperiment")
-all_pkgs <- unique(c("DESeq2", "apeglm", "ashr", "locfit",
+all_pkgs <- unique(c("DESeq2", "apeglm", "ashr", "limma", "locfit",
                      foundational_bioc, unlist(deps)))
 # Drop base + recommended that ship with WebR core
 bundled <- c('base','compiler','datasets','grDevices','graphics','grid',
@@ -106,7 +108,7 @@ if (dir.exists(local_dir)) {
   }
 }
 pins <- c(DESeq2 = "${PIN_DESeq2}", apeglm = "${PIN_apeglm}",
-          ashr = "${PIN_ashr}")
+          ashr = "${PIN_ashr}", limma = "${PIN_limma}")
 drift <- character(0)
 for (nm in names(pins)) {
   got <- manifest\$version[match(nm, manifest\$name)]

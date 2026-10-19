@@ -131,9 +131,9 @@ jobs:
               BiocGenerics zlibbioc S4Vectors IRanges XVector \
               GenomeInfoDbData GenomeInfoDb Seqinfo GenomicRanges \
               MatrixGenerics S4Arrays SparseArray DelayedArray \
-              Biobase BiocParallel SummarizedExperiment apeglm DESeq2
+              Biobase BiocParallel SummarizedExperiment apeglm DESeq2 limma
 
-      - name: Bake DESeq2 + apeglm bundle
+      - name: Bake DESeq2 + apeglm + limma bundle
         run: |
           docker run --rm \
             -v "$(pwd)/scripts/wasm-cran":/out \

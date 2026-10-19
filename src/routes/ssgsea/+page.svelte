@@ -13,6 +13,15 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { handoff } from '$lib/pipeline-handoff';
+  import SsgseaTrendResults from '$lib/components/SsgseaTrendResults.svelte';
+  import {
+    parseSampleTable,
+    isNumericColumn,
+    checkDesign,
+    runTrendTest,
+    type TrendModel,
+    type TrendResult,
+  } from '$lib/ssgsea-trend';
 
   let exprText = $state('');
   let exprSource = $state('');
@@ -24,6 +33,10 @@
       if (!h) return;
       exprText = h.tsv;
       exprSource = h.label;
+      if (h.designTsv) {
+        sampleText = h.designTsv;
+        sampleSource = 'design from /de';
+      }
       toast.success('Loaded expression matrix from /de', { description: h.label });
       return;
     }
@@ -53,6 +66,77 @@
   let results = $state<SsgseaScores[]>([]);
   let sampleNames = $state<string[]>([]);
   let elapsed = $state<number | null>(null);
+
+  // Trend test on the score matrix (limma, in WebR).
+  let sampleText = $state('');
+  let sampleSource = $state('');
+  let variable = $state('');
+  let trendModel = $state<TrendModel>('linear');
+  let splineDf = $state(3);
+  let testing = $state(false);
+  let trend = $state<TrendResult | null>(null);
+  let trendLog = $state<string[]>([]);
+  const sampleTable = $derived(parseSampleTable(sampleText));
+  $effect(() => {
+    const t = sampleTable;
+    if (t && !t.columns.includes(variable)) variable = t.columns[0] ?? '';
+  });
+  // A numeric column defaults to the linear model, text to the factor model.
+  $effect(() => {
+    const t = sampleTable;
+    if (!t || !variable) return;
+    const numeric = isNumericColumn(t, variable);
+    if (!numeric) trendModel = 'factor';
+    else if (trendModel === 'factor') trendModel = 'linear';
+  });
+  const designCheck = $derived.by(() => {
+    const t = sampleTable;
+    if (!t || !variable || sampleNames.length === 0) return null;
+    const valueOf = new Map(t.samples.map((s, i) => [s, t.rows[i][variable]]));
+    const missing = sampleNames.filter((s) => !valueOf.has(s));
+    if (missing.length)
+      return { ok: false as const, reason: `no row for sample ${missing[0]} in the sample table` };
+    return checkDesign(
+      sampleNames.map((s) => valueOf.get(s)!),
+      trendModel,
+      splineDf,
+    );
+  });
+
+  async function testTrend() {
+    const t = sampleTable;
+    if (!t) {
+      toast.error('No sample table detected', {
+        description: 'A header row, then one line per sample: its name, then the variable.',
+      });
+      return;
+    }
+    if (designCheck && !designCheck.ok) {
+      toast.error('Cannot test', { description: designCheck.reason + '.' });
+      return;
+    }
+    testing = true;
+    trendLog = [];
+    try {
+      trend = await runTrendTest({
+        scores: results,
+        sampleNames,
+        table: t,
+        variable,
+        model: trendModel,
+        splineDf,
+        onLine: (s) => (trendLog = [...trendLog.slice(-7), s]),
+      });
+      const n = trend.rows.filter((r) => r.adjP < 0.05).length;
+      toast.success(`Trend test: ${n} of ${trend.rows.length} sets at adjusted p < 0.05`, {
+        description: `${(trend.elapsedMs / 1000).toFixed(1)}s`,
+      });
+    } catch (e) {
+      toast.error('Trend test failed', { description: e instanceof Error ? e.message : String(e) });
+    } finally {
+      testing = false;
+    }
+  }
 
   function parseExpr(
     text: string,
@@ -238,11 +322,11 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
     the whole matrix, so adding a sample or a gene set shifts every number. Two separate runs cannot
     be compared, even for the same set.
     <br /><br />
-    <b>The scores are descriptive, not a test.</b> There are no p-values here, so a difference between
-    0.44 and 0.30 is a starting point rather than a result. To make a claim, export the matrix and test
-    the scores across replicates, a t-test per set or limma on the set-by-sample matrix, just as you would
-    with expression values. With one sample per condition no test is possible and the plot is the whole
-    story.
+    <b>The scores are descriptive, not a test.</b> There are no p-values in the matrix, so a
+    difference between 0.44 and 0.30 is a starting point rather than a result. To make a claim, use
+    the <b>Test a trend</b> step below the scores: it fits one linear model per set across the samples,
+    which is how the GSVA authors recommend testing per-sample scores. With one sample per condition no
+    test is possible and the plot is the whole story.
   </PageHint>
 
   <div class="grid gap-4 md:grid-cols-2">
@@ -401,5 +485,138 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
       />
     </div>
     <SsgseaResults {results} {sampleNames} />
+
+    <section class="space-y-3 rounded-md border p-3">
+      <h2 class="inline-flex items-center gap-1.5 text-base font-semibold">
+        Test a trend
+        <ControlHint id="ssgsea-trend" title="What the trend test does">
+          For every gene set, its scores across the samples are fitted to a linear model on one
+          column of the sample table: a number such as day or dose gives a slope and a t-test on it;
+          a label such as condition or timepoint gives an F-test across its levels, which catches a
+          rise and fall as well as a steady change; with five or more distinct values a natural
+          spline in the number does the same for a curved time course. The fit is limma's (lmFit,
+          eBayes), which shares variance information across sets, and p-values are adjusted across
+          sets by Benjamini-Hochberg. This is the design the GSVA authors recommend for per-sample
+          scores (Hänzelmann et al. 2013). It runs in the browser through WebR; the first run of a
+          session starts R, which takes a minute.
+          <br /><br />
+          When every level has one sample there is no variance to test against and the step says so instead
+          of fitting.
+        </ControlHint>
+      </h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="space-y-2">
+          <label class="block text-sm font-medium" for="sample-table">
+            Sample table
+            {#if sampleSource}
+              <span class="ml-1 font-normal text-muted-foreground">· {sampleSource}</span>
+            {/if}
+          </label>
+          <textarea
+            id="sample-table"
+            class="h-32 w-full rounded border bg-background p-2 font-mono text-xs"
+            placeholder="sample&#9;day&#9;condition&#10;WT.D1&#9;1&#9;WT&#10;WT.D3&#9;3&#9;WT&#10;..."
+            bind:value={sampleText}
+          ></textarea>
+          <p class="text-xs text-muted-foreground">
+            One line per sample in the matrix, its name first, then one column per variable.
+          </p>
+        </div>
+        <div class="space-y-2 text-sm">
+          <label class="block">
+            <span class="mb-1 block text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+              Variable
+            </span>
+            <select
+              bind:value={variable}
+              class="h-8 rounded-md border border-input bg-background px-2 text-sm"
+              disabled={!sampleTable}
+            >
+              {#each sampleTable?.columns ?? [] as c (c)}
+                <option value={c}>{c}</option>
+              {/each}
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+              Model
+            </span>
+            <select
+              bind:value={trendModel}
+              class="h-8 rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option value="linear">Linear in the variable (slope)</option>
+              <option value="factor">Factor: F-test across levels</option>
+              <option value="spline">Natural spline in the variable (time course)</option>
+            </select>
+          </label>
+          {#if trendModel === 'spline'}
+            <label class="block">
+              <span
+                class="mb-1 block text-[0.65rem] uppercase tracking-wider text-muted-foreground"
+              >
+                Spline df
+              </span>
+              <input
+                type="number"
+                min="2"
+                max="6"
+                bind:value={splineDf}
+                class="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm"
+              />
+            </label>
+          {/if}
+          {#if designCheck}
+            {#if designCheck.ok}
+              <p class="text-xs text-muted-foreground">
+                {designCheck.residualDf} residual degrees of freedom{designCheck.levels.length
+                  ? ` · levels: ${designCheck.levels.join(', ')}`
+                  : ''}
+              </p>
+            {:else}
+              <p class="text-xs text-destructive">Cannot test: {designCheck.reason}.</p>
+            {/if}
+          {/if}
+          <button
+            class="rounded bg-primary px-3 py-1 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            onclick={testTrend}
+            disabled={testing ||
+              !sampleTable ||
+              !variable ||
+              (designCheck ? !designCheck.ok : false)}
+          >
+            {testing ? 'Testing…' : 'Test trend'}
+          </button>
+          {#if testing && trendLog.length}
+            <pre
+              class="max-h-24 overflow-auto rounded bg-muted/40 p-2 font-mono text-[0.65rem]">{trendLog.join(
+                '\n',
+              )}</pre>
+          {/if}
+        </div>
+      </div>
+      {#if trend}
+        <div class="flex justify-end">
+          <MethodsButton
+            ctx={{
+              tool: 'ssgsea',
+              params: {
+                alpha,
+                normalize,
+                trend: {
+                  model: trend.model,
+                  variable: trend.variable,
+                  splineDf,
+                  sets: trend.rows.length,
+                  samples: sampleNames.length,
+                },
+              },
+              inputSummary: `${results.length} sets, ${sampleNames.length} samples`,
+            }}
+          />
+        </div>
+        <SsgseaTrendResults result={trend} />
+      {/if}
+    </section>
   {/if}
 </div>

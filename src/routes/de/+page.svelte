@@ -466,7 +466,11 @@
     // ssGSEA ranks genes within each sample, so any per-sample monotone transform
     // gives identical scores. Normalized counts are sent rather than VST so that
     // VST stays confined to visualization (the PCA and the sample-distance heatmap).
-    handoff.ssgsea.set({ tsv: fit.normalizedCountsTsv, label: 'Normalized counts from /de' });
+    handoff.ssgsea.set({
+      tsv: fit.normalizedCountsTsv,
+      label: 'Normalized counts from /de',
+      designTsv: fit.designTsv,
+    });
     await goto(resolve('/ssgsea') + '?from=de');
   }
 
