@@ -49,6 +49,10 @@ export interface DESeq2Contrast {
   tsv: string;
   /** Which shrinkage was actually applied to this contrast. */
   shrinkage: Shrinkage;
+  /** Shrinkage asked for after the apeglm-to-ashr fallback; differs from `shrinkage` only when lfcShrink failed. */
+  shrinkageRequested?: Shrinkage;
+  /** R error text when lfcShrink failed and the unshrunken results were kept. */
+  shrinkError?: string;
 }
 
 export interface DESeq2FitResult {

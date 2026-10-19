@@ -325,6 +325,14 @@
     }
   }
 
+  function warnShrinkFailure(c: DESeq2Contrast) {
+    if (!c.shrinkError) return;
+    toast.warning(`Shrinkage failed for ${c.name}`, {
+      description: `${c.shrinkError.replace(/[.\s]+$/, '')}. Showing unshrunken log2 fold changes.`,
+      duration: 10_000,
+    });
+  }
+
   async function extractOne(pair: ContrastSpec) {
     if (!fit || extracting || runningAll) return;
     const name = `${pair.treatment}_vs_${pair.reference}`;
@@ -337,7 +345,8 @@
         : contrastShrinkage === 'apeglm'
           ? 'ashr'
           : contrastShrinkage;
-    if (existing && existing.shrinkage === effective && contrastAlpha.get(name) === alpha) return;
+    const existingRequested = existing?.shrinkageRequested ?? existing?.shrinkage;
+    if (existing && existingRequested === effective && contrastAlpha.get(name) === alpha) return;
     extracting = true;
     try {
       const c = await runOneContrast(
@@ -349,6 +358,7 @@
       );
       contrastAlpha.set(name, alpha);
       contrasts.set(name, c);
+      warnShrinkFailure(c);
     } catch (e) {
       toast.error('Contrast failed', { description: (e as Error)?.message ?? String(e) });
     } finally {
@@ -377,6 +387,7 @@
         (_i, c) => {
           contrasts.set(c.name, c);
           contrastAlpha.set(c.name, alpha);
+          warnShrinkFailure(c);
         },
         poolSize,
         alpha,
@@ -1102,6 +1113,14 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
               ><span class="font-mono">{activeContrastObj.name}</span> · shrink: {activeContrastObj.shrinkage}
               · {activeContrastObj.rows.length} genes · {nSig} sig (padj &lt; {alpha})</span
             >
+            {#if activeContrastObj.shrinkError}
+              <span class="text-destructive"
+                >Shrinkage ({activeContrastObj.shrinkageRequested}) failed: {activeContrastObj.shrinkError.replace(
+                  /[.\s]+$/,
+                  '',
+                )}. Showing unshrunken log2 fold changes.</span
+              >
+            {/if}
             {#if selectedGene}
               <span>
                 selected: <span class="font-mono">{selectedDisplay}</span>

@@ -34,12 +34,13 @@ async function pinnedBuildCached(url: string): Promise<boolean> {
 
 // null means the live version could not be resolved, which must stay
 // distinguishable from a real build id.
-async function fetchLatestVersion(): Promise<string | null> {
+async function fetchLatestVersion(): Promise<{ version: string; gzSize: number } | null> {
   try {
     const res = await fetch('/data/version.json', { cache: 'no-store' });
     if (!res.ok) return null;
-    const v = (await res.json()) as { version?: string };
-    return v?.version ?? null;
+    const v = (await res.json()) as { version?: string; gz_size?: number };
+    if (!v?.version) return null;
+    return { version: v.version, gzSize: typeof v.gz_size === 'number' ? v.gz_size : 0 };
   } catch {
     return null;
   }
@@ -56,6 +57,8 @@ class DbStore {
   totalNeuronal = $state<number>(0);
   /** Build actually loaded. */
   version = $state<string>('');
+  /** Compressed size of the newest published build in bytes, 0 until version.json has been read. */
+  gzSize = $state<number>(0);
   /** Newest published build, when it differs from the one loaded. */
   updateAvailable = $state<string>('');
   /** Set when a pinned build could not be confirmed and the newest was loaded. */
@@ -85,7 +88,9 @@ class DbStore {
     void navigator.storage?.persist?.().catch(() => {});
 
     const pinned = readPin();
-    const latest = await fetchLatestVersion();
+    const published = await fetchLatestVersion();
+    const latest = published?.version ?? null;
+    this.gzSize = published?.gzSize ?? 0;
 
     let version: string;
     if (latest) {

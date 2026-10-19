@@ -21,7 +21,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to wormie.rs.ht',
-    body: 'A local-first C. elegans gene explorer. The database (~28 MB) loads once into your browser and runs offline. No accounts, no telemetry. This tour takes ~60 seconds.',
+    body: 'A local-first C. elegans gene explorer. The database loads once into your browser and runs offline. No accounts, no telemetry. This tour takes ~60 seconds.',
   },
   {
     id: 'search',

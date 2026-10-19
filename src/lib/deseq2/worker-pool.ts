@@ -87,6 +87,8 @@ export class ContrastPool {
         member.busy = null;
         done++;
         this.onLine?.(`[w${idx + 1}] done  ${name} [${c.shrinkage}] (${done}/${total})`);
+        if (c.shrinkError)
+          this.onLine?.(`[w${idx + 1}] shrinkage failed for ${name}: ${c.shrinkError}`);
         onContrast?.(i, c);
       }
     };
