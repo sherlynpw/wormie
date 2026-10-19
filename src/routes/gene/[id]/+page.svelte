@@ -1605,7 +1605,7 @@
               <ControlHint id="gene-similar" title="Similar genes">
                 Ranked by shared GO and WormCat annotations, both IDF-weighted so a rare category
                 counts for more than a broad one, plus shared neuronal categories and interaction
-                partners. Direct annotations only — propagated GO ancestors aren't used so
+                partners. GO ancestors count at reduced weight and only a few levels up, so
                 similarity isn't dominated by trivial parents.
               </ControlHint>
             </CardTitle>

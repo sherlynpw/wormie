@@ -16,6 +16,17 @@
   let pasteText = $state('');
 
   onMount(async () => {
+    const params = page.url.searchParams;
+    const dsId = params.get('id');
+    if (params.get('load') === 'list' && dsId) {
+      const { datasets } = await import('$lib/stores/datasets.svelte');
+      const ds = await datasets.getById(dsId);
+      if (ds) {
+        pasteText = ds.body;
+        toast.success('Loaded', { description: ds.name });
+        return;
+      }
+    }
     const ids = await readIdsFromUrl(page.url);
     if (ids.length > 0) {
       pasteText = ids.join('\n');

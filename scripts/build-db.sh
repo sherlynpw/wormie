@@ -1216,7 +1216,7 @@ cur.executemany(
 print(f'gene_disease: {len(dz_acc)} (gene, disease) pairs', file=sys.stderr)
 
 # ---------- CeNGEN co-expression neighbors ----------
-# Pearson similarity across the 41-neuron-type bulk TMM vector
+# Pearson similarity across the bulk TMM vector (52 neuron types, VD_DD merged)
 cur.executescript("""
 CREATE TABLE cengen_coexpression (
   wormbase_gene TEXT NOT NULL,

@@ -239,6 +239,10 @@ export async function buildGseaReport(input: GseaReportInput): Promise<string> {
 // BibTeX for all data sources, pinned to the exact build versions via version.json.
 export async function buildCitationBibtex(): Promise<string> {
   const v = await fetchVersion();
+  // version.json describes the newest published build; the one in use may be older.
+  const { db } = await import('$lib/stores/db.svelte');
+  const loaded = db.version || v?.version || 'local';
+  const newerPublished = !!v?.version && loaded !== v.version;
   const src = (v?.sources ?? {}) as any;
   const wb = src.wormbase?.release ?? '?';
   const wbDate = src.wormbase?.date ?? '';
@@ -294,11 +298,11 @@ export async function buildCitationBibtex(): Promise<string> {
   note = {CeNGEN release ${cengen}; https://www.cengen.org}
 }`);
   }
-  entries.push(`@misc{wbrsht_${(v?.version ?? 'local').replace(/[^A-Za-z0-9]/g, '_')},
+  entries.push(`@misc{wbrsht_${loaded.replace(/[^A-Za-z0-9]/g, '_')},
   title = {wormie.rs.ht: a local-first C. elegans gene explorer},
   author = {{wormie.rs.ht}},
   year = {${built.slice(0, 4)}},
-  note = {Build ${v?.version ?? 'local'}, exported ${new Date().toISOString()}}
+  note = {Build ${loaded}, exported ${new Date().toISOString()}${newerPublished ? `. Source releases above are those of the newer published build ${v!.version}` : ''}}
 }`);
   return entries.join('\n\n') + '\n';
 }

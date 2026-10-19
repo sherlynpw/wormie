@@ -10,6 +10,7 @@
     getPhenotypesFor,
     getAnatomyFor,
     getOrthologs,
+    getCengenExpressionFor,
     type GeneRow,
     type WormcatAssignment,
     type NeuronalAssignment,
@@ -69,6 +70,8 @@
     phenotypes: PhenotypeRow[];
     anatomy: AnatomyRow[];
     orthologs: Ortholog[];
+    /** CeNGEN neuron types calling the gene expressed at threshold 2 or above, as enrichment uses them. */
+    neurons: string[];
   };
 
   let rows = $state<Row[]>([]);
@@ -80,6 +83,7 @@
     const phenotypes = new Map<string, string>();
     const tissues = new Map<string, string>();
     const orthologs = new Map<string, string>();
+    const neurons = new Map<string, string>();
     /* eslint-enable svelte/prefer-svelte-reactivity */
     for (const r of rows) {
       for (const a of r.go) go.set(a.go_id, a.name);
@@ -87,8 +91,9 @@
       for (const t of r.anatomy) tissues.set(t.term_id, t.name);
       for (const o of r.orthologs)
         orthologs.set(`${o.taxon_id}|${o.ortholog_symbol}`, `${o.ortholog_symbol} (${o.species})`);
+      for (const n of r.neurons) neurons.set(n, n);
     }
-    return { go, phenotypes, tissues, orthologs };
+    return { go, phenotypes, tissues, orthologs, neurons };
   });
   const goHref = (id: string) => `/go/${id}`;
   const phenotypeHref = (id: string) => `/phenotype/${id}`;
@@ -129,13 +134,14 @@
 
     const detail = await Promise.all(
       ordered.map(async (g) => {
-        const [wc, neu, go, ph, an, ort] = await Promise.all([
+        const [wc, neu, go, ph, an, ort, cengen] = await Promise.all([
           getWormcatFor(g.wormbase_gene),
           getNeuronalFor(g.wormbase_gene),
           getGoFor(g.wormbase_gene),
           getPhenotypesFor(g.wormbase_gene),
           getAnatomyFor(g.wormbase_gene),
           getOrthologs(g.wormbase_gene),
+          getCengenExpressionFor(g.wormbase_gene),
         ]);
         return {
           ...g,
@@ -145,6 +151,10 @@
           phenotypes: ph,
           anatomy: an,
           orthologs: ort,
+          neurons: cengen
+            .filter((c) => (c.max_threshold ?? 0) >= 2)
+            .map((c) => c.neuron_type)
+            .sort(),
         };
       }),
     );
@@ -224,14 +234,14 @@
 
   <PageHint id="compare" title="What this step does">
     You have a handful of genes and want to know what they have in common: are they annotated to the
-    same GO terms, do they give the same phenotypes, are they expressed in the same tissues, do they
-    share orthologs? Select the genes from the cards or table view and send them here. Every gene is
-    compared against every other one, annotation by annotation. With two genes you get a
-    three-column split, unique to the first / shared / unique to the second. With three or more you
-    get an UpSet plot per category showing which combinations of genes share terms, a Jaccard
-    heatmap of how similar each pair is overall, and the list of annotations common to all of them.
-    Note this compares genes to each other, not one list against another list: to see which genes
-    two lists share, use
+    same GO terms, do they give the same phenotypes, are they expressed in the same tissues and
+    neuron types, do they share orthologs? Select the genes from the cards or table view and send
+    them here. Every gene is compared against every other one, annotation by annotation. With two
+    genes you get a three-column split, unique to the first / shared / unique to the second. With
+    three or more you get an UpSet plot per category showing which combinations of genes share
+    terms, a Jaccard heatmap of how similar each pair is overall, and the list of annotations common
+    to all of them. Note this compares genes to each other, not one list against another list: to
+    see which genes two lists share, use
     <a href={resolve('/compare/lists')} class="underline underline-offset-2">Gene overlap</a>; to
     ask whether two separate gene lists turn up the same biology, paste them into
     <a href={resolve('/enrichment/overlap')} class="underline underline-offset-2"
@@ -401,6 +411,10 @@
             label: `${o.ortholog_symbol} (${o.species})`,
           })),
         )}
+        {@const neOverlap = diffSets(
+          A.neurons.map((n) => ({ id: n, label: n })),
+          B.neurons.map((n) => ({ id: n, label: n })),
+        )}
 
         <Card>
           <CardHeader class="pb-3">
@@ -413,7 +427,7 @@
             </div>
           </CardHeader>
           <CardContent class="space-y-4 pt-0">
-            {#each [{ k: 'GO terms', d: goOverlap }, { k: 'Phenotypes', d: phOverlap }, { k: 'Tissues', d: anOverlap }, { k: 'Orthologs', d: orOverlap }] as section (section.k)}
+            {#each [{ k: 'GO terms', d: goOverlap }, { k: 'Phenotypes', d: phOverlap }, { k: 'Tissues', d: anOverlap }, { k: 'Neuron types', d: neOverlap }, { k: 'Orthologs', d: orOverlap }] as section (section.k)}
               {#if section.d.onlyA.length + section.d.both.length + section.d.onlyB.length > 0}
                 <div>
                   <div
@@ -533,6 +547,15 @@
               exportName="compare-upset-tissues"
             />
             <UpSetPlot
+              title="Neuron types (CeNGEN)"
+              sets={rows.map((r) => ({
+                name: r.gene_name ?? r.wormbase_gene,
+                ids: r.neurons,
+              }))}
+              labels={termLabels.neurons}
+              exportName="compare-upset-neurons"
+            />
+            <UpSetPlot
               title="Orthologs"
               sets={rows.map((r) => ({
                 name: r.gene_name ?? r.wormbase_gene,
@@ -598,6 +621,14 @@
               labels={termLabels.tissues}
             />
             <JaccardHeatmap
+              title="Neuron types (CeNGEN)"
+              sets={rows.map((r) => ({
+                name: r.gene_name ?? r.wormbase_gene,
+                ids: r.neurons,
+              }))}
+              labels={termLabels.neurons}
+            />
+            <JaccardHeatmap
               title="Orthologs"
               sets={rows.map((r) => ({
                 name: r.gene_name ?? r.wormbase_gene,
@@ -630,6 +661,7 @@
             tissues: intersect(
               rows.map((r) => r.anatomy.map((t) => ({ id: t.term_id, label: t.name }))),
             ),
+            neurons: intersect(rows.map((r) => r.neurons.map((n) => ({ id: n, label: n })))),
             orthologs: intersect(
               rows.map((r) =>
                 r.orthologs.map((o) => ({
@@ -649,7 +681,7 @@
             </div>
           </CardHeader>
           <CardContent class="space-y-4 pt-0">
-            {#each [{ k: 'GO terms', items: sharedAll.go, href: (id: string) => `/go/${id}` }, { k: 'Phenotypes', items: sharedAll.phenotypes, href: (id: string) => `https://wormbase.org/species/all/phenotype/${id}` }, { k: 'Tissues', items: sharedAll.tissues, href: (id: string) => `https://wormbase.org/species/all/anatomy_term/${id}` }, { k: 'Orthologs', items: sharedAll.orthologs, href: null }] as section (section.k)}
+            {#each [{ k: 'GO terms', items: sharedAll.go, href: (id: string) => `/go/${id}` }, { k: 'Phenotypes', items: sharedAll.phenotypes, href: (id: string) => `https://wormbase.org/species/all/phenotype/${id}` }, { k: 'Tissues', items: sharedAll.tissues, href: (id: string) => `https://wormbase.org/species/all/anatomy_term/${id}` }, { k: 'Neuron types', items: sharedAll.neurons, href: (id: string) => `/cell-type/${id}` }, { k: 'Orthologs', items: sharedAll.orthologs, href: null }] as section (section.k)}
               <div>
                 <div
                   class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"

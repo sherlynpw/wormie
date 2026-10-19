@@ -232,6 +232,11 @@ function opSubquery(op: Op): { sql: string; params: unknown[] } | null {
               WHERE kegg_fts MATCH ?`,
         params: [escapeFts(v.split(/\s+/))],
       };
+    case 'wb':
+      return {
+        sql: `SELECT wormbase_gene FROM annotations WHERE wormbase_gene = ?`,
+        params: [v.replace(/^WBGENE/i, 'WBGene')],
+      };
     case 'status':
       return {
         sql: `SELECT wormbase_gene FROM annotations WHERE LOWER(status) = ?`,
@@ -373,8 +378,10 @@ export async function bulkLookup(
       status: string | null;
     };
     const WBGENE_RE = /^WBGene\d+$/i;
+    const ENTREZ_RE = /^\d+$/;
     const wbgeneTokens = unique.filter((t) => WBGENE_RE.test(t));
-    const residual = unique.filter((t) => !WBGENE_RE.test(t));
+    const entrezTokens = unique.filter((t) => ENTREZ_RE.test(t));
+    const residual = unique.filter((t) => !WBGENE_RE.test(t) && !ENTREZ_RE.test(t));
     void lowered; // residualLower is built below from `residual` only.
     const rows: Row[] = [];
     if (wbgeneTokens.length > 0) {
@@ -410,6 +417,21 @@ export async function bulkLookup(
         });
       }
     }
+    if (entrezTokens.length > 0) {
+      jobs.update(jobId, `Entrez lookup · ${entrezTokens.length.toLocaleString()} IDs`);
+      const entrezRows = await query<Row>(
+        `WITH inputs(input_lower) AS (
+			   SELECT value FROM json_each(?)
+			 )
+			 SELECT i.input_lower,
+			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description, a.status
+			 FROM inputs i
+			 JOIN wb_to_entrez we ON we.entrez_id = i.input_lower
+			 JOIN annotations a ON a.wormbase_gene = we.wormbase_gene`,
+        [JSON.stringify(entrezTokens)],
+      );
+      for (const r of entrezRows) rows.push(r);
+    }
     if (residual.length > 0) {
       const residualLower = residual.map((t) => t.toLowerCase());
       jobs.update(jobId, `Fuzzy match · ${residual.length.toLocaleString()} tokens (slow path)`);
@@ -425,7 +447,8 @@ export async function bulkLookup(
 			   ON LOWER(a.gene_name) = i.input_lower
 			   OR LOWER(a.sequence_name) = i.input_lower
 			   OR LOWER(a.other_names) = i.input_lower
-			   OR ',' || LOWER(REPLACE(a.other_names, ' ', '')) || ',' LIKE '%,' || i.input_lower || ',%'`,
+			   OR '|' || LOWER(REPLACE(REPLACE(a.other_names, ' ', ''), ',', '|')) || '|'
+			        LIKE '%|' || i.input_lower || '|%'`,
         [JSON.stringify(residualLower)],
       );
       for (const r of fuzzyRows) rows.push(r);
@@ -483,6 +506,58 @@ async function searchByGeneList(ids: string[], limit: number, offset = 0): Promi
 export interface SearchResult {
   rows: GeneRow[];
   parsed: ParsedQuery;
+}
+
+// One subquery per term of a query that mixes AND/OR/NOT with table-routed prefixes,
+// joined as a compound select in token order. An empty term is skipped together with
+// the connector before it; a leading NOT subtracts from the whole gene table.
+function compoundSubquery(
+  sequence: SeqItem[],
+  globalFields: readonly FtsField[] | undefined,
+): { sql: string; params: unknown[] } | null {
+  const CONN: Record<'AND' | 'OR' | 'NOT', string> = {
+    AND: 'INTERSECT',
+    OR: 'UNION',
+    NOT: 'EXCEPT',
+  };
+  const parts: string[] = [];
+  const params: unknown[] = [];
+  let pending: 'AND' | 'OR' | 'NOT' | null = null;
+  for (const item of sequence) {
+    if (item.kind === 'conn') {
+      pending = item.conn;
+      continue;
+    }
+    let sq: { sql: string; params: unknown[] } | null = null;
+    if (item.kind === 'free') {
+      const e = escapeFts([item.token], globalFields);
+      if (e)
+        sq = { sql: `SELECT wormbase_gene FROM genes_fts WHERE genes_fts MATCH ?`, params: [e] };
+    } else if (item.op.mode === 'like') {
+      sq = opLikeSubquery(item.op);
+    } else if (FTS_OP_COLUMNS[item.op.key]) {
+      const tokens = item.op.value.split(/\s+/).filter(Boolean);
+      const e = tokens.length ? escapeFts(tokens, FTS_OP_COLUMNS[item.op.key]) : '';
+      if (e)
+        sq = { sql: `SELECT wormbase_gene FROM genes_fts WHERE genes_fts MATCH ?`, params: [e] };
+    } else {
+      sq = opSubquery(item.op);
+    }
+    if (!sq) {
+      pending = null;
+      continue;
+    }
+    if (parts.length === 0) {
+      if (pending === 'NOT') parts.push('SELECT wormbase_gene FROM annotations');
+      else pending = null;
+    }
+    if (parts.length > 0) parts.push(CONN[pending ?? 'AND']);
+    parts.push(sq.sql);
+    params.push(...sq.params);
+    pending = null;
+  }
+  if (parts.length === 0) return null;
+  return { sql: parts.join('\n'), params };
 }
 
 // Build a single FTS5 MATCH expression from free-text tokens and scoped FTS ops (pheno:, tissue:, etc.).
@@ -544,23 +619,19 @@ function buildFtsExpression(
   return parts.join(' AND ');
 }
 
-export async function runSearch(
-  input: string,
-  limit = 500,
-  offset = 0,
-  fields?: readonly FtsField[],
-): Promise<SearchResult> {
-  const parsed = parseQuery(input);
-
-  if (parsed.mode === 'empty') {
-    return { rows: await listGenes(limit, offset), parsed };
-  }
-
-  if (parsed.mode === 'genelist') {
-    return { rows: await searchByGeneList(parsed.ids, limit, offset), parsed };
-  }
-
-  // Route ops: FTS column-scoped, table INTERSECT, or LIKE.
+// Routes a parsed query into the gene subqueries that runSearch and the facet
+// counts both intersect, so the result list and its counter cannot disagree.
+function routeQuery(
+  parsed: ParsedQuery,
+  fields: readonly FtsField[] | undefined,
+): {
+  ftsExpr: string;
+  tableOps: Op[];
+  likeOps: Op[];
+  compound: boolean;
+  intersects: string[];
+  params: unknown[];
+} {
   const ftsOps: Op[] = [];
   const tableOps: Op[] = [];
   const likeOps: Op[] = [];
@@ -569,8 +640,6 @@ export async function runSearch(
     else if (FTS_OP_COLUMNS[op.key]) ftsOps.push(op);
     else tableOps.push(op);
   }
-
-  const ftsExpr = buildFtsExpression(parsed.freeTextTokens, fields, ftsOps, parsed.sequence);
 
   const intersects: string[] = [];
   const params: unknown[] = [];
@@ -589,22 +658,58 @@ export async function runSearch(
     params.push(...parsed.ids, ...lowered, ...lowered);
   }
 
+  // Explicit AND/OR/NOT with a prefix that is not FTS-routable (go:, expressed:, ...)
+  // cannot be expressed inside one MATCH, so each term becomes a subquery and the
+  // connectors become INTERSECT / UNION / EXCEPT. SQLite evaluates a compound select
+  // left to right, so `a OR b AND c` reads as (a OR b) AND c here. Ranking by bm25
+  // and match snippets are unavailable in this mode.
+  const hasConn = parsed.sequence?.some((s) => s.kind === 'conn') ?? false;
+  const allOpsFts =
+    parsed.sequence?.every((s) => s.kind !== 'op' || !!FTS_OP_COLUMNS[s.op.key]) ?? true;
+  const compound = hasConn && !allOpsFts ? compoundSubquery(parsed.sequence!, fields) : null;
+  const ftsExpr = compound
+    ? ''
+    : buildFtsExpression(parsed.freeTextTokens, fields, ftsOps, parsed.sequence);
+  if (compound) {
+    intersects.push(compound.sql);
+    params.push(...compound.params);
+  }
   if (ftsExpr) {
     intersects.push(`SELECT wormbase_gene FROM genes_fts WHERE genes_fts MATCH ?`);
     params.push(ftsExpr);
   }
-  for (const op of tableOps) {
+  for (const op of compound ? [] : tableOps) {
     const sq = opSubquery(op);
     if (!sq) continue;
     intersects.push(sq.sql);
     params.push(...sq.params);
   }
-  for (const op of likeOps) {
+  for (const op of compound ? [] : likeOps) {
     const sq = opLikeSubquery(op);
     if (!sq) continue;
     intersects.push(sq.sql);
     params.push(...sq.params);
   }
+  return { ftsExpr, tableOps, likeOps, compound: !!compound, intersects, params };
+}
+
+export async function runSearch(
+  input: string,
+  limit = 500,
+  offset = 0,
+  fields?: readonly FtsField[],
+): Promise<SearchResult> {
+  const parsed = parseQuery(input);
+
+  if (parsed.mode === 'empty') {
+    return { rows: await listGenes(limit, offset), parsed };
+  }
+
+  if (parsed.mode === 'genelist') {
+    return { rows: await searchByGeneList(parsed.ids, limit, offset), parsed };
+  }
+
+  const { ftsExpr, tableOps, likeOps, compound, intersects, params } = routeQuery(parsed, fields);
 
   if (intersects.length === 0) {
     return { rows: await listGenes(limit, offset), parsed };
@@ -613,6 +718,7 @@ export async function runSearch(
   // Fast path for status/type-only queries: push conditions directly into WHERE,
   // avoiding the IN-subquery overhead. Cuts status:live load from ~2s to <100ms.
   const annoOnly =
+    !compound &&
     !ftsExpr &&
     likeOps.length === 0 &&
     tableOps.length > 0 &&
@@ -1914,47 +2020,7 @@ function matchedGenesSubquery(input: string): { sql: string; params: unknown[] }
     };
   }
 
-  const ftsOps: Op[] = [];
-  const tableOps: Op[] = [];
-  const likeOps: Op[] = [];
-  for (const op of parsed.ops) {
-    if (op.mode === 'like') likeOps.push(op);
-    else if (FTS_OP_COLUMNS[op.key]) ftsOps.push(op);
-    else tableOps.push(op);
-  }
-  const ftsExpr = buildFtsExpression(parsed.freeTextTokens, undefined, ftsOps, parsed.sequence);
-
-  const intersects: string[] = [];
-  const params: unknown[] = [];
-  // Hybrid pre-filter (same as gene-list mode): ensures facet counts (n_genes, WormCat, GO)
-  // honour the ID restriction rather than returning unfiltered totals.
-  if (parsed.ids.length > 0) {
-    const placeholders = parsed.ids.map(() => '?').join(',');
-    const lower = parsed.ids.map((id) => id.toLowerCase());
-    intersects.push(
-      `SELECT a.wormbase_gene FROM annotations a
-		   WHERE a.wormbase_gene IN (${placeholders})
-		      OR LOWER(a.gene_name) IN (${placeholders})
-		      OR LOWER(a.sequence_name) IN (${placeholders})`,
-    );
-    params.push(...parsed.ids, ...lower, ...lower);
-  }
-  if (ftsExpr) {
-    intersects.push(`SELECT wormbase_gene FROM genes_fts WHERE genes_fts MATCH ?`);
-    params.push(ftsExpr);
-  }
-  for (const op of tableOps) {
-    const sq = opSubquery(op);
-    if (!sq) continue;
-    intersects.push(sq.sql);
-    params.push(...sq.params);
-  }
-  for (const op of likeOps) {
-    const sq = opLikeSubquery(op);
-    if (!sq) continue;
-    intersects.push(sq.sql);
-    params.push(...sq.params);
-  }
+  const { intersects, params } = routeQuery(parsed, undefined);
   if (intersects.length === 0) return null;
   return {
     sql: intersects.join(' INTERSECT '),
@@ -2069,6 +2135,7 @@ export async function getFacets(term: string): Promise<Facets> {
   const annoOnly =
     parsed.mode === 'search' &&
     parsed.freeTextTokens.length === 0 &&
+    !parsed.sequence.some((it) => it.kind === 'conn') &&
     parsed.ops.length > 0 &&
     parsed.ops.every((o) => o.mode === 'fts' && (o.key === 'status' || o.key === 'type'));
   if (annoOnly) {

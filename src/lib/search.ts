@@ -63,9 +63,8 @@ export const FTS_OP_COLUMNS: Partial<Record<OpKey, readonly FtsField[]>> = {
   pathway: ['pathways'],
 };
 
-// Keys that accept `:` (FTS) syntax. `wb` is FTS-UNINDEXED so it's missing
-// from this list. `go`, `cat`, `neuronal`, `status`, `type` go through
-// table-INTERSECT rather than genes_fts, but still use `:` syntax.
+// Keys that accept `:` syntax. `go`, `cat`, `neuronal`, `syn`, `status`, `type`,
+// `wb` and `expressed` go through table subqueries rather than genes_fts.
 export const FTS_OP_KEYS: OpKey[] = [
   'go',
   'cat',
@@ -73,6 +72,7 @@ export const FTS_OP_KEYS: OpKey[] = [
   'syn',
   'status',
   'type',
+  'wb',
   'pheno',
   'tissue',
   'ortho',

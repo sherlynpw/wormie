@@ -32,11 +32,13 @@
       { path: '/enrichment', param: 'deseq2', label: 'Over-representation (DE table / volcano)' },
       { path: '/compare/lists', param: 'list', label: 'Gene overlap' },
       { path: '/enrichment/overlap', param: 'list', label: 'Enrichment overlap' },
+      { path: '/nta', param: 'list', label: 'Network connectivity' },
     ],
     ranked: [
       { path: '/gsea', param: 'ranked', label: 'Ranked-list enrichment' },
       { path: '/enrichment', param: 'ranked', label: 'Over-representation (gene list)' },
       { path: '/enrichment', param: 'deseq2', label: 'Over-representation (DE table / volcano)' },
+      { path: '/nta', param: 'list', label: 'Network connectivity' },
     ],
     deseq2: [
       { path: '/enrichment', param: 'deseq2', label: 'Over-representation (DE subset)' },
