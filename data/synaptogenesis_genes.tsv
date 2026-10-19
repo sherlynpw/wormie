@@ -5,7 +5,7 @@ symbol	class	subclass	notes	family	wormbase_id	refs
 # search prefix and enrichment key keep the name synaptogenesis.
 # References checked against Crossref; SYNAPTOGENESIS.txt in the
 # transdaomic-pipeline repo records the per-gene verification status.
-# v6 changes (from Claire Richardson's review, 2026-10-19):
+# v6 changes (panel reviewed 2026-10-19):
 # - refs column: every gene cites at least one primary research article, by the
 #   R ids in src/lib/synaptogenesis-references.ts. Inline citations left the
 #   notes column. Class-level reviews stay on the class, not the gene.
