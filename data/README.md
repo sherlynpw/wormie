@@ -45,9 +45,12 @@ insert.
 
 Ours, under this repository's licence, curated for this work.
 
-No maintained resource groups _C. elegans_ synaptogenesis genes by the role they
-play, so this panel was assembled from the primary literature. 242 genes across
-13 classes, drawn from 25 publications. Each gene carries the publications it
-was curated from, listed in `src/lib/synaptogenesis-references.ts` and shown
-beside the gene in the interface, so an assignment can be checked against its
-source rather than taken on trust.
+No maintained resource groups _C. elegans_ synapse development and function
+genes by the role they play, so this panel was assembled from the primary
+literature. 178 genes across 12 classes (v6), drawn from 139 publications. Each
+gene's `refs` column names at least one primary research article, by the ids in
+`src/lib/synaptogenesis-references.ts`, and the interface shows those papers
+beside the gene, so an assignment can be checked against its source rather than
+taken on trust. The file, table, search prefix (`syn:`) and enrichment key keep
+the historical name `synaptogenesis`; the interface calls the panel "Synapse
+development and function".

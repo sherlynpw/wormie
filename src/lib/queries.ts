@@ -41,7 +41,7 @@ const MATCH_COLS: { idx: number; field: MatchField; label: string }[] = [
   { idx: 11, field: 'wormcat', label: 'WormCat' },
   { idx: 12, field: 'neuronal', label: 'Neuronal' },
   { idx: 13, field: 'orthologs', label: 'Orthologs' },
-  { idx: 14, field: 'synaptogenesis', label: 'Synaptogenesis' },
+  { idx: 14, field: 'synaptogenesis', label: 'Synapse panel' },
 ];
 
 export interface MatchedField {
@@ -1589,13 +1589,14 @@ export interface SynaptogenesisAssignment {
   class: string;
   subclass: string | null;
   notes: string | null;
+  refs: string | null;
 }
 
 export async function getSynaptogenesisFor(
   wormbase_gene: string,
 ): Promise<SynaptogenesisAssignment[]> {
   return query<SynaptogenesisAssignment>(
-    'SELECT class, subclass, notes FROM synaptogenesis WHERE wormbase_gene = ? ORDER BY class',
+    'SELECT class, subclass, notes, refs FROM synaptogenesis WHERE wormbase_gene = ? ORDER BY class',
     [wormbase_gene],
   );
 }
@@ -2278,6 +2279,7 @@ export interface SynaptoGene {
   wormbase_gene: string;
   gene_name: string | null;
   notes: string | null;
+  refs: string | null;
   concise_description: string | null;
 }
 
@@ -2302,7 +2304,7 @@ export async function getSynaptogenesisGenes(
     }
   }
   return query<SynaptoGene>(
-    `SELECT s.wormbase_gene, a.gene_name, s.notes, a.concise_description
+    `SELECT s.wormbase_gene, a.gene_name, s.notes, s.refs, a.concise_description
 		 FROM synaptogenesis s
 		 LEFT JOIN annotations a ON a.wormbase_gene = s.wormbase_gene
 		 WHERE ${conds.join(' AND ')}

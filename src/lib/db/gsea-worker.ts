@@ -7,6 +7,7 @@ import { multilevelP } from './fgsea-multilevel';
 import { bhFdr } from './stats';
 import { GO_POSITIVE, CENGEN_MIN_THRESHOLD } from './term-filters';
 import { buildWormcatTerms, WORMCAT_LEVEL_ROWS_SQL, type WormcatLevelRow } from './wormcat-terms';
+import { classById } from '../synaptogenesis-references';
 // Permutation strategy: gene-set permutation (random samples of size |S| from
 // the ranked background), standard for preranked GSEA without sample labels.
 
@@ -246,7 +247,7 @@ function loadTermSets(db: any, kind: GseaKind): TermSet[] {
     for (const r of srows) {
       let s = sets.get(r.term_id);
       if (!s) {
-        s = { term_id: r.term_id, name: r.term_id, genes: [] };
+        s = { term_id: r.term_id, name: classById(r.term_id)?.label ?? r.term_id, genes: [] };
         sets.set(r.term_id, s);
       }
       s.genes.push(r.wormbase_gene);

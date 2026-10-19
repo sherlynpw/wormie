@@ -34,7 +34,7 @@
     { key: 'wormcat', label: 'WormCat', icon: FolderTree },
     { key: 'go', label: 'GO terms', icon: Network },
     { key: 'neuronal', label: 'Neuronal class', icon: Brain },
-    { key: 'synaptogenesis', label: 'Synaptogenesis', icon: Cable },
+    { key: 'synaptogenesis', label: 'Synapse panel', icon: Cable },
   ];
 
   type ToolLink = { href: string; match: string; label: string; icon: IconComponent };

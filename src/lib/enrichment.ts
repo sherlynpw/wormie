@@ -13,7 +13,7 @@ export const ALL_ENRICHMENT_KINDS: { key: EnrichmentKind; label: string }[] = [
   { key: 'neuronal', label: 'Neuronal class' },
   { key: 'tissue', label: 'Tissues' },
   { key: 'cell-type', label: 'Neurons (CeNGEN)' },
-  { key: 'synaptogenesis', label: 'Synaptogenesis' },
+  { key: 'synaptogenesis', label: 'Synapse development and function' },
   { key: 'pathway', label: 'KEGG' },
 ];
 

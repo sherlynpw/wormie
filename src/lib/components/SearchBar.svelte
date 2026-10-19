@@ -66,7 +66,7 @@
     wormcat: 'WormCat',
     neuronal: 'Neuronal categories',
     orthologs: 'Ortholog symbols',
-    synaptogenesis: 'Synaptogenesis panel',
+    synaptogenesis: 'Synapse panel',
     pathways: 'KEGG pathways',
   };
 
@@ -349,7 +349,7 @@
         {
           key: 'syn',
           example: 'syn:innexin',
-          help: 'Synaptogenesis panel class / subclass / notes (quote multi-word)',
+          help: 'Synapse panel class / subclass / notes (quote multi-word)',
         },
       ],
     },

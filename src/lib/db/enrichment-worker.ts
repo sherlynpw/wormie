@@ -13,6 +13,7 @@ export type EnrichmentKind =
   | 'pathway';
 
 import { GO_POSITIVE, CENGEN_MIN_THRESHOLD } from './term-filters';
+import { classById } from '../synaptogenesis-references';
 import { buildWormcatTerms, WORMCAT_LEVEL_ROWS_SQL, type WormcatLevelRow } from './wormcat-terms';
 
 let wormcatTermsCache: Map<string, Set<string>> | null = null;
@@ -105,7 +106,7 @@ function loadBackground(db: any, kind: EnrichmentKind): BgInfo {
                 COUNT(DISTINCT wormbase_gene) AS df,
                 class AS name
          FROM synaptogenesis WHERE class IS NOT NULL GROUP BY class`,
-      );
+      ).map((c) => ({ ...c, name: classById(c.term_id)?.label ?? c.term_id }));
       N = execAll<{ n: number }>(
         db,
         'SELECT COUNT(DISTINCT wormbase_gene) AS n FROM synaptogenesis',

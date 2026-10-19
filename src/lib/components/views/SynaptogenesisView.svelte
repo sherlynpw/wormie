@@ -20,6 +20,7 @@
     refById,
     doiHref,
     prettySubclass,
+    refShortLabel,
   } from '$lib/synaptogenesis-references';
 
   let { term, meta }: { term: string; meta?: Snippet } = $props();
@@ -109,7 +110,7 @@
 </script>
 
 {#if loading}
-  <div class="py-6 text-sm text-muted-foreground">Loading synaptogenesis panel...</div>
+  <div class="py-6 text-sm text-muted-foreground">Loading synapse panel...</div>
 {:else if grouped.length === 0}
   <div class="py-10 text-center text-sm text-muted-foreground">No matching panel entries.</div>
 {:else}
@@ -219,6 +220,21 @@
                               {#if g.notes}
                                 <span class="text-xs text-muted-foreground">— {g.notes}</span>
                               {/if}
+                              {#each (g.refs ?? '').split(';').filter(Boolean) as rid (rid)}
+                                {@const r = refById(rid)}
+                                {#if r}
+                                  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+                                  <a
+                                    href={doiHref(r.doi)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
+                                    class="inline-block rounded border bg-background px-1.5 py-0.5 text-[0.65rem] text-muted-foreground hover:bg-accent"
+                                  >
+                                    {refShortLabel(r)}
+                                  </a>
+                                {/if}
+                              {/each}
                             </div>
                           {/each}
                         </div>
