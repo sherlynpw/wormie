@@ -388,7 +388,7 @@ if Path(neuronal_csv).is_file():
         msg += f' ({len(neuronal_skipped)} rows skipped: no wormbase_id and the name resolved against neither source)'
     print(msg, file=sys.stderr)
 
-# ---------- Synaptogenesis panel ----------
+# ---------- Synapse development and function panel (table: synaptogenesis) ----------
 cur.executescript("""
 CREATE TABLE synaptogenesis (
   wormbase_gene TEXT NOT NULL,
@@ -396,6 +396,7 @@ CREATE TABLE synaptogenesis (
   class TEXT NOT NULL,
   subclass TEXT,
   notes TEXT,
+  refs TEXT,
   PRIMARY KEY (wormbase_gene, class)
 );
 CREATE INDEX idx_synapto_class ON synaptogenesis(class);
@@ -420,14 +421,15 @@ if Path(synapto_tsv).is_file():
             klass = row.get('class', '')
             subclass = row.get('subclass') or None
             notes = row.get('notes') or None
+            refs = row.get('refs') or None
             if not symbol or not klass: continue
             wb = row.get('wormbase_id') or sym_to_wb.get(symbol.lower())
             if not wb:
                 syn_unresolved.append(symbol)
                 continue
-            syn_rows.append((wb, symbol, klass, subclass or None, notes or None))
+            syn_rows.append((wb, symbol, klass, subclass or None, notes or None, refs))
     cur.executemany(
-        'INSERT OR REPLACE INTO synaptogenesis VALUES (?,?,?,?,?)', syn_rows
+        'INSERT OR REPLACE INTO synaptogenesis VALUES (?,?,?,?,?,?)', syn_rows
     )
     msg = f'synaptogenesis: {len(syn_rows)} rows'
     if syn_unresolved:
@@ -1216,7 +1218,7 @@ cur.executemany(
 print(f'gene_disease: {len(dz_acc)} (gene, disease) pairs', file=sys.stderr)
 
 # ---------- CeNGEN co-expression neighbors ----------
-# Pearson similarity across the 41-neuron-type bulk TMM vector
+# Pearson similarity across the bulk TMM vector (52 neuron types, VD_DD merged)
 cur.executescript("""
 CREATE TABLE cengen_coexpression (
   wormbase_gene TEXT NOT NULL,
@@ -2040,7 +2042,7 @@ MIN_ROWS = {
     'wormcat': 15000,              # 31389
     'wormcat_term_freq': 350,      # 750
     'neuronal': 600,               # 1313
-    'synaptogenesis': 120,         # 171
+    'synaptogenesis': 120,         # 178
     'interactions': 25000,         # 49087
     'cengen_expression': 250000,   # 507574
     'cengen_coexpression': 500000, # 2104706

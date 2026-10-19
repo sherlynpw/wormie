@@ -26,6 +26,21 @@ export interface MethodsBundle {
   bundleBaked?: string;
 }
 
+// Appended to the ssGSEA paragraph when a trend was tested on the score matrix.
+function trendSentence(p: Record<string, unknown>): string {
+  const t = p.trend as
+    | { model: string; variable: string; splineDf?: number; sets: number; samples: number }
+    | undefined;
+  if (!t) return '';
+  const design =
+    t.model === 'factor'
+      ? `a factor for ${t.variable}, with a moderated F-test across its levels`
+      : t.model === 'spline'
+        ? `a natural cubic spline in ${t.variable} with ${t.splineDf ?? 3} degrees of freedom, with a moderated F-test on the spline coefficients, as the limma user guide recommends for time courses`
+        : `${t.variable} as a continuous covariate, with a moderated t-test on its slope`;
+  return ` A trend across the ${t.samples} samples was tested on the score matrix by fitting, for each of the ${t.sets} gene sets, a linear model of score on ${design}, with limma's lmFit and eBayes (Smyth 2004; Ritchie et al. 2015) run in the browser through WebR, the design recommended for per-sample enrichment scores by Hänzelmann et al. (2013), and p-values adjusted across sets by the Benjamini-Hochberg method.`;
+}
+
 export async function loadBundle(): Promise<MethodsBundle> {
   const [dbVer, manifest] = await Promise.all([fetchVersion(), getBundleManifest()]);
   return {
@@ -69,7 +84,7 @@ const toolText: Record<Tool, (p: Record<string, unknown>) => string> = {
   gsea: (p) =>
     `Preranked GSEA was performed with a custom in-browser implementation (TypeScript, run in Web Workers) of Subramanian et al.'s weighted Kolmogorov-Smirnov enrichment score combined with gene-set permutation (\`nperm = ${fmt(p.nperm ?? 1000)}\`, \`minSize = ${fmt(p.minSize ?? 15)}\`, \`maxSize = ${fmt(p.maxSize ?? 500)}\`, weight exponent \`p = ${fmt(p.weight ?? 1)}\`). Permutations are pooled in log-spaced size buckets (fgsea-style).${p.multilevel === false ? '' : ' Sets whose permutation p-value fell within three times the permutation floor were re-estimated by adaptive multilevel splitting (Korotkevich et al.), scaled by the fraction of null scores sharing the observed sign as in `fgseaMultilevel`.'} On validation data NES correlation versus \`fgsea::fgseaSimple\` was ≥ 0.9999, and the browser run recovered 112 of R's 113 significant sets at q < 0.05 while adding 1.`,
   ssgsea: (p) =>
-    `Single-sample GSEA was performed with a custom in-browser implementation (TypeScript, run in a Web Worker) of the Barbie et al. (2009) integral form, with weighting exponent α = ${fmt(p.alpha ?? 0.25)}${p.normalize === false ? '' : ' and final scores scaled by the matrix range (GSVA::ssgseaParam default)'}. Score correlation versus \`GSVA::gsva(ssgseaParam(...))\` on validation data was 1.0000 over 13,200 scores, with maximum absolute deviation 7.8e-5.`,
+    `Single-sample GSEA was performed with a custom in-browser implementation (TypeScript, run in a Web Worker) of the Barbie et al. (2009) integral form, with weighting exponent α = ${fmt(p.alpha ?? 0.25)}${p.normalize === false ? '' : ' and final scores scaled by the matrix range (GSVA::ssgseaParam default)'}. Score correlation versus \`GSVA::gsva(ssgseaParam(...))\` on validation data was 1.0000 over 13,200 scores, with maximum absolute deviation 7.8e-5.${trendSentence(p)}`,
   nta: (p) =>
     `Network connectivity was tested against the ${
       p.edgeKind === 'physical'

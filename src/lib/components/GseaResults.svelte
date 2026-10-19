@@ -80,7 +80,7 @@
     { key: 'neuronal', label: 'Neuronal class' },
     { key: 'tissue', label: 'Tissues' },
     { key: 'cell-type', label: 'Neurons (CeNGEN)' },
-    { key: 'synaptogenesis', label: 'Synaptogenesis' },
+    { key: 'synaptogenesis', label: 'Synapse development and function' },
     { key: 'pathway', label: 'KEGG' },
   ];
   // KEGG excluded from the build drops the pathway category (license).

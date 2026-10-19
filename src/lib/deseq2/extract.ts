@@ -53,7 +53,7 @@ export async function runContrast(
   // apeglm coefficient is looked up rather than pasted from the raw level names.
   // res = res keeps p-values and padj from results() at the user's alpha; without it
   // lfcShrink recomputes results() at DESeq2's default alpha = 0.1.
-  const onError = 'error = function(e) { shrink_ok <<- FALSE; res }';
+  const onError = 'error = function(e) { shrink_err <<- conditionMessage(e); res }';
   const resR =
     effective === 'apeglm'
       ? `
@@ -73,7 +73,7 @@ export async function runContrast(
     fmt <- function(x) ifelse(is.na(x), "NA", formatC(x, format = "g", digits = 6))
     ${resR}
     stat_values <- res$stat
-    shrink_ok <- TRUE
+    shrink_err <- ""
     res <- ${shrinkR}
     df <- as.data.frame(res)
     df$gene <- rownames(df)
@@ -87,20 +87,23 @@ export async function runContrast(
         fmt(as.numeric(r[["padj"]])),
         sep = "\\t"
       ))
-    ), collapse = "\\n"), if (shrink_ok) "ok" else "failed")
+    ), collapse = "\\n"), shrink_err)
   `;
   const r = await webR.evalR(script, { captureStreams: false, captureConditions: false });
   const o = await r.toJs();
   const values = o.values as unknown as string[];
   const tsv = values[0] ?? '';
-  // A failed shrink falls back to the unshrunken results, so label them as such.
-  const applied: Shrinkage = values[1] === 'failed' ? 'none' : effective;
+  // A failed shrink falls back to the unshrunken results, so label them as such
+  // and carry the R error so the page can say why.
+  const shrinkError = (values[1] ?? '').trim();
   return {
     name: `${pair.treatment}_vs_${pair.reference}`,
     treatment: pair.treatment,
     reference: pair.reference,
     rows: parseRows(tsv),
     tsv,
-    shrinkage: applied,
+    shrinkage: shrinkError ? 'none' : effective,
+    shrinkageRequested: effective,
+    ...(shrinkError ? { shrinkError } : {}),
   };
 }

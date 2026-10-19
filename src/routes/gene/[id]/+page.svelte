@@ -368,7 +368,7 @@
       { id: 'go', label: 'Gene Ontology' },
       { id: 'wormcat', label: 'WormCat' },
       { id: 'neuronal', label: 'Neuronal class' },
-      { id: 'synaptogenesis', label: 'Synaptogenesis' },
+      { id: 'synaptogenesis', label: 'Synapse panel' },
       ...(KEGG_ENABLED ? [{ id: 'pathways', label: 'KEGG' }] : []),
     ];
     const expression: TocLeaf[] = [
@@ -1320,12 +1320,12 @@
         <Card id="synaptogenesis">
           <CardHeader class="pb-3">
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Synaptogenesis panel
-              <ControlHint id="gene-synaptogenesis" title="Synaptogenesis panel">
-                171 genes in 11 functional classes, from activity-regulated transcription through to
-                synaptic machinery. References are held per class, not per gene, so the same list
-                shows for every gene in a class; a paper supporting this gene specifically is named
-                in its own note.
+              Synapse development and function panel
+              <ControlHint id="gene-synaptogenesis" title="Synapse development and function panel">
+                178 genes in 12 functional classes, from activity-regulated transcription through
+                synaptic machinery to neurotransmitter identity. The papers listed are the primary
+                research articles this gene was curated from; the reviews behind each class are on
+                the panel view.
               </ControlHint>
             </CardTitle>
             <div class="text-xs text-muted-foreground">
@@ -1336,6 +1336,7 @@
           <CardContent class="space-y-3 pt-0">
             {#each synaptogenesis as s, i (i)}
               {@const meta = synaptoClassById(s.class)}
+              {@const geneRefs = (s.refs ?? '').split(';').filter(Boolean)}
               <div>
                 <div class="flex flex-wrap items-center gap-2 text-sm">
                   <a href={resolve(`/?view=synaptogenesis&q=${encodeURIComponent(s.class)}`)}>
@@ -1349,10 +1350,10 @@
                 {#if s.notes}
                   <div class="mt-2.5 text-xs text-muted-foreground">{s.notes}</div>
                 {/if}
-                {#if meta?.refIds && meta.refIds.length > 0}
+                {#if geneRefs.length > 0}
                   <div class="mt-1.5 flex flex-wrap items-center gap-1">
-                    <span class="text-xs text-muted-foreground">Papers behind this class:</span>
-                    {#each meta.refIds as rid (rid)}
+                    <span class="text-xs text-muted-foreground">Papers:</span>
+                    {#each geneRefs as rid (rid)}
                       {@const r = synaptoRefById(rid)}
                       {#if r}
                         <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
@@ -1376,8 +1377,8 @@
       {:else}
         <EmptyPanel
           id="synaptogenesis"
-          title="Synaptogenesis panel"
-          message="This gene is not in the curated synaptogenesis panel."
+          title="Synapse development and function panel"
+          message="This gene is not in the curated synapse development and function panel."
         />
       {/if}
 
@@ -1605,7 +1606,7 @@
               <ControlHint id="gene-similar" title="Similar genes">
                 Ranked by shared GO and WormCat annotations, both IDF-weighted so a rare category
                 counts for more than a broad one, plus shared neuronal categories and interaction
-                partners. Direct annotations only — propagated GO ancestors aren't used so
+                partners. GO ancestors count at reduced weight and only a few levels up, so
                 similarity isn't dominated by trivial parents.
               </ControlHint>
             </CardTitle>

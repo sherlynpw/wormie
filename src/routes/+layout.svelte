@@ -191,7 +191,9 @@
                 </div>
               {:else}
                 <div class="text-xs text-muted-foreground">
-                  First-time load caches the database (about 28 MB compressed) for offline use.
+                  First-time load caches the database{db.gzSize
+                    ? ` (${fmtMB(db.gzSize)} compressed)`
+                    : ''} for offline use.
                 </div>
               {/if}
             </CardContent>

@@ -25,7 +25,9 @@ test.beforeEach(async ({ page }) => {
 test('gene page shows synaptogenesis panel card for a paneled gene', async ({ page }) => {
   // syd-2 is the Liprin-alpha scaffold, in the panel as active_zone.
   await page.goto('/gene/syd-2');
-  await expect(page.getByRole('heading', { name: 'Synaptogenesis panel' })).toBeVisible({
+  await expect(
+    page.getByRole('heading', { name: 'Synapse development and function panel' }),
+  ).toBeVisible({
     timeout: 60_000,
   });
   // Label "Active zone scaffolding" or the raw id "NN_active_zone".

@@ -35,8 +35,9 @@ export const handoff = {
   deseq2: slot<{ tsv: string }>(),
   /** Ranked list from /de to /gsea. Score is the Wald stat (signed effect magnitude, mirrors fgsea's recommended input). */
   gsea: slot<{ contrastName: string; rows: { gene: string; score: number }[] }>(),
-  /** Normalized counts (all samples in the fit) handed off from /de to /ssgsea. */
-  ssgsea: slot<{ tsv: string; label: string }>(),
+  /** Normalized counts (all samples in the fit) handed off from /de to /ssgsea, with the
+   * per-sample design so a trend across samples can be tested without retyping it. */
+  ssgsea: slot<{ tsv: string; label: string; designTsv?: string }>(),
   /** Two contrasts handed off from /de to /de/diff. */
   deseqDiff: slot<{ a: { name: string; tsv: string }; b: { name: string; tsv: string } }>(),
   /** Current enrichment result table (as clusterProfiler CSV) handed off from /enrichment to /enrichment/overlap. */

@@ -192,12 +192,12 @@
         'C. elegans pathway gene sets (~150 maps including Insulin/IGF, TGF-β, FoxO, longevity, autophagy), the KO ↔ worm-gene table, and the pre-rendered pathway map images (lossless WebP) re-encoded from the KEGG PNG output. All assets are pulled at build time from the KEGG REST API and ingested into the local SQLite DB so the /pathway/[id] viewer works fully offline. KEGG REST access is free for academic use; redistribution of the bulk dump is license-restricted (we ship per-pathway assets used to power the local viewer, no full data dump). Cite Kanehisa et al. as KEGG requires.',
     },
     {
-      name: 'Synaptogenesis panel (v4)',
+      name: 'Synapse development and function panel (v6)',
       version: 'celegans-pipeline refs/gene_sets',
       url: 'https://github.com/rayandrew/celegans-pipeline',
       license: 'project-internal',
       description:
-        'A 171-gene panel grouped into 11 functional classes (activity-regulated TFs, remodeling, adhesion, active zone, SV release, innexins, postsynaptic, synapse positioning, synapse growth control, etc.). Curated by the Richardson Lab from 49 publications. Drives the Synaptogenesis enrichment/GSEA tab and the gene-page panel card.',
+        'A 178-gene panel grouped into 12 functional classes ordered from synapse formation to function (activity-regulated TFs, RNA export, synapse positioning, adhesion, active zone, synapse growth control, cargo transport, SV release, postsynaptic, neurotransmitter identity, innexins, remodeling). Curated by the Richardson Lab; every gene cites at least one primary research article from a list of 139 publications. Drives the Synapse development and function enrichment/GSEA tab and the gene-page panel card.',
     },
   ]);
 

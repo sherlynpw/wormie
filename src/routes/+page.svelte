@@ -136,8 +136,8 @@
     go: { title: 'GO terms', caption: 'Genes grouped by Gene Ontology term' },
     neuronal: { title: 'Neuronal class', caption: 'Genes grouped by neuronal classification' },
     synaptogenesis: {
-      title: 'Synaptogenesis',
-      caption: 'Genes grouped by synaptogenesis panel class',
+      title: 'Synapse development and function',
+      caption: 'Genes grouped by synapse panel class',
     },
   };
   const viewHeader = $derived(VIEW_HEADERS[view] ?? null);
@@ -264,19 +264,20 @@
       ],
     },
     {
-      group: 'Synaptogenesis',
+      group: 'Synapse panel',
       chips: [
         { q: 'syn:"activity regulated"', label: 'Activity-regulated TFs' },
-        { q: 'syn:remodeling', label: 'Remodeling (dauer)' },
+        { q: 'syn:"mRNA export"', label: 'RNA export / processing' },
+        { q: 'syn:Wnt', label: 'Synapse positioning' },
         { q: 'syn:adhesion', label: 'Adhesion / specificity' },
         { q: 'syn:"active zone"', label: 'Active zone scaffolds' },
-        { q: 'syn:"SV release"', label: 'SV / release machinery' },
-        { q: 'syn:innexin', label: 'Innexins (gap junctions)' },
-        { q: 'syn:postsynaptic', label: 'Postsynaptic receptors' },
-        { q: 'syn:"mRNA export"', label: 'RNA export / processing' },
         { q: 'syn:PHR', label: 'Synapse growth control' },
-        { q: 'syn:Wnt', label: 'Synapse positioning' },
+        { q: 'syn:"cargo transport"', label: 'Synaptic cargo transport' },
+        { q: 'syn:"SV release"', label: 'SV release machinery' },
+        { q: 'syn:postsynaptic', label: 'Postsynaptic receptors' },
         { q: 'syn:"NT identity"', label: 'Neurotransmitter identity' },
+        { q: 'syn:innexin', label: 'Innexins (gap junctions)' },
+        { q: 'syn:remodeling', label: 'Remodeling' },
       ],
     },
   ];
@@ -563,7 +564,8 @@
             class="underline underline-offset-2 hover:text-foreground">WormBook</a
           >
         {:else if view === 'synaptogenesis'}
-          Synaptogenesis panel curated from the primary literature; each entry links its reference
+          Synapse development and function panel curated from the primary literature; each gene
+          links the papers it was curated from
         {/if}
       </p>
     </header>
