@@ -184,9 +184,9 @@
                     <Badge
                       variant="outline"
                       class="px-1 py-0 font-mono text-[0.55rem]"
-                      title="Chromosome"
+                      title="Genetic map position"
                     >
-                      {h.chromosome}
+                      {h.chromosome}{h.cm != null ? `:${h.cm.toFixed(2)}` : ''}
                     </Badge>
                   {/if}
                   {#if h.status && h.status !== 'Live'}

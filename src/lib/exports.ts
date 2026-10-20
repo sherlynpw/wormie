@@ -41,6 +41,7 @@ export async function exportTsv(ids: string[]) {
     'start_pos',
     'end_pos',
     'strand',
+    'cm',
   ];
   const header = cols.join('\t');
   const body = rows.map((r) => cols.map((c) => tsvEscape(r[c])).join('\t')).join('\n');
@@ -90,6 +91,7 @@ export async function exportCsv(ids: string[]) {
     'start_pos',
     'end_pos',
     'strand',
+    'cm',
   ];
   const header = cols.join(',');
   const body = rows.map((r) => cols.map((c) => csvEscape(r[c])).join(',')).join('\n');

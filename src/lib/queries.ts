@@ -117,9 +117,9 @@ const BASE_COLUMNS = `
 	       a.other_names, a.operon,
 	       (SELECT entrez_id FROM wb_to_entrez WHERE wormbase_gene = a.wormbase_gene LIMIT 1) AS entrez_id`;
 const LOCATION_COLUMNS = `,
-	       l.chromosome, l.start_pos, l.end_pos, l.strand`;
+	       l.chromosome, l.start_pos, l.end_pos, l.strand, l.cm`;
 const NO_LOCATION_COLUMNS = `,
-	       NULL AS chromosome, NULL AS start_pos, NULL AS end_pos, NULL AS strand`;
+	       NULL AS chromosome, NULL AS start_pos, NULL AS end_pos, NULL AS strand, NULL AS cm`;
 
 // The deployed database can predate gene_location by up to a week, so the
 // column list is decided once per session from the schema rather than assumed.
@@ -355,6 +355,7 @@ export interface BulkLookupHit {
   /** WormBase gene status: Live, Dead or Suppressed. Surfaced, never filtered on. */
   status: string | null;
   chromosome?: string | null;
+  cm?: number | null;
 }
 
 /**
@@ -397,7 +398,7 @@ export async function bulkLookup(
   if (unique.length === 0) return { hits: [], misses: [] };
   const lowered = unique.map((t) => t.toLowerCase());
   const chromCol = (await hasGeneLocation())
-    ? ', (SELECT chromosome FROM gene_location WHERE wormbase_gene = a.wormbase_gene) AS chromosome'
+    ? ', (SELECT chromosome FROM gene_location WHERE wormbase_gene = a.wormbase_gene) AS chromosome, (SELECT cm FROM gene_location WHERE wormbase_gene = a.wormbase_gene) AS cm'
     : '';
 
   const { jobs } = await import('$lib/stores/jobs.svelte');
@@ -414,6 +415,7 @@ export async function bulkLookup(
       gene_name: string | null;
       sequence_name: string | null;
       chromosome?: string | null;
+      cm?: number | null;
       concise_description: string | null;
       status: string | null;
     };
@@ -435,6 +437,7 @@ export async function bulkLookup(
         gene_name: string | null;
         sequence_name: string | null;
         chromosome?: string | null;
+        cm?: number | null;
         concise_description: string | null;
         status: string | null;
       }>(
@@ -454,6 +457,7 @@ export async function bulkLookup(
           gene_name: r.gene_name,
           sequence_name: r.sequence_name,
           chromosome: r.chromosome ?? null,
+          cm: r.cm ?? null,
           concise_description: r.concise_description,
           status: r.status,
         });
@@ -505,6 +509,7 @@ export async function bulkLookup(
         gene_name: r.gene_name,
         sequence_name: r.sequence_name,
         chromosome: r.chromosome ?? null,
+        cm: r.cm ?? null,
         concise_description: r.concise_description,
         status: r.status,
       };

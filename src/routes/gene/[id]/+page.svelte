@@ -591,14 +591,27 @@
                   )}&tracks=Curated_Genes"
                   target="_blank"
                   rel="noopener"
-                  title="WBcel235 coordinates; opens this region in the WormBase genome browser"
+                  title="Genetic map position (interpolated, as WormBase reports it) and WBcel235 coordinates; opens this region in the WormBase genome browser"
                 >
-                  {gene.chromosome}:{gene.start_pos.toLocaleString()}-{gene.end_pos.toLocaleString()}{gene.strand
-                    ? ` (${gene.strand})`
-                    : ''}
+                  {#if gene.cm != null}
+                    {gene.chromosome}:{gene.cm.toFixed(2)} cM
+                    <span class="text-muted-foreground"
+                      >({gene.start_pos.toLocaleString()}-{gene.end_pos.toLocaleString()}{gene.strand
+                        ? ` ${gene.strand}`
+                        : ''})</span
+                    >
+                  {:else}
+                    {gene.chromosome}:{gene.start_pos.toLocaleString()}-{gene.end_pos.toLocaleString()}{gene.strand
+                      ? ` (${gene.strand})`
+                      : ''}
+                  {/if}
                   <ExternalLink class="h-3 w-3" />
                 </a>
-                <CopyButton text={`${gene.chromosome}:${gene.start_pos}-${gene.end_pos}`} />
+                <CopyButton
+                  text={gene.cm != null
+                    ? `${gene.chromosome}:${gene.cm.toFixed(2)}`
+                    : `${gene.chromosome}:${gene.start_pos}-${gene.end_pos}`}
+                />
               {/if}
               {#if bestHumanOrthos.length > 0}
                 <span class="ml-1">·</span>
