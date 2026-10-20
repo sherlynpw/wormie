@@ -105,6 +105,7 @@ export type EnrichmentKind =
   | 'neuronal'
   | 'tissue'
   | 'disease'
+  | 'domain'
   | 'cell-type'
   | 'synaptogenesis'
   | 'pathway';
@@ -131,6 +132,7 @@ export type GseaKind =
   | 'neuronal'
   | 'tissue'
   | 'disease'
+  | 'domain'
   | 'cell-type'
   | 'synaptogenesis'
   | 'pathway';

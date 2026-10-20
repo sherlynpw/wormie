@@ -4,12 +4,19 @@
   import { untrack } from 'svelte';
   import { SvelteMap, SvelteSet } from 'svelte/reactivity';
   import { fmtTitle } from '$lib/format';
+  import StageExpressionChart from '$lib/components/StageExpressionChart.svelte';
   import { KEGG_ENABLED } from '$lib/config';
   import {
     getGene,
     getWormcatFor,
     getNeuronalFor,
     getSynaptogenesisFor,
+    getStageExpressionFor,
+    getTranscriptsFor,
+    getDomainsFor,
+    type StageExpression,
+    type GeneTranscript,
+    type GeneDomain,
     getGoFor,
     getOrthologs,
     getInteractionsFor,
@@ -92,6 +99,9 @@
   let wormcat = $state<WormcatAssignment | null>(null);
   let neuronal = $state<NeuronalAssignment[]>([]);
   let synaptogenesis = $state<SynaptogenesisAssignment[]>([]);
+  let stages = $state<StageExpression[]>([]);
+  let transcripts = $state<GeneTranscript[]>([]);
+  let domains = $state<GeneDomain[]>([]);
   let goAnnotations = $state<GoAnnotation[]>([]);
   let orthologs = $state<Ortholog[]>([]);
   let interactions = $state<Interaction[]>([]);
@@ -217,6 +227,9 @@
       rn,
       pw,
       si,
+      st,
+      tr,
+      dm,
     ] = await Promise.all([
       getWormcatFor(wb),
       getNeuronalFor(wb),
@@ -238,6 +251,9 @@
       getRnaiForGene(wb),
       getPathwaysFor(wb),
       getStringInteractionsFor(wb),
+      getStageExpressionFor(wb),
+      getTranscriptsFor(wb),
+      getDomainsFor(wb),
     ]);
     if (my !== loadToken) return;
     wormcat = wc;
@@ -262,6 +278,9 @@
     rnai = rn;
     pathways = pw;
     stringInteractions = si;
+    stages = st;
+    transcripts = tr;
+    domains = dm;
     loading = false;
   }
 
@@ -348,6 +367,23 @@
     return { BP, MF, CC, total: BP + MF + CC };
   });
 
+  // One line for the header: isoform count, exon range and protein (or transcript) length range.
+  const modelSummary = $derived.by(() => {
+    if (transcripts.length === 0) return null;
+    const range = (xs: number[]) => {
+      const lo = Math.min(...xs);
+      const hi = Math.max(...xs);
+      return lo === hi ? `${lo}` : `${lo} to ${hi}`;
+    };
+    const coding = transcripts.filter((t) => t.cds_nt > 0);
+    return {
+      n: transcripts.length,
+      exons: range(transcripts.map((t) => t.exons)),
+      aa: coding.length ? range(coding.map((t) => Math.floor(t.cds_nt / 3))) : '',
+      nt: range(transcripts.map((t) => t.length_nt)),
+    };
+  });
+
   // Dynamic TOC: leaves appear only if their section has data; groups vanish when all children are empty.
   // Card render order below mirrors this grouping.
   const tocEntries = $derived.by<TocEntry[]>(() => {
@@ -355,6 +391,8 @@
     // Every panel renders even with no data, so every panel is always listed.
     const identity: TocLeaf[] = [
       { id: 'overview', label: 'Overview' },
+      { id: 'model', label: 'Gene model' },
+      { id: 'domains', label: 'Protein domains' },
       { id: 'phylo', label: 'Conservation' },
       { id: 'orthologs', label: 'Orthologs' },
       { id: 'external', label: 'External resources' },
@@ -373,6 +411,7 @@
     ];
     const expression: TocLeaf[] = [
       { id: 'tissues', label: 'Tissues' },
+      { id: 'stages', label: 'Life stages' },
       { id: 'cengen', label: 'Neurons (CeNGEN)' },
     ];
     const related: TocLeaf[] = [
@@ -636,6 +675,21 @@
             {#if gene.gene_type}
               <Badge variant="muted">{gene.gene_type}</Badge>
             {/if}
+            {#if modelSummary}
+              <Badge variant="outline" title="Transcripts in the WormBase canonical gene set"
+                >{modelSummary.n} {modelSummary.n === 1 ? 'transcript' : 'isoforms'}</Badge
+              >
+              <Badge variant="outline" title="Exons per transcript"
+                >{modelSummary.exons} exons</Badge
+              >
+              {#if modelSummary.aa}
+                <Badge variant="outline" title="Protein length across isoforms"
+                  >{modelSummary.aa} aa</Badge
+                >
+              {:else}
+                <Badge variant="outline" title="Transcript length">{modelSummary.nt} nt</Badge>
+              {/if}
+            {/if}
             {#if gene.status && gene.status !== 'Live'}
               <Badge variant="outline" class="border-amber-500 text-amber-600 dark:text-amber-400">
                 {gene.status}
@@ -732,6 +786,101 @@
           </CardContent>
         {/if}
       </Card>
+
+      {#if transcripts.length > 0}
+        <Card id="model">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Gene model
+              <ControlHint id="gene-model" title="Gene model">
+                Transcripts of this gene in the WormBase canonical gene set for this build's
+                release, with exon count, spliced length and coding length. Protein length is the
+                coding length divided by three. Isoform letters follow the WormBase sequence name.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">{transcripts.length}</span>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs">
+                <thead class="text-left text-muted-foreground">
+                  <tr>
+                    <th class="py-1 pr-3">Transcript</th>
+                    <th class="py-1 pr-3">Type</th>
+                    <th class="py-1 pr-3 text-right">Exons</th>
+                    <th class="py-1 pr-3 text-right">Spliced</th>
+                    <th class="py-1 pr-3 text-right">CDS</th>
+                    <th class="py-1 pr-3 text-right">Protein</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each transcripts as t (t.transcript_id)}
+                    <tr class="border-t">
+                      <td class="py-1 pr-3 font-mono">{t.transcript_id}</td>
+                      <td class="py-1 pr-3 text-muted-foreground"
+                        >{(t.biotype ?? '').replace(/_/g, ' ')}</td
+                      >
+                      <td class="py-1 pr-3 text-right tabular-nums">{t.exons}</td>
+                      <td class="py-1 pr-3 text-right tabular-nums"
+                        >{t.length_nt.toLocaleString()} nt</td
+                      >
+                      <td class="py-1 pr-3 text-right tabular-nums"
+                        >{t.cds_nt ? `${t.cds_nt.toLocaleString()} nt` : ''}</td
+                      >
+                      <td class="py-1 pr-3 text-right tabular-nums"
+                        >{t.cds_nt ? `${Math.floor(t.cds_nt / 3)} aa` : ''}</td
+                      >
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="model"
+          title="Gene model"
+          message="No transcript in the canonical gene set for this gene in this build."
+        />
+      {/if}
+
+      {#if domains.length > 0}
+        <Card id="domains">
+          <CardHeader class="flex flex-row items-baseline justify-between pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Protein domains
+              <ControlHint id="gene-domains" title="Protein domains">
+                Domains and families found on this gene's proteins by InterProScan, as WormBase
+                distributes them: InterPro entries first, then the member databases (Pfam, SMART,
+                PANTHER, SUPERFAMILY, PROSITE, PRINTS). An accession opens the search for every gene
+                carrying it; the Protein domains enrichment kind tests a gene list against the
+                InterPro entries.
+              </ControlHint>
+            </CardTitle>
+            <span class="font-mono text-xs text-muted-foreground">{domains.length}</span>
+          </CardHeader>
+          <CardContent class="space-y-1 pt-0">
+            {#each domains as d (d.accession)}
+              <div class="flex flex-wrap items-baseline gap-2 text-sm">
+                <a
+                  href={resolve(`/?q=${encodeURIComponent(`domain:${d.accession}`)}`)}
+                  class="font-mono text-xs text-primary hover:underline"
+                  title="Every gene carrying this domain">{d.accession}</a
+                >
+                <span>{d.name ?? ''}</span>
+                <Badge variant="outline" class="px-1 py-0 text-[0.55rem]">{d.source}</Badge>
+              </div>
+            {/each}
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="domains"
+          title="Protein domains"
+          message="No protein domain recorded for this gene in this build."
+        />
+      {/if}
 
       {#if orthologs.length > 0}
         <Card id="phylo">
@@ -1448,6 +1597,33 @@
       {/if}
 
       {@render groupHeading('tissues')}
+      {#if stages.length > 0}
+        <Card id="stages">
+          <CardHeader class="pb-3">
+            <CardTitle class="inline-flex items-center gap-1.5 text-base">
+              Expression across life stages
+              <ControlHint id="gene-stages" title="Expression across life stages">
+                Median FPKM per stage over the RNA-seq libraries WormBase classes as controls (wild
+                type, untreated), the grey bars of the WormBase expression plot. Reads were aligned
+                with STAR and quantified with cufflinks by WormBase; n is the number of libraries
+                behind each bar. Stages with no control library are left out.
+              </ControlHint>
+            </CardTitle>
+            <div class="text-xs text-muted-foreground">
+              When this gene is expressed, from the WormBase control RNA-seq set.
+            </div>
+          </CardHeader>
+          <CardContent class="pt-0">
+            <StageExpressionChart {stages} />
+          </CardContent>
+        </Card>
+      {:else}
+        <EmptyPanel
+          id="stages"
+          title="Expression across life stages"
+          message="No control RNA-seq value for this gene in this build."
+        />
+      {/if}
       {#if anatomy.length > 0}
         <Card id="tissues">
           <CardHeader class="flex flex-row items-baseline justify-between pb-3">

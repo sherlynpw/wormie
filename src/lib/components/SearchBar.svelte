@@ -364,6 +364,11 @@
       label: 'Conservation',
       ops: [
         { key: 'ortho', example: 'ortho:human', help: 'Has an ortholog in this species / symbol' },
+        {
+          key: 'domain',
+          example: 'domain:forkhead',
+          help: 'Protein domain (name or Pfam / InterPro accession)',
+        },
       ],
     },
     {

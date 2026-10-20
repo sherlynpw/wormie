@@ -123,12 +123,8 @@ const NO_LOCATION_COLUMNS = `,
 
 // The deployed database can predate gene_location by up to a week, so the
 // column list is decided once per session from the schema rather than assumed.
-let hasLocationPromise: Promise<boolean> | null = null;
 export function hasGeneLocation(): Promise<boolean> {
-  hasLocationPromise ??= query<{ n: number }>(
-    `SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'gene_location'`,
-  ).then((r) => (r[0]?.n ?? 0) > 0);
-  return hasLocationPromise;
+  return hasTable('gene_location');
 }
 async function baseSelect(): Promise<string> {
   return BASE_COLUMNS + ((await hasGeneLocation()) ? LOCATION_COLUMNS : NO_LOCATION_COLUMNS);
@@ -266,6 +262,13 @@ function opSubquery(op: Op): { sql: string; params: unknown[] } | null {
       return {
         sql: `SELECT wormbase_gene FROM annotations WHERE wormbase_gene = ?`,
         params: [v.replace(/^WBGENE/i, 'WBGene')],
+      };
+    case 'domain':
+      // Accession (PF00250, IPR001766) or a word of the domain name.
+      return {
+        sql: `SELECT DISTINCT wormbase_gene FROM gene_domain
+              WHERE UPPER(accession) = ? OR LOWER(name) LIKE ?`,
+        params: [v.toUpperCase(), `%${v.toLowerCase()}%`],
       };
     case 'chr':
       return {
@@ -941,6 +944,7 @@ export async function getTermMembers(
     | 'disease'
     | 'cell-type'
     | 'synaptogenesis'
+    | 'domain'
     | 'pathway',
 ): Promise<TermMemberRow[]> {
   if (kind === 'pathway') {
@@ -971,6 +975,18 @@ export async function getTermMembers(
 			 WHERE gp.term_id = ?`,
       [term_id],
     );
+  }
+  if (kind === 'domain') {
+    try {
+      return await query<TermMemberRow>(
+        `SELECT DISTINCT gd.wormbase_gene, a.gene_name
+         FROM gene_domain gd LEFT JOIN annotations a ON a.wormbase_gene = gd.wormbase_gene
+         WHERE gd.accession = ?`,
+        [term_id],
+      );
+    } catch {
+      return [];
+    }
   }
   if (kind === 'disease') {
     try {
@@ -2330,6 +2346,58 @@ export async function getWormcatGenes(
   );
 }
 
+// ---- Expression across life stages and gene model ----
+
+export interface StageExpression {
+  stage_id: string;
+  stage: string;
+  stage_order: number;
+  n_libraries: number;
+  mean_fpkm: number | null;
+  median_fpkm: number | null;
+}
+
+export async function getStageExpressionFor(wormbase_gene: string): Promise<StageExpression[]> {
+  if (!(await hasTable('stage_expression'))) return [];
+  return query<StageExpression>(
+    `SELECT stage_id, stage, stage_order, n_libraries, mean_fpkm, median_fpkm
+     FROM stage_expression WHERE wormbase_gene = ? ORDER BY stage_order`,
+    [wormbase_gene],
+  );
+}
+
+export interface GeneTranscript {
+  transcript_id: string;
+  biotype: string | null;
+  exons: number;
+  length_nt: number;
+  cds_nt: number;
+}
+
+export async function getTranscriptsFor(wormbase_gene: string): Promise<GeneTranscript[]> {
+  if (!(await hasTable('gene_transcript'))) return [];
+  return query<GeneTranscript>(
+    `SELECT transcript_id, biotype, exons, length_nt, cds_nt
+     FROM gene_transcript WHERE wormbase_gene = ? ORDER BY transcript_id`,
+    [wormbase_gene],
+  );
+}
+
+export interface GeneDomain {
+  source: string;
+  accession: string;
+  name: string | null;
+}
+
+export async function getDomainsFor(wormbase_gene: string): Promise<GeneDomain[]> {
+  if (!(await hasTable('gene_domain'))) return [];
+  return query<GeneDomain>(
+    `SELECT source, accession, name FROM gene_domain WHERE wormbase_gene = ?
+     ORDER BY CASE source WHEN 'InterPro' THEN 0 WHEN 'Pfam' THEN 1 WHEN 'SMART' THEN 2 ELSE 3 END, accession`,
+    [wormbase_gene],
+  );
+}
+
 // ---- Synaptogenesis tree ----
 
 export interface SynaptoCount {
@@ -3128,6 +3196,11 @@ export async function getTermSets(
       table: 'gene_disease',
       sql: `SELECT do_id AS term_id, COALESCE(do_name, do_id) AS name, wormbase_gene AS gene
          FROM gene_disease`,
+    },
+    domain: {
+      table: 'gene_domain',
+      sql: `SELECT accession AS term_id, COALESCE(name, accession) AS name, wormbase_gene AS gene
+         FROM gene_domain WHERE source = 'InterPro'`,
     },
     'cell-type': {
       table: 'cengen_calls',

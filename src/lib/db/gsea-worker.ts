@@ -18,6 +18,7 @@ export type GseaKind =
   | 'neuronal'
   | 'tissue'
   | 'disease'
+  | 'domain'
   | 'cell-type'
   | 'synaptogenesis'
   | 'pathway';
@@ -205,6 +206,28 @@ function loadTermSets(db: any, kind: GseaKind): TermSet[] {
       let s = sets.get(r.term_id);
       if (!s) {
         s = { term_id: r.term_id, name: r.term_id, genes: [] };
+        sets.set(r.term_id, s);
+      }
+      s.genes.push(r.wormbase_gene);
+    }
+    return [...sets.values()];
+  }
+  if (kind === 'domain') {
+    let xrows: { term_id: string; name: string; wormbase_gene: string }[] = [];
+    try {
+      xrows = execAll<{ term_id: string; name: string; wormbase_gene: string }>(
+        db,
+        `SELECT DISTINCT accession AS term_id, COALESCE(name, accession) AS name, wormbase_gene
+         FROM gene_domain WHERE source = 'InterPro'`,
+      );
+    } catch {
+      // gene_domain absent on older builds
+    }
+    const sets = new Map<string, TermSet>();
+    for (const r of xrows) {
+      let s = sets.get(r.term_id);
+      if (!s) {
+        s = { term_id: r.term_id, name: r.name, genes: [] };
         sets.set(r.term_id, s);
       }
       s.genes.push(r.wormbase_gene);
