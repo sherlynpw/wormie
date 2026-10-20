@@ -10,4 +10,9 @@ export interface Gene {
   other_names: string | null;
   operon: string | null;
   entrez_id: string | null;
+  /** WBcel235 location; null on a database built before gene_location existed. */
+  chromosome: string | null;
+  start_pos: number | null;
+  end_pos: number | null;
+  strand: string | null;
 }

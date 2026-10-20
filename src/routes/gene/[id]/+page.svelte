@@ -582,6 +582,24 @@
                 </a>
                 <CopyButton text={gene.entrez_id} />
               {/if}
+              {#if gene.chromosome && gene.start_pos != null && gene.end_pos != null}
+                <span class="ml-1">·</span>
+                <a
+                  class="inline-flex items-center gap-1 hover:text-primary"
+                  href="https://wormbase.org/tools/genome/jbrowse-simple/?data=data%2Fc_elegans_PRJNA13758&loc={encodeURIComponent(
+                    `${gene.chromosome}:${gene.start_pos}..${gene.end_pos}`,
+                  )}&tracks=Curated_Genes"
+                  target="_blank"
+                  rel="noopener"
+                  title="WBcel235 coordinates; opens this region in the WormBase genome browser"
+                >
+                  {gene.chromosome}:{gene.start_pos.toLocaleString()}-{gene.end_pos.toLocaleString()}{gene.strand
+                    ? ` (${gene.strand})`
+                    : ''}
+                  <ExternalLink class="h-3 w-3" />
+                </a>
+                <CopyButton text={`${gene.chromosome}:${gene.start_pos}-${gene.end_pos}`} />
+              {/if}
               {#if bestHumanOrthos.length > 0}
                 <span class="ml-1">·</span>
                 <a

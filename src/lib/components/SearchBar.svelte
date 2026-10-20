@@ -372,6 +372,7 @@
         { key: 'name', example: 'name:daf*', help: 'Gene name / synonym (FTS)' },
         { key: 'seq', example: 'seq:Y110A7A.10', help: 'Sequence name (FTS)' },
         { key: 'wb', example: 'wb:WBGene00000912', help: 'WBGene ID (exact, or wb~ for a glob)' },
+        { key: 'chr', example: 'chr:X', help: 'Chromosome (I to V, X, MtDNA)' },
         { key: 'desc', example: 'desc:insulin', help: 'Any description field' },
         { key: 'allele', example: 'allele:e1370', help: 'Allele ID / symbol' },
         { key: 'type', example: 'type:protein_coding', help: 'Biotype' },

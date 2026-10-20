@@ -292,6 +292,32 @@ for g in bgi.get('data', []):
             e_rows.append((xid.split(':', 1)[1], wb))
             break
 cur.executemany('INSERT OR REPLACE INTO entrez_to_wb VALUES (?,?)', e_rows)
+
+# Genome location from the same Alliance record (WBcel235 coordinates).
+cur.executescript("""
+CREATE TABLE gene_location (
+  wormbase_gene TEXT PRIMARY KEY,
+  chromosome TEXT NOT NULL,
+  start_pos INTEGER NOT NULL,
+  end_pos INTEGER NOT NULL,
+  strand TEXT,
+  assembly TEXT
+);
+CREATE INDEX idx_gene_location_chrom ON gene_location(chromosome);
+""")
+loc_rows = []
+for g in bgi.get('data', []):
+    be = g.get('basicGeneticEntity', {}) or {}
+    wb_raw = be.get('primaryId') or ''
+    if not wb_raw.startswith('WB:WBGene'): continue
+    locs = be.get('genomeLocations') or []
+    if not locs: continue
+    loc = locs[0]
+    chrom = loc.get('chromosome'); s0 = loc.get('startPosition'); e0 = loc.get('endPosition')
+    if not chrom or s0 is None or e0 is None: continue
+    loc_rows.append((wb_raw[3:], str(chrom), int(s0), int(e0), loc.get('strand'), loc.get('assembly')))
+cur.executemany('INSERT OR REPLACE INTO gene_location VALUES (?,?,?,?,?,?)', loc_rows)
+print(f'gene_location: {len(loc_rows)} genes', file=sys.stderr)
 cur.executemany('INSERT OR REPLACE INTO wb_to_entrez VALUES (?,?)', [(wb, eid) for eid, wb in e_rows])
 print(f'entrez_to_wb: {len(e_rows)} mappings', file=sys.stderr)
 
@@ -2117,7 +2143,7 @@ WBBT_DATE="$(file_mtime_date "$WBBT_OBO")"
 # Per-table counts, so quoted numbers come from one identified artifact.
 RECORDS_JSON="$("${PY[@]}" -c '
 import json, sqlite3, sys
-tables = ["annotations", "go_terms", "gene_go", "wormcat", "neuronal", "synaptogenesis",
+tables = ["annotations", "go_terms", "gene_go", "wormcat", "neuronal", "synaptogenesis", "gene_location",
           "interactions", "gene_phenotype", "allele_phenotype", "allele_names", "cengen_expression",
           "cengen_coexpression", "gene_disease", "orthologs", "gene_paper", "paper_meta",
           "kegg_pathway", "gene_kegg_pathway"]

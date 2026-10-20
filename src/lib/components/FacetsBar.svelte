@@ -38,6 +38,13 @@
     return url.pathname + url.search;
   }
 
+  // Narrow the current query to one chromosome; the search joins terms with AND.
+  function chromosomeHref(chrom: string): string {
+    const term = q.trim() ? `${q.trim()} AND chr:${chrom}` : `chr:${chrom}`;
+    return urlWith({ q: term, page: '' });
+  }
+  const chromosomes = $derived(facets?.chromosomes ?? []);
+
   const STATUSES = [
     { key: 'live', label: 'live' },
     { key: 'dead', label: 'dead' },
@@ -88,6 +95,22 @@
             )}
           >
             {v.label}
+          </a>
+        {/each}
+      </div>
+    {/if}
+    {#if isGeneList && chromosomes.length > 0}
+      <div
+        class="inline-flex overflow-hidden rounded border"
+        title="Genes per chromosome in this result; click one to narrow the query to it"
+      >
+        {#each chromosomes as c (c.chromosome)}
+          <a
+            href={resolve(chromosomeHref(c.chromosome) as '/')}
+            class="border-r px-1.5 py-0.5 font-mono text-[0.7rem] text-muted-foreground transition-colors last:border-r-0 hover:bg-accent/50"
+          >
+            {c.chromosome}
+            <span class="tabular-nums text-foreground">{c.n.toLocaleString()}</span>
           </a>
         {/each}
       </div>
