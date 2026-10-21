@@ -28,9 +28,7 @@ async function run(req: Req) {
 
   const names = pool.getFileNames() as string[];
   if (names.includes(req.dbFile)) {
-    // CAUTION: do NOT call pool.removeVfs(); it deletes the entire `.wormie-pool`
-    // OPFS directory. Parent termination releases SAHs at OS level; slot files
-    // persist for the main worker to pick up.
+    releaseHandles(pool);
     post({ type: 'skipped' });
     return;
   }
@@ -86,9 +84,21 @@ async function run(req: Req) {
     }
   }
 
-  // Same caveat: no removeVfs(). Parent terminates; SAHs released at OS level,
-  // slot file remains in `.wormie-pool/` for the main worker.
+  releaseHandles(pool);
   post({ type: 'done' });
+}
+
+// The main worker installs the same pool as soon as it hears back, and the
+// browser releases a terminated worker's access handles asynchronously, so
+// closing them here keeps that install from failing with
+// NoModificationAllowedError and dropping the tab into memory mode. Never
+// removeVfs(): that deletes the whole `.wormie-pool` directory.
+function releaseHandles(pool: any) {
+  try {
+    pool.pauseVfs();
+  } catch {
+    // Handles close with the worker anyway; the parent retries the install.
+  }
 }
 
 ctx.onmessage = async (e: MessageEvent<Req>) => {

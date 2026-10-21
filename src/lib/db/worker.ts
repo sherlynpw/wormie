@@ -486,6 +486,18 @@ function runImportWorker(
   });
 }
 
+async function installPoolWithRetry(sqlite3: any, attempts = 5, delayMs = 200) {
+  for (let i = 1; ; i++) {
+    try {
+      return await sqlite3.installOpfsSAHPoolVfs({ name: POOL_NAME });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (i >= attempts || !/NoModificationAllowed|Access Handle/i.test(msg)) throw err;
+      await new Promise((r) => setTimeout(r, delayMs * i));
+    }
+  }
+}
+
 // Returns any valid cached OPFS DB (any version), for offline fallback when the requested version is missing.
 // The version is reported back so the UI can label the build it actually got.
 async function openAnyCachedOpfs(sqlite3: any): Promise<{ db: any; version: string } | null> {
@@ -545,9 +557,11 @@ async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string) {
     return;
   }
 
-  // Step 2: install the main pool (import worker already released its SAHs via removeVfs() + terminate()).
+  // Step 2: install the main pool. The import worker closed its handles before
+  // reporting, but a terminated worker's handles can linger for a moment, so a
+  // lock error gets a few retries before the tab gives up on OPFS.
   try {
-    pool = await sqlite3.installOpfsSAHPoolVfs({ name: POOL_NAME });
+    pool = await installPoolWithRetry(sqlite3);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     broadcast({
@@ -574,7 +588,7 @@ async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string) {
     }
     pool = null;
     await runImportWorker(dbUrl, version, POOL_NAME, dbFile);
-    pool = await sqlite3.installOpfsSAHPoolVfs({ name: POOL_NAME });
+    pool = await installPoolWithRetry(sqlite3);
     installedFiles = pool.getFileNames() as string[];
     if (!installedFiles.includes(dbFile)) {
       broadcast({
