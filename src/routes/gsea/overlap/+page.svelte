@@ -92,6 +92,7 @@
       const genes = new Set<string>();
       for (const r of passing) for (const g of r.leading_edge) genes.add(g);
       return {
+        slotId: p.slotId,
         name: p.name,
         ids: [...genes],
         passingTerms: passing.length,
@@ -331,7 +332,7 @@
             {/each}
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            {#each leadingEdgePerSlot as s (s.name)}
+            {#each leadingEdgePerSlot as s (s.slotId)}
               <Badge variant="muted" class="text-[0.65rem]">
                 {s.name}: {s.ids.length} genes / {s.passingTerms} terms
               </Badge>
