@@ -32,6 +32,18 @@ function snapshot(svgEl: SVGSVGElement): SVGSVGElement {
       if (cs.fontWeight && cs.fontWeight !== 'normal') c.setAttribute('font-weight', cs.fontWeight);
       c.setAttribute('font-family', cs.fontFamily || 'sans-serif');
     }
+    // Gradient stops and inline styles can name theme variables, which a
+    // standalone file cannot resolve (the strip under a GSEA plot came out black).
+    if (tag === 'stop') {
+      if (cs.stopColor) c.setAttribute('stop-color', cs.stopColor);
+      if (cs.stopOpacity) c.setAttribute('stop-opacity', cs.stopOpacity);
+    }
+    const st = (c as HTMLElement | SVGElement).style;
+    if (st) {
+      if (st.fill) st.fill = cs.fill;
+      if (st.stroke) st.stroke = cs.stroke;
+      if (st.stopColor) st.stopColor = cs.stopColor;
+    }
   }
 
   // Interaction-only layers (hover hit areas, selection highlights) stay out of exports.
