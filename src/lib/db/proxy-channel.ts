@@ -5,11 +5,14 @@
 // memory-mode fallback) and forward all requests to the host over the channel.
 //
 // Election: new worker sends `hello`, waits HELLO_TIMEOUT_MS for `hello-ack`.
-// If none arrives it races for the OPFS lock; winner becomes host, losers retry
-// and find the winner. Host emits periodic `heartbeat`; guests re-elect after
-// HEARTBEAT_TIMEOUT_MS (3 missed beats).
+// If none arrives it races for the OPFS lock; winner becomes host, losers find
+// the pool locked and become guests. Host emits periodic `heartbeat`, but a
+// host runs queries on the same thread as its channel handler, so a long job
+// silences both; the OPFS lock, which a live host holds throughout, is the
+// liveness signal and the heartbeat only triggers the check.
 
 export const CHANNEL_NAME = 'wb-db-v1';
+export const ANY_HOST = '*';
 export const HELLO_TIMEOUT_MS = 400; // how long to wait for an existing host
 export const HEARTBEAT_INTERVAL_MS = 1000;
 export const HEARTBEAT_TIMEOUT_MS = 3500; // 3 missed beats → assume host gone
@@ -19,6 +22,7 @@ export type ChannelMsg =
   | { kind: 'hello-ack'; from: string }
   | { kind: 'heartbeat'; from: string }
   // Guest-to-host request; `payload` mirrors the worker Req shape, `reqId` supplied by proxy.
+  // `to` is the host id, or ANY_HOST from a guest that has not heard the host yet.
   | { kind: 'req'; from: string; to: string; reqId: string; payload: unknown }
   // Final response.
   | {

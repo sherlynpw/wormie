@@ -39,6 +39,12 @@ function createWorker(): WorkerLike {
   };
 }
 const worker = createWorker();
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', (e) => {
+    // A page restored from the back-forward cache keeps its worker and its handles.
+    if (!e.persisted) worker.postMessage({ type: 'release' });
+  });
+}
 const pending = new Map<number, Pending>();
 let nextId = 1;
 let initPromise: Promise<{ version: string }> | null = null;
@@ -67,12 +73,23 @@ worker.addEventListener('message', (e: MessageEvent) => {
   else p.reject(new Error(msg.error));
 });
 
-function call<T>(payload: object, onProgress?: (p: TaskProgress) => void): Promise<T> {
+function send<T>(payload: object, onProgress?: (p: TaskProgress) => void): Promise<T> {
   const id = nextId++;
   return new Promise<T>((resolve, reject) => {
     pending.set(id, { resolve, reject, onProgress });
     worker.postMessage({ id, ...payload });
   });
+}
+
+// A guest's request dies with its host; the worker re-elects on the next
+// request, so one retry is enough.
+async function call<T>(payload: object, onProgress?: (p: TaskProgress) => void): Promise<T> {
+  try {
+    return await send<T>(payload, onProgress);
+  } catch (err) {
+    if (!/Host disappeared/.test(err instanceof Error ? err.message : String(err))) throw err;
+    return send<T>(payload, onProgress);
+  }
 }
 
 /** Resolves with the build the worker actually opened, which is not always the one requested. */
@@ -84,6 +101,9 @@ export function initDb(opts: InitOptions): Promise<{ version: string }> {
     type: 'init',
     dbUrl: opts.dbUrl,
     version: opts.version,
+  }).catch((err) => {
+    initPromise = null;
+    throw err;
   });
   return initPromise;
 }

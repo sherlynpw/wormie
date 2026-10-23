@@ -1,4 +1,5 @@
 /// <reference lib="webworker" />
+import { installPool, isLockError, poolFreeWithin, poolLocked } from './opfs-pool';
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import ImportWorker from './import-worker?worker';
 import {
@@ -11,6 +12,7 @@ import { runGseaSync, type GseaKind, type GseaInput, type CustomGseaSet } from '
 import { execAll } from './sql';
 import { fetchAndDecompress } from './fetch-stream';
 import {
+  ANY_HOST,
   CHANNEL_NAME,
   HELLO_TIMEOUT_MS,
   HEARTBEAT_INTERVAL_MS,
@@ -140,10 +142,11 @@ function onChannelMessage(e: MessageEvent<ChannelMsg>) {
       }
       return;
     case 'req':
-      if (mode === 'host' && m.to === MY_ID) handleHostedRequest(m);
+      if (mode === 'host' && (m.to === MY_ID || m.to === ANY_HOST)) handleHostedRequest(m);
       return;
     case 'res': {
       if (m.to !== MY_ID) return;
+      if (mode === 'guest' && !hostId) hostId = m.from;
       const p = pendingByReqId.get(m.reqId);
       if (!p) return;
       pendingByReqId.delete(m.reqId);
@@ -170,22 +173,38 @@ function startHostHeartbeat() {
 function startGuestWatchdog() {
   if (guestWatchdog) return;
   lastHeartbeatAt = Date.now();
+  let checking = false;
   guestWatchdog = setInterval(() => {
-    if (mode !== 'guest') return;
-    if (Date.now() - lastHeartbeatAt > HEARTBEAT_TIMEOUT_MS) {
-      // Host vanished: stop watchdog, reject in-flight requests (clients can retry),
-      // and clear init state so the next call triggers re-election.
-      console.warn('[wb-db] host heartbeat lost, attempting promotion');
-      stopGuestWatchdog();
-      hostId = null;
-      mode = 'unknown';
-      for (const p of pendingByReqId.values()) {
-        p.reject(new Error('Host disappeared mid-request; retry'));
+    if (mode !== 'guest' || checking) return;
+    if (Date.now() - lastHeartbeatAt <= HEARTBEAT_TIMEOUT_MS) return;
+    checking = true;
+    void (async () => {
+      try {
+        // A host busy with a long query cannot beat, but it still holds the pool.
+        if (await poolLocked(POOL_NAME)) {
+          lastHeartbeatAt = Date.now();
+          return;
+        }
+        promoteFromGuest();
+      } finally {
+        checking = false;
       }
-      pendingByReqId.clear();
-      dbInitPromise = null;
-    }
+    })();
   }, HEARTBEAT_INTERVAL_MS);
+}
+
+// Host vanished: stop watchdog, reject in-flight requests (clients retry once),
+// and clear init state so the next request triggers re-election.
+function promoteFromGuest() {
+  console.warn('[wb-db] host gone, attempting promotion');
+  stopGuestWatchdog();
+  hostId = null;
+  mode = 'unknown';
+  for (const p of pendingByReqId.values()) {
+    p.reject(new Error('Host disappeared mid-request; retry'));
+  }
+  pendingByReqId.clear();
+  dbInitPromise = null;
 }
 
 function stopGuestWatchdog() {
@@ -206,13 +225,9 @@ async function runElection(): Promise<boolean> {
 // Forwards a request to the host over BroadcastChannel; rejects on host error or disconnect.
 function proxyToHost(payload: unknown, onProgress?: Pending['onProgress']): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    if (!hostId) {
-      reject(new Error('No host elected'));
-      return;
-    }
     const reqId = genId();
     pendingByReqId.set(reqId, { resolve, reject, onProgress });
-    postChannel({ kind: 'req', from: MY_ID, to: hostId, reqId, payload });
+    postChannel({ kind: 'req', from: MY_ID, to: hostId ?? ANY_HOST, reqId, payload });
   });
 }
 
@@ -371,6 +386,15 @@ async function ensureDb(dbUrl: string, version: string) {
     return;
   }
 
+  // No reply, but a host busy with a query cannot reply either; it still holds
+  // the pool, so a lock that outlasts a dying worker's release means join it.
+  if (!(await poolFreeWithin(POOL_NAME, 2000))) {
+    mode = 'guest';
+    startGuestWatchdog();
+    broadcast({ type: 'status', message: 'Connected to another tab (guest mode)' });
+    return;
+  }
+
   // No host found, attempt to become one.
   const sqlite3 = await sqlite3InitModule({
     print: (m: string) => console.log('[sqlite]', m),
@@ -383,10 +407,12 @@ async function ensureDb(dbUrl: string, version: string) {
     startHostHeartbeat();
     postChannel({ kind: 'hello-ack', from: MY_ID });
   } catch (err) {
-    // Likely lost the OPFS-lock race to a tab whose hello-ack hadn't arrived yet.
-    // Re-run election; fall back to memory mode if still no host.
+    // Lost the OPFS lock to another tab: either its hello-ack had not arrived
+    // yet, or it is busy with a query and cannot answer. The lock itself says
+    // it is alive, so join it as a guest; the host id arrives with its reply.
     console.warn('[sqlite] OPFS path failed, retrying election:', err);
-    const secondCheck = await runElection();
+    const secondCheck =
+      (await runElection()) || (isLockError(err) && (await poolLocked(POOL_NAME)));
     if (secondCheck) {
       mode = 'guest';
       startGuestWatchdog();
@@ -486,23 +512,11 @@ function runImportWorker(
   });
 }
 
-async function installPoolWithRetry(sqlite3: any, attempts = 5, delayMs = 200) {
-  for (let i = 1; ; i++) {
-    try {
-      return await sqlite3.installOpfsSAHPoolVfs({ name: POOL_NAME });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (i >= attempts || !/NoModificationAllowed|Access Handle/i.test(msg)) throw err;
-      await new Promise((r) => setTimeout(r, delayMs * i));
-    }
-  }
-}
-
 // Returns any valid cached OPFS DB (any version), for offline fallback when the requested version is missing.
 // The version is reported back so the UI can label the build it actually got.
 async function openAnyCachedOpfs(sqlite3: any): Promise<{ db: any; version: string } | null> {
   try {
-    if (!pool) pool = await sqlite3.installOpfsSAHPoolVfs({ name: POOL_NAME });
+    if (!pool) pool = await installPool(sqlite3, POOL_NAME, 'main');
     const files = (pool.getFileNames() as string[]).filter((f) => /\/wormie-.*\.sqlite$/.test(f));
     for (const f of files) {
       try {
@@ -543,15 +557,10 @@ async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string) {
       applyRuntimePragmas(db);
       return;
     }
-    const looksLikeLock =
-      msg.includes('NoModificationAllowed') ||
-      msg.includes('No modification allowed') ||
-      msg.includes('Failed to acquire');
+    if (isLockError(err) || msg.includes('Failed to acquire')) throw err;
     broadcast({
       type: 'status',
-      message: looksLikeLock
-        ? 'Another tab is using the offline database. Loading this tab in memory mode...'
-        : `Offline storage unavailable (${msg}). Loading in memory...`,
+      message: `Offline storage unavailable (${msg}). Loading in memory...`,
     });
     db = await loadIntoMemory(sqlite3, dbUrl);
     return;
@@ -561,8 +570,9 @@ async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string) {
   // reporting, but a terminated worker's handles can linger for a moment, so a
   // lock error gets a few retries before the tab gives up on OPFS.
   try {
-    pool = await installPoolWithRetry(sqlite3);
+    pool = await installPool(sqlite3, POOL_NAME, 'main');
   } catch (err) {
+    if (isLockError(err)) throw err;
     const msg = err instanceof Error ? err.message : String(err);
     broadcast({
       type: 'status',
@@ -588,7 +598,7 @@ async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string) {
     }
     pool = null;
     await runImportWorker(dbUrl, version, POOL_NAME, dbFile);
-    pool = await installPoolWithRetry(sqlite3);
+    pool = await installPool(sqlite3, POOL_NAME, 'main');
     installedFiles = pool.getFileNames() as string[];
     if (!installedFiles.includes(dbFile)) {
       broadcast({
@@ -636,6 +646,7 @@ function runQuery(sql: string, params: unknown[] = []) {
 // Build actually opened, which differs from the requested one when the offline
 // fallback picks up a cached DB under another version.
 let openedVersion = '';
+let lastInit: { dbUrl: string; version: string } | null = null;
 
 // Shared in-flight init promise; subsequent calls coalesce onto it (or resolve immediately if already loaded).
 let dbInitPromise: Promise<void> | null = null;
@@ -717,7 +728,29 @@ async function executeRequest(msg: Req, report: ReportFn): Promise<unknown> {
   throw new Error(`Unknown request type: ${(msg as { type: string }).type}`);
 }
 
+// The page is going away. The browser releases a dead worker's OPFS access
+// handles asynchronously, so the next page's worker would race them on a
+// reload or a typed URL; closing here hands them over before the page dies.
+function releaseForUnload() {
+  try {
+    db?.close?.();
+  } catch {
+    /* already closed */
+  }
+  db = null;
+  dbInitPromise = null;
+  try {
+    pool?.pauseVfs();
+  } catch {
+    /* handles close with the worker anyway */
+  }
+}
+
 function handleMessage(msg: Req) {
+  if ((msg as { type: string }).type === 'release') {
+    releaseForUnload();
+    return;
+  }
   const ctx = self as DedicatedWorkerGlobalScope;
   const send = (data: object) => ctx.postMessage({ id: msg.id, ...data });
   const report = (phase: string, current?: number, total?: number) =>
@@ -727,10 +760,13 @@ function handleMessage(msg: Req) {
       if (msg.type === 'init') {
         // Drives election + local-or-guest setup; sets `mode` for subsequent routing.
         // Deliberately bypasses executeRequest so a guest does not proxy its own init.
+        lastInit = { dbUrl: msg.dbUrl, version: msg.version };
         await ensureDbOnce(msg.dbUrl, msg.version);
         send({ ok: true, version: openedVersion || msg.version });
         return;
       }
+      // After a promotion the worker has no db and no host; redo the election first.
+      if (mode === 'unknown' && lastInit) await ensureDbOnce(lastInit.dbUrl, lastInit.version);
       if (mode === 'guest') {
         const data = await proxyToHost(msg, report);
         send({ ok: true, ...(data as object) });
