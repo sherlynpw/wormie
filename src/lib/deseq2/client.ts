@@ -1,13 +1,22 @@
 // Public surface for /de.
 // Flow: runFit (slow, once) -> runOneContrast (primary instance) or runAllContrasts (ContrastPool).
 
-import { getPrimary, runFit as fitImpl, rehydrateFromDdsBlob } from './fit';
-export { rehydrateFromDdsBlob };
+import { getPrimary, restartPrimary, runFit as fitImpl } from './fit';
+export { rehydrateFromDdsBlob, subscribeRSession } from './fit';
+export type { RSessionSnapshot, RSessionState } from './fit';
 export { clearBundleCache } from './webr-instance';
 
 // Starts WebR + library(DESeq2) in the background; safe to call multiple times (cached).
-export function prewarmWebR(onProgress?: (line: string) => void): void {
-  void getPrimary(onProgress);
+// Progress goes to subscribeRSession, not to the caller, since the session outlives the page.
+export function prewarmWebR(): void {
+  getPrimary().catch(() => {
+    /* reported through subscribeRSession; a fit retries on its own */
+  });
+}
+
+/** Throw away a stuck or failed R session and start over. */
+export function restartWebR(): void {
+  restartPrimary().catch(() => {});
 }
 import { runContrast } from './extract';
 import { ContrastPool } from './worker-pool';
@@ -44,7 +53,7 @@ export async function runOneContrast(
   onProgress?: (line: string) => void,
   alpha = 0.05,
 ): Promise<DESeq2Contrast> {
-  const webR = await getPrimary(onProgress);
+  const webR = await getPrimary();
   onProgress?.(`[contrast] ${pair.treatment}_vs_${pair.reference} (${shrinkage})`);
   return runContrast(webR, pair, shrinkage, reference, alpha);
 }
