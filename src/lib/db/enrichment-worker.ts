@@ -8,6 +8,7 @@ export type EnrichmentKind =
   | 'neuronal'
   | 'tissue'
   | 'disease'
+  | 'domain'
   | 'cell-type'
   | 'synaptogenesis'
   | 'pathway';
@@ -155,6 +156,25 @@ function loadBackground(db: any, kind: EnrichmentKind): BgInfo {
       counts = [];
       N = 0;
     }
+  } else if (kind === 'domain') {
+    // InterPro entries only: they integrate the member databases, so a Pfam and
+    // its SMART twin do not count the same genes twice.
+    try {
+      counts = execAll<{ term_id: string; df: number; name: string }>(
+        db,
+        `SELECT accession AS term_id,
+                COUNT(DISTINCT wormbase_gene) AS df,
+                COALESCE(name, accession) AS name
+         FROM gene_domain WHERE source = 'InterPro' GROUP BY accession`,
+      );
+      N = execAll<{ n: number }>(
+        db,
+        `SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_domain WHERE source = 'InterPro'`,
+      )[0].n;
+    } catch {
+      counts = [];
+      N = 0;
+    }
   } else if (kind === 'disease') {
     try {
       counts = execAll<{ term_id: string; df: number; name: string }>(
@@ -276,6 +296,15 @@ function loadAnnotationIndex(db: any, kind: EnrichmentKind): Map<string, string[
       rows = execAll<{ wormbase_gene: string; term_id: string }>(
         db,
         'SELECT DISTINCT wormbase_gene, pathway_id AS term_id FROM gene_kegg_pathway',
+      );
+    } catch {
+      rows = [];
+    }
+  } else if (kind === 'domain') {
+    try {
+      rows = execAll<{ wormbase_gene: string; term_id: string }>(
+        db,
+        `SELECT DISTINCT wormbase_gene, accession AS term_id FROM gene_domain WHERE source = 'InterPro'`,
       );
     } catch {
       rows = [];

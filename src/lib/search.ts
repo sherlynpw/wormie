@@ -28,6 +28,8 @@ export type OpKey =
   | 'desc'
   | 'seq'
   | 'wb'
+  | 'chr'
+  | 'domain'
   | 'expressed'
   | 'pathway';
 export const OP_KEYS: OpKey[] = [
@@ -45,6 +47,8 @@ export const OP_KEYS: OpKey[] = [
   'desc',
   'seq',
   'wb',
+  'chr',
+  'domain',
   'expressed',
   'pathway',
 ];
@@ -64,7 +68,7 @@ export const FTS_OP_COLUMNS: Partial<Record<OpKey, readonly FtsField[]>> = {
 };
 
 // Keys that accept `:` syntax. `go`, `cat`, `neuronal`, `syn`, `status`, `type`,
-// `wb` and `expressed` go through table subqueries rather than genes_fts.
+// `wb`, `chr`, `domain` and `expressed` go through table subqueries rather than genes_fts.
 export const FTS_OP_KEYS: OpKey[] = [
   'go',
   'cat',
@@ -73,6 +77,8 @@ export const FTS_OP_KEYS: OpKey[] = [
   'status',
   'type',
   'wb',
+  'chr',
+  'domain',
   'pheno',
   'tissue',
   'ortho',

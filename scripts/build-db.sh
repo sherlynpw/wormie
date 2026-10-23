@@ -36,6 +36,12 @@ GTF_URL="https://ftp.ebi.ac.uk/pub/databases/wormbase/releases/${WB_RELEASE}/spe
 GTF_GZ="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.canonical_geneset.gtf.gz"
 FUNC_DESC="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.functional_descriptions.txt.gz"
 XREFS="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.xrefs.txt.gz"
+# Genetic map: interpolated cM per cosmid or YAC clone; genes take their clone's position.
+CLONE_MAP="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.interpolated_clones.txt.gz"
+# Median FPKM per life stage from the RNA-seq libraries WormBase classes as controls.
+STAGE_FPKM="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.RNASeq_controls_FPKM.dat"
+# Protein domains per WormPep protein (Pfam, InterPro, SMART, PANTHER and others).
+DOMAINS_CSV="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.protein_domains.csv.gz"
 # Allele-level phenotype associations
 WB_PHENO="$CACHE/c_elegans.PRJNA13758.${WB_RELEASE}.phenotype_association.wb.gz"
 # RNAi reagent → gene → phenotype mapping
@@ -104,6 +110,9 @@ fetch() {
 fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.geneIDs.txt.gz" "$GENE_IDS"
 fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.functional_descriptions.txt.gz" "$FUNC_DESC"
 fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.xrefs.txt.gz" "$XREFS"
+fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.interpolated_clones.txt.gz" "$CLONE_MAP"
+fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.RNASeq_controls_FPKM.dat" "$STAGE_FPKM" || echo "warning: stage FPKM file unavailable for $WB_RELEASE" >&2
+fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.protein_domains.csv.gz" "$DOMAINS_CSV" || echo "warning: protein domains file unavailable for $WB_RELEASE" >&2
 fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.phenotype_association.wb.gz" "$WB_PHENO"
 fetch "$EBI_WB/c_elegans.PRJNA13758.${WB_RELEASE}.rnai_phenotypes.wb.gz" "$RNAI_PHENO"
 fetch "$GTF_URL" "$GTF_GZ" || echo "warning: canonical geneset GTF unavailable for $WB_RELEASE" >&2
@@ -159,7 +168,7 @@ if ! "${PY[@]}" -c 'import numpy' >/dev/null 2>&1; then
   exit 1
 fi
 
-"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_BULK" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" "$DEST_DIR" "$ALLELE_JSON" <<'PY'
+"${PY[@]}" - "$TMP_DB" "$WORMCAT_CSV" "$NEURONAL_CSV" "$GAF" "$OBO" "$ORTHO" "$BIOGRID_TAB" "$PHENO_JSON" "$WBPHENO_OBO" "$WBBT_OBO" "$EXPR_TSV" "$BGI_JSON" "$GENE_IDS" "$FUNC_DESC" "$XREFS" "$WB_PHENO" "$CENGEN_TSV" "$CENGEN_BULK" "$CENGEN_T1" "$CENGEN_T2" "$CENGEN_T3" "$CENGEN_T4" "$DISEASE_TSV" "$RNAI_PHENO" "$SYNAPTO_TSV" "$REF_JSON" "$GENE2PUBMED_CE" "$CACHE/paper_meta" "$DEST_DIR" "$ALLELE_JSON" "$CLONE_MAP" "$STAGE_FPKM" "$GTF_GZ" "$DOMAINS_CSV" <<'PY'
 import csv, gzip, json, math, re, sqlite3, sys
 from pathlib import Path
 
@@ -168,7 +177,7 @@ from pathlib import Path
  bgi_json_gz, gene_ids_path, func_desc_path, xrefs_path, wb_pheno_gz,
  cengen_tsv, cengen_bulk, cengen_t1, cengen_t2, cengen_t3, cengen_t4, disease_tsv,
  rnai_pheno_gz, synapto_tsv, reference_json_gz, gene2pubmed_ce,
- paper_cache_dir, dest_dir, allele_json_gz) = sys.argv[1:31]
+ paper_cache_dir, dest_dir, allele_json_gz, clone_map_gz, stage_fpkm_path, gtf_gz, domains_csv_gz) = sys.argv[1:35]
 
 conn = sqlite3.connect(db_path)
 conn.executescript('PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL;')
@@ -292,6 +301,191 @@ for g in bgi.get('data', []):
             e_rows.append((xid.split(':', 1)[1], wb))
             break
 cur.executemany('INSERT OR REPLACE INTO entrez_to_wb VALUES (?,?)', e_rows)
+
+# Genome location from the same Alliance record (WBcel235 coordinates).
+cur.executescript("""
+CREATE TABLE gene_location (
+  wormbase_gene TEXT PRIMARY KEY,
+  chromosome TEXT NOT NULL,
+  start_pos INTEGER NOT NULL,
+  end_pos INTEGER NOT NULL,
+  strand TEXT,
+  assembly TEXT,
+  cm REAL,
+  cm_source TEXT
+);
+CREATE INDEX idx_gene_location_chrom ON gene_location(chromosome);
+""")
+loc_rows = []
+for g in bgi.get('data', []):
+    be = g.get('basicGeneticEntity', {}) or {}
+    wb_raw = be.get('primaryId') or ''
+    if not wb_raw.startswith('WB:WBGene'): continue
+    locs = be.get('genomeLocations') or []
+    if not locs: continue
+    loc = locs[0]
+    chrom = loc.get('chromosome'); s0 = loc.get('startPosition'); e0 = loc.get('endPosition')
+    if not chrom or s0 is None or e0 is None: continue
+    loc_rows.append((wb_raw[3:], str(chrom), int(s0), int(e0), loc.get('strand'), loc.get('assembly')))
+
+# Genetic position in cM. A gene takes the interpolated position WormBase gives
+# its clone (the cosmid or YAC named by its sequence name, R13H8.1 -> R13H8);
+# the few genes whose clone has no position are interpolated by base pair between
+# the nearest positioned genes on the same chromosome.
+clone_cm = {}
+if Path(clone_map_gz).is_file():
+    with gzip.open(clone_map_gz, 'rt', encoding='utf-8') as f:
+        for line in f:
+            p = line.rstrip('\n').split('\t')
+            if len(p) >= 3:
+                try: clone_cm[p[0]] = (p[1], float(p[2]))
+                except ValueError: pass
+seq_of = dict(cur.execute('SELECT wormbase_gene, sequence_name FROM annotations WHERE sequence_name IS NOT NULL'))
+anchors = {}
+cm_rows = []
+pending = []
+for wb, chrom, s0, e0, strand, asm in loc_rows:
+    clone = (seq_of.get(wb) or '').split('.')[0]
+    hit = clone_cm.get(clone)
+    if hit and hit[0] == chrom:
+        cm_rows.append((wb, chrom, s0, e0, strand, asm, hit[1], 'clone'))
+        anchors.setdefault(chrom, []).append(((s0 + e0) / 2, hit[1]))
+    else:
+        pending.append((wb, chrom, s0, e0, strand, asm))
+for ch in anchors: anchors[ch].sort()
+import bisect
+for wb, chrom, s0, e0, strand, asm in pending:
+    pts = anchors.get(chrom)
+    if not pts:
+        cm_rows.append((wb, chrom, s0, e0, strand, asm, None, None)); continue
+    mid = (s0 + e0) / 2
+    i = bisect.bisect_left(pts, (mid, float('-inf')))
+    if i == 0: cm = pts[0][1]
+    elif i >= len(pts): cm = pts[-1][1]
+    else:
+        (x0, y0), (x1, y1) = pts[i - 1], pts[i]
+        cm = y0 if x1 == x0 else y0 + (y1 - y0) * (mid - x0) / (x1 - x0)
+    cm_rows.append((wb, chrom, s0, e0, strand, asm, round(cm, 4), 'interpolated'))
+cur.executemany('INSERT OR REPLACE INTO gene_location VALUES (?,?,?,?,?,?,?,?)', cm_rows)
+n_clone = sum(1 for r in cm_rows if r[7] == 'clone')
+print(f'gene_location: {len(cm_rows)} genes ({n_clone} with a clone cM, {len(clone_cm)} clones mapped)', file=sys.stderr)
+
+# ---------- Expression across life stages ----------
+# WormBase's median FPKM per stage over the libraries it classes as controls
+# (the grey bars of the gene page's expression plot). Stage names from the
+# development ontology, fixed here because the file carries only WBls ids.
+cur.executescript("""
+CREATE TABLE stage_expression (
+  wormbase_gene TEXT NOT NULL,
+  stage_id TEXT NOT NULL,
+  stage TEXT NOT NULL,
+  stage_order INTEGER NOT NULL,
+  n_libraries INTEGER NOT NULL,
+  mean_fpkm REAL,
+  median_fpkm REAL,
+  PRIMARY KEY (wormbase_gene, stage_id)
+) WITHOUT ROWID;
+""")
+STAGES = [('WBls:0000003', 'embryo'), ('WBls:0000024', 'L1'), ('WBls:0000027', 'L2'),
+          ('WBls:0000035', 'L3'), ('WBls:0000038', 'L4'), ('WBls:0000041', 'adult'),
+          ('WBls:0000032', 'dauer')]
+stage_rows = []
+if Path(stage_fpkm_path).is_file():
+    cols = None
+    with open(stage_fpkm_path, encoding='utf-8') as f:
+        for line in f:
+            if line.startswith('### Gene'):
+                cols = line[4:].rstrip('\n').split('\t'); continue
+            if line.startswith('#') or not line.strip() or cols is None: continue
+            p = line.rstrip('\n').split('\t')
+            row = dict(zip(cols, p))
+            wb = row.get('Gene')
+            if not wb: continue
+            for order, (sid, name) in enumerate(STAGES):
+                try:
+                    n = int(row.get(f'{sid} count', 0) or 0)
+                    if n == 0: continue
+                    mean = float(row.get(f'{sid} mean')); med = float(row.get(f'{sid} median'))
+                except (TypeError, ValueError):
+                    continue
+                stage_rows.append((wb, sid, name, order, n, round(mean, 4), round(med, 4)))
+    cur.executemany('INSERT OR REPLACE INTO stage_expression VALUES (?,?,?,?,?,?,?)', stage_rows)
+print(f'stage_expression: {len(stage_rows)} gene-stage rows', file=sys.stderr)
+
+# ---------- Gene model: transcripts from the canonical geneset ----------
+# One row per transcript with its exon count, exonic length and CDS length,
+# streamed from the GTF the build already fetches for read counting.
+cur.executescript("""
+CREATE TABLE gene_transcript (
+  wormbase_gene TEXT NOT NULL,
+  transcript_id TEXT NOT NULL,
+  biotype TEXT,
+  exons INTEGER NOT NULL,
+  length_nt INTEGER NOT NULL,
+  cds_nt INTEGER NOT NULL,
+  PRIMARY KEY (wormbase_gene, transcript_id)
+) WITHOUT ROWID;
+""")
+tx = {}
+if Path(gtf_gz).is_file():
+    attr_re = re.compile(r'(\w+) "([^"]*)"')
+    with gzip.open(gtf_gz, 'rt', encoding='utf-8') as f:
+        for line in f:
+            if line.startswith('#'): continue
+            p = line.rstrip('\n').split('\t')
+            if len(p) < 9 or p[2] not in ('exon', 'CDS', 'transcript'): continue
+            a = dict(attr_re.findall(p[8]))
+            gid = a.get('gene_id'); tid = a.get('transcript_id')
+            if not gid or not tid: continue
+            t = tx.setdefault((gid, tid), {'biotype': None, 'exons': 0, 'length': 0, 'cds': 0})
+            span = int(p[4]) - int(p[3]) + 1
+            if p[2] == 'transcript':
+                t['biotype'] = a.get('transcript_biotype') or a.get('gene_biotype')
+            elif p[2] == 'exon':
+                t['exons'] += 1; t['length'] += span
+            else:
+                t['cds'] += span
+    cur.executemany('INSERT OR REPLACE INTO gene_transcript VALUES (?,?,?,?,?,?)',
+                    [(g, t, v['biotype'], v['exons'], v['length'], v['cds']) for (g, t), v in tx.items()])
+print(f'gene_transcript: {len(tx)} transcripts', file=sys.stderr)
+
+# ---------- Protein domains ----------
+# One row per gene and domain accession, pooled over the gene's protein
+# isoforms. Sources kept are the domain and family databases; phosphosite and
+# proteomics tags in the same file are not domains and are skipped.
+cur.executescript("""
+CREATE TABLE gene_domain (
+  wormbase_gene TEXT NOT NULL,
+  source TEXT NOT NULL,
+  accession TEXT NOT NULL,
+  name TEXT,
+  PRIMARY KEY (wormbase_gene, accession)
+) WITHOUT ROWID;
+CREATE INDEX idx_gene_domain_acc ON gene_domain(accession);
+""")
+DOMAIN_SOURCES = {'PFAM': 'Pfam', 'INTERPRO': 'InterPro', 'SMART': 'SMART', 'HMMPANTHER': 'PANTHER',
+                  'SUPERFAMILY': 'SUPERFAMILY', 'PFSCAN': 'PROSITE', 'SCANPROSITE': 'PROSITE',
+                  'PRINTS': 'PRINTS', 'CDD': 'CDD', 'TIGRFAM': 'TIGRFAM', 'HAMAP': 'HAMAP',
+                  'PIRSF': 'PIRSF', 'GENE3D': 'Gene3D', 'NCBIFAM': 'NCBIfam'}
+dom_re = re.compile(r'^([A-Za-z0-9_]+):(\S+)(?:\s+"([^"]*)")?$')
+domain_rows = {}
+if Path(domains_csv_gz).is_file():
+    with gzip.open(domains_csv_gz, 'rt', encoding='utf-8') as f:
+        for line in f:
+            p = line.rstrip('\n').split('\t')
+            if len(p) < 4 or not p[0].startswith('WBGene'): continue
+            wb = p[0]
+            for cell in p[3:]:
+                mm = dom_re.match(cell.strip())
+                if not mm: continue
+                src, acc, name = mm.group(1).upper(), mm.group(2), mm.group(3)
+                if src not in DOMAIN_SOURCES: continue
+                key = (wb, acc)
+                if key not in domain_rows or (name and not domain_rows[key][1]):
+                    domain_rows[key] = (DOMAIN_SOURCES[src], name or None)
+    cur.executemany('INSERT OR REPLACE INTO gene_domain VALUES (?,?,?,?)',
+                    [(wb, src, acc, name) for (wb, acc), (src, name) in domain_rows.items()])
+print(f'gene_domain: {len(domain_rows)} gene-domain rows', file=sys.stderr)
 cur.executemany('INSERT OR REPLACE INTO wb_to_entrez VALUES (?,?)', [(wb, eid) for eid, wb in e_rows])
 print(f'entrez_to_wb: {len(e_rows)} mappings', file=sys.stderr)
 
@@ -2117,7 +2311,7 @@ WBBT_DATE="$(file_mtime_date "$WBBT_OBO")"
 # Per-table counts, so quoted numbers come from one identified artifact.
 RECORDS_JSON="$("${PY[@]}" -c '
 import json, sqlite3, sys
-tables = ["annotations", "go_terms", "gene_go", "wormcat", "neuronal", "synaptogenesis",
+tables = ["annotations", "go_terms", "gene_go", "wormcat", "neuronal", "synaptogenesis", "gene_location", "stage_expression", "gene_transcript", "gene_domain",
           "interactions", "gene_phenotype", "allele_phenotype", "allele_names", "cengen_expression",
           "cengen_coexpression", "gene_disease", "orthologs", "gene_paper", "paper_meta",
           "kegg_pathway", "gene_kegg_pathway"]

@@ -9,6 +9,7 @@ export type TermKind =
   | 'neuronal'
   | 'tissue'
   | 'disease'
+  | 'domain'
   | 'cell-type'
   | 'synaptogenesis'
   | 'pathway';
@@ -17,6 +18,7 @@ export function termHref(kind: TermKind, termId: string): string | null {
   if (kind === 'go') return `/go/${termId}`;
   if (kind === 'phenotype') return `/phenotype/${termId}`;
   if (kind === 'disease') return `/disease/${termId}`;
+  if (kind === 'domain') return `/?q=${encodeURIComponent(`domain:${termId}`)}`;
   if (kind === 'cell-type') return `/cell-type/${encodeURIComponent(termId)}`;
   if (kind === 'synaptogenesis') return `/?view=synaptogenesis&q=${encodeURIComponent(termId)}`;
   if (kind === 'pathway') {

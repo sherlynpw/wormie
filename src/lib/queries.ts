@@ -111,12 +111,31 @@ function scrubDescriptions<
   return r;
 }
 
-const BASE_SELECT = `
+const BASE_COLUMNS = `
 	SELECT a.wormbase_gene, a.gene_name, a.sequence_name, a.gene_type, a.status,
 	       a.gene_class_description, a.concise_description, a.legacy_description,
 	       a.other_names, a.operon,
-	       (SELECT entrez_id FROM wb_to_entrez WHERE wormbase_gene = a.wormbase_gene LIMIT 1) AS entrez_id
-`;
+	       (SELECT entrez_id FROM wb_to_entrez WHERE wormbase_gene = a.wormbase_gene LIMIT 1) AS entrez_id`;
+const LOCATION_COLUMNS = `,
+	       l.chromosome, l.start_pos, l.end_pos, l.strand, l.cm`;
+const NO_LOCATION_COLUMNS = `,
+	       NULL AS chromosome, NULL AS start_pos, NULL AS end_pos, NULL AS strand, NULL AS cm`;
+
+// The deployed database can predate gene_location by up to a week, so the
+// column list is decided once per session from the schema rather than assumed.
+export function hasGeneLocation(): Promise<boolean> {
+  return hasTable('gene_location');
+}
+async function baseSelect(): Promise<string> {
+  return BASE_COLUMNS + ((await hasGeneLocation()) ? LOCATION_COLUMNS : NO_LOCATION_COLUMNS);
+}
+// Joined after every `FROM annotations a`; harmless when the table is absent because
+// the join is only emitted when it exists.
+async function locationJoin(): Promise<string> {
+  return (await hasGeneLocation())
+    ? ' LEFT JOIN gene_location l ON l.wormbase_gene = a.wormbase_gene'
+    : '';
+}
 
 export interface GeneRow extends Gene {
   rank?: number;
@@ -132,8 +151,8 @@ export async function getGenesByIds(ids: string[]): Promise<GeneRow[]> {
   if (ids.length === 0) return [];
   const placeholders = ids.map(() => '?').join(',');
   const rows = await query<GeneRow>(
-    `${BASE_SELECT}
-		 FROM annotations a
+    `${await baseSelect()}
+		 FROM annotations a${await locationJoin()}
 		 WHERE a.wormbase_gene IN (${placeholders})
 		 ORDER BY ${NAME_RANK}`,
     ids,
@@ -144,8 +163,8 @@ export async function getGenesByIds(ids: string[]): Promise<GeneRow[]> {
 export async function listGenes(limit = 50, offset = 0): Promise<GeneRow[]> {
   // No gene_name filter: facets count all annotations so pagination must match; GeneCard falls back to wormbase_gene.
   const rows = await query<GeneRow>(
-    `${BASE_SELECT}
-		 FROM annotations a
+    `${await baseSelect()}
+		 FROM annotations a${await locationJoin()}
 		 ORDER BY ${NAME_RANK}
 		 LIMIT ? OFFSET ?`,
     [limit, offset],
@@ -185,6 +204,13 @@ function opLikeSubquery(op: Op): { sql: string; params: unknown[] } | null {
       };
   }
   return null;
+}
+
+// chr:x, chr:chrIII, chr:mtdna all name the WBcel235 chromosome as the Alliance writes it.
+export function normalizeChromosome(v: string): string {
+  const c = v.trim().replace(/^chr/i, '');
+  if (/^mt/i.test(c)) return 'MtDNA';
+  return c.toUpperCase();
 }
 
 function opSubquery(op: Op): { sql: string; params: unknown[] } | null {
@@ -236,6 +262,18 @@ function opSubquery(op: Op): { sql: string; params: unknown[] } | null {
       return {
         sql: `SELECT wormbase_gene FROM annotations WHERE wormbase_gene = ?`,
         params: [v.replace(/^WBGENE/i, 'WBGene')],
+      };
+    case 'domain':
+      // Accession (PF00250, IPR001766) or a word of the domain name.
+      return {
+        sql: `SELECT DISTINCT wormbase_gene FROM gene_domain
+              WHERE UPPER(accession) = ? OR LOWER(name) LIKE ?`,
+        params: [v.toUpperCase(), `%${v.toLowerCase()}%`],
+      };
+    case 'chr':
+      return {
+        sql: `SELECT wormbase_gene FROM gene_location WHERE chromosome = ?`,
+        params: [normalizeChromosome(v)],
       };
     case 'status':
       return {
@@ -319,6 +357,8 @@ export interface BulkLookupHit {
   concise_description: string | null;
   /** WormBase gene status: Live, Dead or Suppressed. Surfaced, never filtered on. */
   status: string | null;
+  chromosome?: string | null;
+  cm?: number | null;
 }
 
 /**
@@ -360,6 +400,9 @@ export async function bulkLookup(
   const unique = [...new Set(tokens.map((t) => t.trim()).filter(Boolean))];
   if (unique.length === 0) return { hits: [], misses: [] };
   const lowered = unique.map((t) => t.toLowerCase());
+  const chromCol = (await hasGeneLocation())
+    ? ', (SELECT chromosome FROM gene_location WHERE wormbase_gene = a.wormbase_gene) AS chromosome, (SELECT cm FROM gene_location WHERE wormbase_gene = a.wormbase_gene) AS cm'
+    : '';
 
   const { jobs } = await import('$lib/stores/jobs.svelte');
   const jobId = `bulkLookup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -374,6 +417,8 @@ export async function bulkLookup(
       wormbase_gene: string;
       gene_name: string | null;
       sequence_name: string | null;
+      chromosome?: string | null;
+      cm?: number | null;
       concise_description: string | null;
       status: string | null;
     };
@@ -394,6 +439,8 @@ export async function bulkLookup(
         wormbase_gene: string;
         gene_name: string | null;
         sequence_name: string | null;
+        chromosome?: string | null;
+        cm?: number | null;
         concise_description: string | null;
         status: string | null;
       }>(
@@ -401,7 +448,7 @@ export async function bulkLookup(
 			   SELECT value FROM json_each(?)
 			 )
 			 SELECT i.input_id,
-			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description, a.status
+			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description, a.status${chromCol}
 			 FROM inputs i
 			 JOIN annotations a ON a.wormbase_gene = i.input_id`,
         [JSON.stringify(canonical)],
@@ -412,6 +459,8 @@ export async function bulkLookup(
           wormbase_gene: r.wormbase_gene,
           gene_name: r.gene_name,
           sequence_name: r.sequence_name,
+          chromosome: r.chromosome ?? null,
+          cm: r.cm ?? null,
           concise_description: r.concise_description,
           status: r.status,
         });
@@ -424,7 +473,7 @@ export async function bulkLookup(
 			   SELECT value FROM json_each(?)
 			 )
 			 SELECT i.input_lower,
-			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description, a.status
+			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description, a.status${chromCol}
 			 FROM inputs i
 			 JOIN wb_to_entrez we ON we.entrez_id = i.input_lower
 			 JOIN annotations a ON a.wormbase_gene = we.wormbase_gene`,
@@ -441,7 +490,7 @@ export async function bulkLookup(
 			   SELECT value FROM json_each(?)
 			 )
 			 SELECT i.input_lower,
-			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description, a.status
+			        a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description, a.status${chromCol}
 			 FROM inputs i
 			 JOIN annotations a
 			   ON LOWER(a.gene_name) = i.input_lower
@@ -462,6 +511,8 @@ export async function bulkLookup(
         wormbase_gene: r.wormbase_gene,
         gene_name: r.gene_name,
         sequence_name: r.sequence_name,
+        chromosome: r.chromosome ?? null,
+        cm: r.cm ?? null,
         concise_description: r.concise_description,
         status: r.status,
       };
@@ -491,8 +542,8 @@ async function searchByGeneList(ids: string[], limit: number, offset = 0): Promi
   const placeholders = ids.map(() => '?').join(',');
   const lower = ids.map((id) => id.toLowerCase());
   const rows = await query<GeneRow>(
-    `${BASE_SELECT}
-		 FROM annotations a
+    `${await baseSelect()}
+		 FROM annotations a${await locationJoin()}
 		 WHERE a.wormbase_gene IN (${placeholders})
 		    OR LOWER(a.gene_name) IN (${placeholders})
 		    OR LOWER(a.sequence_name) IN (${placeholders})
@@ -736,8 +787,8 @@ export async function runSearch(
         annoParams.push(`%${normalizeBiotype(v)}%`);
       }
     }
-    const sql = `${BASE_SELECT}
-		             FROM annotations a
+    const sql = `${await baseSelect()}
+		             FROM annotations a${await locationJoin()}
 		             WHERE ${conds.join(' AND ')}
 		             ORDER BY ${NAME_RANK}
 		             LIMIT ? OFFSET ?`;
@@ -759,8 +810,8 @@ export async function runSearch(
 
   let sql: string;
   if (ftsExpr) {
-    sql = `${BASE_SELECT}, bm25(genes_fts) AS rank${snippetSelect}
-		       FROM annotations a
+    sql = `${await baseSelect()}, bm25(genes_fts) AS rank${snippetSelect}
+		       FROM annotations a${await locationJoin()}
 		       JOIN genes_fts f ON f.wormbase_gene = a.wormbase_gene
 		       WHERE a.wormbase_gene IN (${intersected})
 		         AND genes_fts MATCH ?
@@ -768,8 +819,8 @@ export async function runSearch(
 		       LIMIT ? OFFSET ?`;
     params.push(ftsExpr, limit, offset);
   } else {
-    sql = `${BASE_SELECT}
-		       FROM annotations a
+    sql = `${await baseSelect()}
+		       FROM annotations a${await locationJoin()}
 		       WHERE a.wormbase_gene IN (${intersected})
 		       ORDER BY ${NAME_RANK}
 		       LIMIT ? OFFSET ?`;
@@ -893,6 +944,7 @@ export async function getTermMembers(
     | 'disease'
     | 'cell-type'
     | 'synaptogenesis'
+    | 'domain'
     | 'pathway',
 ): Promise<TermMemberRow[]> {
   if (kind === 'pathway') {
@@ -923,6 +975,18 @@ export async function getTermMembers(
 			 WHERE gp.term_id = ?`,
       [term_id],
     );
+  }
+  if (kind === 'domain') {
+    try {
+      return await query<TermMemberRow>(
+        `SELECT DISTINCT gd.wormbase_gene, a.gene_name
+         FROM gene_domain gd LEFT JOIN annotations a ON a.wormbase_gene = gd.wormbase_gene
+         WHERE gd.accession = ?`,
+        [term_id],
+      );
+    } catch {
+      return [];
+    }
   }
   if (kind === 'disease') {
     try {
@@ -1506,12 +1570,12 @@ export async function getRnaiForGene(wormbase_gene: string): Promise<RnaiRow[]> 
 export async function getGene(id: string): Promise<GeneRow | null> {
   // Try wormbase_gene first, then case-insensitive gene_name.
   let rows = await query<GeneRow>(
-    `${BASE_SELECT} FROM annotations a WHERE a.wormbase_gene = ? LIMIT 1`,
+    `${await baseSelect()} FROM annotations a${await locationJoin()} WHERE a.wormbase_gene = ? LIMIT 1`,
     [id],
   );
   if (rows.length === 0) {
     rows = await query<GeneRow>(
-      `${BASE_SELECT} FROM annotations a WHERE LOWER(a.gene_name) = LOWER(?) LIMIT 1`,
+      `${await baseSelect()} FROM annotations a${await locationJoin()} WHERE LOWER(a.gene_name) = LOWER(?) LIMIT 1`,
       [id],
     );
   }
@@ -2004,6 +2068,39 @@ export interface Facets {
   n_wormcat_categories: number;
   n_go_terms: number;
   n_neuronal_categories: number;
+  /** Genes per chromosome in the result; empty on a database without gene_location. */
+  chromosomes?: ChromosomeCount[];
+}
+
+export interface ChromosomeCount {
+  chromosome: string;
+  n: number;
+}
+
+const CHROMOSOME_ORDER = ['I', 'II', 'III', 'IV', 'V', 'X', 'MtDNA'];
+function sortChromosomes(rows: ChromosomeCount[]): ChromosomeCount[] {
+  const rank = (c: string) => {
+    const i = CHROMOSOME_ORDER.indexOf(c);
+    return i === -1 ? CHROMOSOME_ORDER.length : i;
+  };
+  return rows.sort(
+    (a, b) => rank(a.chromosome) - rank(b.chromosome) || a.chromosome.localeCompare(b.chromosome),
+  );
+}
+
+async function chromosomeFacets(
+  match: { sql: string; params: unknown[] } | null,
+): Promise<ChromosomeCount[]> {
+  if (!(await hasGeneLocation())) return [];
+  const rows = match
+    ? await query<ChromosomeCount>(
+        `SELECT chromosome, COUNT(*) AS n FROM gene_location WHERE wormbase_gene IN (${match.sql}) GROUP BY chromosome`,
+        match.params,
+      )
+    : await query<ChromosomeCount>(
+        `SELECT chromosome, COUNT(*) AS n FROM gene_location GROUP BY chromosome`,
+      );
+  return sortChromosomes(rows);
 }
 
 // Returns the matched-genes subquery for the current query, or null if input is empty (no filter).
@@ -2124,8 +2221,8 @@ async function getUnfilteredFacets(): Promise<Facets> {
 			(SELECT COUNT(*) FROM go_terms WHERE is_obsolete=0) AS n_go_terms,
 			(SELECT COUNT(DISTINCT supercategory) FROM neuronal WHERE supercategory IS NOT NULL) AS n_neuronal_categories`,
   );
-  unfilteredFacetsCache = rows[0];
-  return rows[0];
+  unfilteredFacetsCache = { ...rows[0], chromosomes: await chromosomeFacets(null) };
+  return unfilteredFacetsCache;
 }
 
 export async function getFacets(term: string): Promise<Facets> {
@@ -2163,6 +2260,7 @@ export async function getFacets(term: string): Promise<Facets> {
 
   // General path: matched subquery repeated once per facet.
   const params = [...match.params, ...match.params, ...match.params, ...match.params];
+  const chromosomes = chromosomeFacets(match);
   const rows = await query<Facets>(
     `SELECT
 			(SELECT COUNT(*) FROM (${match.sql})) AS n_genes,
@@ -2171,7 +2269,7 @@ export async function getFacets(term: string): Promise<Facets> {
 			(SELECT COUNT(DISTINCT supercategory) FROM neuronal WHERE wormbase_gene IN (${match.sql}) AND supercategory IS NOT NULL) AS n_neuronal_categories`,
     params,
   );
-  return rows[0];
+  return { ...rows[0], chromosomes: await chromosomes };
 }
 
 // ---- WormCat tree ----
@@ -2245,6 +2343,58 @@ export async function getWormcatGenes(
 		 WHERE ${conds.join(' AND ')}
 		 ORDER BY a.gene_name`,
     params,
+  );
+}
+
+// ---- Expression across life stages and gene model ----
+
+export interface StageExpression {
+  stage_id: string;
+  stage: string;
+  stage_order: number;
+  n_libraries: number;
+  mean_fpkm: number | null;
+  median_fpkm: number | null;
+}
+
+export async function getStageExpressionFor(wormbase_gene: string): Promise<StageExpression[]> {
+  if (!(await hasTable('stage_expression'))) return [];
+  return query<StageExpression>(
+    `SELECT stage_id, stage, stage_order, n_libraries, mean_fpkm, median_fpkm
+     FROM stage_expression WHERE wormbase_gene = ? ORDER BY stage_order`,
+    [wormbase_gene],
+  );
+}
+
+export interface GeneTranscript {
+  transcript_id: string;
+  biotype: string | null;
+  exons: number;
+  length_nt: number;
+  cds_nt: number;
+}
+
+export async function getTranscriptsFor(wormbase_gene: string): Promise<GeneTranscript[]> {
+  if (!(await hasTable('gene_transcript'))) return [];
+  return query<GeneTranscript>(
+    `SELECT transcript_id, biotype, exons, length_nt, cds_nt
+     FROM gene_transcript WHERE wormbase_gene = ? ORDER BY transcript_id`,
+    [wormbase_gene],
+  );
+}
+
+export interface GeneDomain {
+  source: string;
+  accession: string;
+  name: string | null;
+}
+
+export async function getDomainsFor(wormbase_gene: string): Promise<GeneDomain[]> {
+  if (!(await hasTable('gene_domain'))) return [];
+  return query<GeneDomain>(
+    `SELECT source, accession, name FROM gene_domain WHERE wormbase_gene = ?
+     ORDER BY CASE source WHEN 'InterPro' THEN 0 WHEN 'Pfam' THEN 1 WHEN 'SMART' THEN 2 ELSE 3 END, accession`,
+    [wormbase_gene],
   );
 }
 
@@ -3046,6 +3196,11 @@ export async function getTermSets(
       table: 'gene_disease',
       sql: `SELECT do_id AS term_id, COALESCE(do_name, do_id) AS name, wormbase_gene AS gene
          FROM gene_disease`,
+    },
+    domain: {
+      table: 'gene_domain',
+      sql: `SELECT accession AS term_id, COALESCE(name, accession) AS name, wormbase_gene AS gene
+         FROM gene_domain WHERE source = 'InterPro'`,
     },
     'cell-type': {
       table: 'cengen_calls',

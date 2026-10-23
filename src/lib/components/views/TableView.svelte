@@ -88,6 +88,7 @@
     { key: 'gene_name', label: 'Name' },
     { key: 'entrez_id', label: 'Entrez' },
     { key: 'sequence_name', label: 'Sequence' },
+    { key: 'chromosome', label: 'Map' },
     { key: 'gene_type', label: 'Type' },
     { key: 'gene_class_description', label: 'Class' },
     { key: 'concise_description', label: 'Description' },
@@ -95,7 +96,7 @@
   ];
 
   const GRID =
-    'grid-cols-[28px_36px_140px_140px_90px_120px_100px_minmax(160px,1fr)_minmax(220px,2fr)_70px]';
+    'grid-cols-[28px_36px_140px_140px_90px_120px_80px_100px_minmax(160px,1fr)_minmax(220px,2fr)_70px]';
 
   let container: HTMLDivElement | null = $state(null);
 
@@ -244,6 +245,18 @@
                   title={g.sequence_name ?? ''}
                 >
                   <Highlight text={g.sequence_name ?? ''} regex={highlight} />
+                </div>
+                <div
+                  class="flex cursor-pointer items-center truncate px-3 py-2 font-mono text-xs"
+                  role="gridcell"
+                  tabindex="-1"
+                  onclick={copyCell}
+                  onkeydown={onCellKey}
+                  title={g.chromosome && g.start_pos != null
+                    ? `${g.chromosome}:${g.start_pos}-${g.end_pos}${g.strand ? ` (${g.strand})` : ''}`
+                    : ''}
+                >
+                  {g.chromosome ?? ''}{g.cm != null ? `:${g.cm.toFixed(2)}` : ''}
                 </div>
                 <div
                   class="flex cursor-pointer items-center truncate px-3 py-2 text-xs"

@@ -9,6 +9,7 @@ export const ALL_ENRICHMENT_KINDS: { key: EnrichmentKind; label: string }[] = [
   { key: 'go', label: 'Gene Ontology' },
   { key: 'phenotype', label: 'Phenotypes' },
   { key: 'disease', label: 'Diseases' },
+  { key: 'domain', label: 'Protein domains' },
   { key: 'wormcat', label: 'WormCat' },
   { key: 'neuronal', label: 'Neuronal class' },
   { key: 'tissue', label: 'Tissues' },
