@@ -51,7 +51,7 @@
   import GeneDetailPanel from '$lib/components/GeneDetailPanel.svelte';
   import CountsQcPanel from '$lib/components/CountsQcPanel.svelte';
   import { parseFeatureCountsTsv } from '$lib/qc';
-  import { countsSamples } from '$lib/deseq2/counts-table';
+  import { countsSamples, parseCountsTable } from '$lib/deseq2/counts-table';
   import { deseq2ErrorHint } from '$lib/deseq2/error-hints';
   import MethodsButton from '$lib/components/MethodsButton.svelte';
   import {
@@ -106,7 +106,9 @@
   let reference = $state('');
   // shrinkage: global default for "Compute all". contrastShrinkage: per-chip override for single clicks.
   let shrinkage = $state<'apeglm' | 'ashr' | 'none'>('apeglm');
-  let contrastShrinkage = $state<'apeglm' | 'ashr' | 'none'>('apeglm');
+  // The pre-fit choice is the default for single chips too; the per-contrast
+  // selector only overrides it afterwards.
+  let contrastShrinkage = $derived<'apeglm' | 'ashr' | 'none'>(shrinkage);
   let showBatch = $state(false);
   let minCount = $state(10);
   let alpha = $state(0.05);
@@ -322,6 +324,21 @@
     (e.target as HTMLInputElement).value = '';
   }
 
+  // Quiet input repairs are worth a line in the log and a toast, not a refusal.
+  function noteInputRepairs() {
+    const { nonNumeric, duplicates } = parseCountsTable(countsText);
+    if (nonNumeric > 0) {
+      const msg = `${nonNumeric.toLocaleString()} empty or non-numeric cells were read as 0`;
+      appendFitLog(`[input] ${msg}`);
+      toast.warning('Counts table repaired', { description: msg });
+    }
+    if (duplicates > 0) {
+      const msg = `${duplicates.toLocaleString()} gene ids appear more than once; DESeq2 suffixes the repeats (.1, .2)`;
+      appendFitLog(`[input] ${msg}`);
+      toast.warning('Duplicate gene ids', { description: msg });
+    }
+  }
+
   async function run() {
     running = true;
     fit = null;
@@ -331,6 +348,7 @@
       rSession.state === 'starting'
         ? [...rSession.log, '[webr] waiting for the R session ...']
         : [];
+    noteInputRepairs();
     contrastLog = [];
     fitError = null;
     try {
