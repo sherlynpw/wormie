@@ -42,7 +42,7 @@
         <CopyButton text={gene.gene_name} />
       {/if}
     </span>
-    <div class="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground">
+    <div class="inline-flex flex-wrap items-center gap-1 font-mono text-xs text-muted-foreground">
       <a
         class="inline-flex items-center gap-1 hover:text-primary"
         href="https://www.wormbase.org/species/c_elegans/gene/{gene.wormbase_gene}"
