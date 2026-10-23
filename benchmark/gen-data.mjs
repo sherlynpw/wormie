@@ -119,7 +119,7 @@ function genRanked(universe, seed) {
   return { rel: path.relative(dataDir, p), order: rows.map((r) => r[0]) };
 }
 // Likewise over-represent a few sets in the query, so ORA has significant terms.
-function genQuery(universe, size, seed, sets) {
+function genQuery(universe, nSets, size, seed, sets) {
   const rand = mulberry32(seed);
   const genes = new Set();
   for (const s of sets.filter((x) => x.signal).slice(0, 3)) {
@@ -129,7 +129,10 @@ function genQuery(universe, size, seed, sets) {
     }
   }
   while (genes.size < size) genes.add(geneId(Math.floor(rand() * universe)));
-  const p = path.join(dataDir, 'ora', `query_u${universe}_k${size}.txt`);
+  // The collection size is part of the name: both collections of a universe
+  // carry their own planted sets, and a shared name let the 500-set queries
+  // overwrite the 50-set ones.
+  const p = path.join(dataDir, 'ora', `query_u${universe}_n${nSets}_k${size}.txt`);
   fs.writeFileSync(p, [...genes].join('\n') + '\n');
   return path.relative(dataDir, p);
 }
@@ -187,7 +190,7 @@ for (const u of universes) {
         nSets: n,
         querySize: k,
         gmt,
-        query: genQuery(u, k, seed++, sets),
+        query: genQuery(u, n, k, seed++, sets),
       });
     }
   }
