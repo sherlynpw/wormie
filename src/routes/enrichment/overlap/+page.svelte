@@ -182,6 +182,7 @@
 
   const significantPerSlot = $derived(
     parsed.map((p) => ({
+      slotId: p.slotId,
       name: p.name,
       ids: p.rows.filter((r) => r.q <= qCutoff).map((r) => r.term_id),
       total: p.total,
@@ -423,7 +424,7 @@
             />
           </label>
           <div class="flex flex-wrap items-center gap-2">
-            {#each significantPerSlot as s (s.name)}
+            {#each significantPerSlot as s (s.slotId)}
               <Badge variant="muted" class="text-[0.65rem]">
                 {s.name}: {s.ids.length}/{s.total}
               </Badge>

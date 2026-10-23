@@ -236,9 +236,56 @@ function loadBundle(onLine?: (s: string) => void) {
 let webrModulePromise: Promise<{ WebR: WebRCtor }> | null = null;
 function loadWebRModule() {
   if (!webrModulePromise) {
-    webrModulePromise = import(/* @vite-ignore */ WEBR_URL) as Promise<{ WebR: WebRCtor }>;
+    webrModulePromise = (import(/* @vite-ignore */ WEBR_URL) as Promise<{ WebR: WebRCtor }>).catch(
+      (e) => {
+        webrModulePromise = null;
+        throw e;
+      },
+    );
   }
   return webrModulePromise;
+}
+
+const INIT_TIMEOUT_MS = 120_000;
+
+// WebR's init promise settles only when its worker posts back or throws
+// synchronously. A failed or truncated download of the R wasm aborts inside
+// the worker asynchronously, so without a watchdog the session never starts
+// and every caller waits forever with nothing to show.
+async function initWithWatchdog(webR: WebRInstance, onLine?: (s: string) => void) {
+  const t = performance.now();
+  const tick = setInterval(() => {
+    onLine?.(
+      `[webr] still starting the R session ... ${((performance.now() - t) / 1000).toFixed(0)}s ` +
+        '(the R runtime downloads on the first visit)',
+    );
+  }, 15_000);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            `The R session did not start within ${INIT_TIMEOUT_MS / 1000}s. ` +
+              'The R runtime download probably failed; check the connection and retry.',
+          ),
+        ),
+      INIT_TIMEOUT_MS,
+    );
+  });
+  try {
+    await Promise.race([webR.init(), timeout]);
+  } catch (e) {
+    try {
+      webR.close();
+    } catch {
+      /* the worker may never have come up */
+    }
+    throw e;
+  } finally {
+    clearInterval(tick);
+    clearTimeout(timer);
+  }
 }
 
 export interface InstanceOptions {
@@ -253,7 +300,7 @@ export async function createWebRInstance(opts: InstanceOptions = {}): Promise<We
   const mod = await loadWebRModule();
   opts.onLine?.('[webr] starting WebR session ...');
   const webR = new mod.WebR({ interactive: false, baseUrl: WEBR_BASE_URL });
-  await webR.init();
+  await initWithWatchdog(webR, opts.onLine);
 
   // Stream R stdout/stderr to onLine for the worker's lifetime.
   if (opts.onLine) {

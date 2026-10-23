@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { SsgseaScores } from '$lib/db/client';
   import { rangeColor } from '$lib/plot-colors';
+  import PlotExportMenu from '$lib/components/PlotExportMenu.svelte';
 
   type Props = {
     results: SsgseaScores[];
@@ -11,6 +12,7 @@
   type SortKey = 'term' | 'var';
   let sortKey = $state<SortKey>('var');
   let topN = $state(50);
+  let svgEl: SVGSVGElement | null = $state(null);
 
   const variance = (xs: number[]) => {
     if (xs.length < 2) return 0;
@@ -45,11 +47,19 @@
 
   const cellW = 32;
   const cellH = 14;
-  const labelW = 240;
-  // Sample names sit at -60 degrees; 10px monospace advances ~6.1px per character.
-  const headerH = $derived(
-    Math.max(80, Math.ceil(Math.max(0, ...sampleNames.map((s) => s.length)) * 6.1 * 0.866) + 12),
+  // 10px monospace advances ~6.1px per character; the longest term name sets the
+  // label column and the longest sample name the header, so nothing is clipped.
+  const CH = 6.1;
+  const labelW = $derived(
+    Math.min(
+      480,
+      Math.max(120, Math.ceil(Math.max(0, ...sorted().map((r) => r.term_id.length)) * CH) + 12),
+    ),
   );
+  const maxSample = $derived(Math.max(0, ...sampleNames.map((s) => s.length)));
+  const headerH = $derived(Math.max(48, Math.ceil(maxSample * CH * 0.866) + 12));
+  // Names run up and to the right from each column, so the last one needs room past the grid.
+  const rightPad = $derived(Math.ceil(maxSample * CH * 0.5) + 8);
 
   function exportTsv() {
     const head = ['term_id', 'name', 'size', ...sampleNames].join('\t');
@@ -91,21 +101,25 @@
     <button class="rounded border px-2 py-0.5 text-xs hover:bg-accent" onclick={exportTsv}
       >Export TSV</button
     >
+    <PlotExportMenu getSvg={() => svgEl} baseName="ssgsea_scores" />
     <span class="text-muted-foreground">colormap: purple (low) ↔ 0 ↔ orange (high)</span>
   </div>
 
   <div class="overflow-x-auto">
     <svg
-      width={labelW + sampleNames.length * cellW}
+      bind:this={svgEl}
+      width={labelW + sampleNames.length * cellW + rightPad}
       height={headerH + sorted().length * cellH}
       class="font-mono text-[10px]"
+      aria-label="ssGSEA score heatmap"
+      role="img"
     >
       {#each sampleNames as s, j (s)}
         <text
           x={labelW + j * cellW + cellW / 2}
-          y={headerH - 4}
-          text-anchor="end"
-          transform={`rotate(-60 ${labelW + j * cellW + cellW / 2} ${headerH - 4})`}
+          y={headerH - 6}
+          text-anchor="start"
+          transform={`rotate(-60 ${labelW + j * cellW + cellW / 2} ${headerH - 6})`}
           fill="currentColor">{s}</text
         >
       {/each}

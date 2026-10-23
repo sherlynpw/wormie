@@ -29,6 +29,9 @@
     rehydrateFromDdsBlob,
     clearBundleCache,
     prewarmWebR,
+    restartWebR,
+    subscribeRSession,
+    type RSessionSnapshot,
   } from '$lib/deseq2/client';
   import { getBundleManifest } from '$lib/deseq2/webr-instance';
   import type {
@@ -48,7 +51,7 @@
   import GeneDetailPanel from '$lib/components/GeneDetailPanel.svelte';
   import CountsQcPanel from '$lib/components/CountsQcPanel.svelte';
   import { parseFeatureCountsTsv } from '$lib/qc';
-  import { countsSamples } from '$lib/deseq2/counts-table';
+  import { countsSamples, parseCountsTable } from '$lib/deseq2/counts-table';
   import { deseq2ErrorHint } from '$lib/deseq2/error-hints';
   import MethodsButton from '$lib/components/MethodsButton.svelte';
   import {
@@ -103,7 +106,9 @@
   let reference = $state('');
   // shrinkage: global default for "Compute all". contrastShrinkage: per-chip override for single clicks.
   let shrinkage = $state<'apeglm' | 'ashr' | 'none'>('apeglm');
-  let contrastShrinkage = $state<'apeglm' | 'ashr' | 'none'>('apeglm');
+  // The pre-fit choice is the default for single chips too; the per-contrast
+  // selector only overrides it afterwards.
+  let contrastShrinkage = $derived<'apeglm' | 'ashr' | 'none'>(shrinkage);
   let showBatch = $state(false);
   let minCount = $state(10);
   let alpha = $state(0.05);
@@ -181,6 +186,18 @@
   const appendFitLog = (line: string) => {
     fitLog = [...fitLog, line];
   };
+  // The R session is module-level and outlives this page, so its state and
+  // start-up log are read back through a subscription rather than owned here.
+  let rSession = $state<RSessionSnapshot>({ state: 'idle', since: 0, error: null, log: [] });
+  let rElapsed = $state(0);
+  $effect(() => {
+    if (rSession.state !== 'starting') return;
+    const since = rSession.since;
+    const tick = () => (rElapsed = Math.max(0, Math.round((Date.now() - since) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  });
   const appendContrastLog = (line: string) => {
     contrastLog = [...contrastLog, line];
   };
@@ -221,7 +238,15 @@
     void getBundleManifest().then((m) => {
       if (m?.dataBytes) bundleSizeLabel = `${(m.dataBytes / 1024 / 1024).toFixed(0)} MB`;
     });
-    void prewarmWebR(appendFitLog);
+    const unsubscribe = subscribeRSession({
+      onStatus: (s) => {
+        rSession = s;
+        if (s.state !== 'ready' && fitLog.length === 0 && s.log.length) fitLog = [...s.log];
+      },
+      onLine: appendFitLog,
+    });
+    prewarmWebR();
+    return unsubscribe;
   });
 
   async function loadCountsFile(f: File) {
@@ -299,12 +324,31 @@
     (e.target as HTMLInputElement).value = '';
   }
 
+  // Quiet input repairs are worth a line in the log and a toast, not a refusal.
+  function noteInputRepairs() {
+    const { nonNumeric, duplicates } = parseCountsTable(countsText);
+    if (nonNumeric > 0) {
+      const msg = `${nonNumeric.toLocaleString()} empty or non-numeric cells were read as 0`;
+      appendFitLog(`[input] ${msg}`);
+      toast.warning('Counts table repaired', { description: msg });
+    }
+    if (duplicates > 0) {
+      const msg = `${duplicates.toLocaleString()} gene ids appear more than once; DESeq2 suffixes the repeats (.1, .2)`;
+      appendFitLog(`[input] ${msg}`);
+      toast.warning('Duplicate gene ids', { description: msg });
+    }
+  }
+
   async function run() {
     running = true;
     fit = null;
     contrasts.clear();
     activeContrast = '';
-    fitLog = [];
+    fitLog =
+      rSession.state === 'starting'
+        ? [...rSession.log, '[webr] waiting for the R session ...']
+        : [];
+    noteInputRepairs();
     contrastLog = [];
     fitError = null;
     try {
@@ -907,10 +951,29 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
               <option value="8">8</option>
             </select>
           </div>
-          <Button onclick={run} disabled={!canRun}>
-            <Play class="h-4 w-4" />
-            {running ? 'Running...' : 'Run DESeq2'}
-          </Button>
+          <div class="flex items-center gap-3">
+            {#if rSession.state === 'starting'}
+              <span class="text-xs text-muted-foreground">R session starting ({rElapsed}s)</span>
+            {:else if rSession.state === 'failed'}
+              <span class="text-xs text-destructive" title={rSession.error ?? undefined}>
+                R session failed to start
+              </span>
+              <button
+                type="button"
+                onclick={restartWebR}
+                disabled={running}
+                class="text-xs underline underline-offset-2 hover:text-foreground disabled:opacity-50"
+              >
+                Restart R
+              </button>
+            {:else if rSession.state === 'ready'}
+              <span class="text-xs text-muted-foreground">R session ready</span>
+            {/if}
+            <Button onclick={run} disabled={!canRun}>
+              <Play class="h-4 w-4" />
+              {running ? 'Running...' : 'Run DESeq2'}
+            </Button>
+          </div>
         </div>
         {#if !running && runBlocker}
           <p class="text-right text-xs text-muted-foreground">{runBlocker}</p>

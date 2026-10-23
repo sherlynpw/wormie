@@ -92,6 +92,8 @@
   // Geometry (SVG centred at size/2, size/2): outer ring 13% wide, inner ring 16% wide, 2px gap.
   const cx = $derived(size / 2);
   const cy = $derived(size / 2);
+  // Ring labels sit on the ring and are wider than it, so the drawing gets a margin.
+  const PAD = 16;
   const rOuter = $derived(size / 2 - 4);
   const rOuterIn = $derived(rOuter - size * 0.13);
   const rInner = $derived(rOuterIn - 2);
@@ -169,9 +171,9 @@
     {/if}
     <svg
       bind:this={svgEl}
-      viewBox="0 0 {size} {size}"
-      width={size}
-      height={size}
+      viewBox="{-PAD} {-PAD} {size + 2 * PAD} {size + 2 * PAD}"
+      width={size + 2 * PAD}
+      height={size + 2 * PAD}
       role="img"
       aria-label="GO namespace × evidence-code donut"
     >

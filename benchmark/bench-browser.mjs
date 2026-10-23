@@ -124,7 +124,9 @@ if (fs.existsSync(outPath)) {
 const save = () => fs.writeFileSync(outPath, JSON.stringify(out, null, 2));
 
 const browser = await chromium.launch({
-  executablePath: fs.existsSync('/usr/sbin/chromium') ? '/usr/sbin/chromium' : undefined,
+  executablePath:
+    process.env.CHROMIUM_PATH ||
+    (fs.existsSync('/usr/sbin/chromium') ? '/usr/sbin/chromium' : undefined),
   headless: true,
   args: ['--no-sandbox'],
 });

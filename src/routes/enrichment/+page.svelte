@@ -51,6 +51,7 @@
     zebrafish: 'Danio rerio',
   };
   let resolvedIds = $state<string[]>([]);
+  let unmatchedCount = $state(0);
   let deBackground = $state<{ genes: string[]; label: string } | null>(null);
   let resolving = $state(false);
   let importText = $state('');
@@ -346,6 +347,7 @@
       const r = await bulkLookup(tokens);
       const unique = [...new Set(r.hits.map((h) => h.wormbase_gene))];
       resolvedIds = unique;
+      unmatchedCount = r.misses.length;
       if (unique.length > 0) lastInputs.stash('gene-list', pasteText);
       if (r.misses.length > 0) {
         toast.warning(`${r.misses.length} input${r.misses.length === 1 ? '' : 's'} not matched`, {
@@ -730,7 +732,9 @@
             </Button>
             {#if resolvedIds.length > 0}
               <span class="text-xs text-muted-foreground">
-                {resolvedIds.length} unique genes resolved
+                {resolvedIds.length} unique genes resolved{unmatchedCount > 0
+                  ? ` · ${unmatchedCount.toLocaleString()} input${unmatchedCount === 1 ? '' : 's'} not matched`
+                  : ''}
               </span>
             {/if}
           </div>

@@ -12,11 +12,87 @@ export function rVec(arr: string[]) {
 
 export const parseFeatureCountsTsv = parseCountsTable;
 
+export type RSessionState = 'idle' | 'starting' | 'ready' | 'failed';
+export interface RSessionSnapshot {
+  state: RSessionState;
+  /** Epoch ms of the last state change, so the page can show elapsed time. */
+  since: number;
+  error: string | null;
+  /** Start-up lines so far, so a page opened mid-start can show them. */
+  log: string[];
+}
+export interface RSessionSubscriber {
+  onStatus?: (s: RSessionSnapshot) => void;
+  onLine?: (line: string) => void;
+}
+
+let session: RSessionSnapshot = { state: 'idle', since: 0, error: null, log: [] };
+const subscribers = new Set<RSessionSubscriber>();
+
+function setSession(patch: Partial<RSessionSnapshot>) {
+  session = { ...session, ...patch, since: Date.now() };
+  for (const s of subscribers) s.onStatus?.(session);
+}
+function broadcastLine(line: string) {
+  if (session.state === 'starting') session = { ...session, log: [...session.log, line] };
+  for (const s of subscribers) s.onLine?.(line);
+}
+
+/**
+ * Follow the primary R session from any page instance. The session outlives
+ * the page that started it, so the subscriber gets the current snapshot at
+ * once and every later start-up and R output line. Returns an unsubscribe.
+ */
+export function subscribeRSession(sub: RSessionSubscriber): () => void {
+  subscribers.add(sub);
+  sub.onStatus?.(session);
+  return () => {
+    subscribers.delete(sub);
+  };
+}
+
 /** Primary WebR instance singleton (the one that owns the fit). */
 let primaryPromise: Promise<WebRInstance> | null = null;
-export function getPrimary(onLine?: (s: string) => void): Promise<WebRInstance> {
-  if (!primaryPromise) primaryPromise = createWebRInstance({ onLine });
+export function getPrimary(): Promise<WebRInstance> {
+  if (!primaryPromise) {
+    setSession({ state: 'starting', error: null, log: [] });
+    const p = createWebRInstance({ onLine: broadcastLine }).then(
+      (webR) => {
+        if (primaryPromise === p) setSession({ state: 'ready' });
+        return webR;
+      },
+      (e: unknown) => {
+        const message = e instanceof Error ? e.message : String(e);
+        if (primaryPromise === p) {
+          primaryPromise = null;
+          broadcastLine(`[error] R session failed to start: ${message}`);
+          setSession({ state: 'failed', error: message });
+        }
+        throw e;
+      },
+    );
+    primaryPromise = p;
+  }
   return primaryPromise;
+}
+
+/** Drop the primary session (closing it once it comes up) and start a new one. */
+export function restartPrimary(): Promise<WebRInstance> {
+  const old = primaryPromise;
+  primaryPromise = null;
+  if (old) {
+    old.then(
+      (w) => {
+        try {
+          w.close();
+        } catch {
+          /* already gone */
+        }
+      },
+      () => {},
+    );
+  }
+  return getPrimary();
 }
 
 /**
@@ -28,7 +104,7 @@ export async function rehydrateFromDdsBlob(
   blob: Uint8Array,
   onProgress?: (line: string) => void,
 ): Promise<DESeq2FitResult> {
-  const webR = await getPrimary(onProgress);
+  const webR = await getPrimary();
   onProgress?.(
     `[rehydrate] writing dds.rds blob (${(blob.byteLength / 1024 / 1024).toFixed(1)} MB) ...`,
   );
@@ -153,7 +229,7 @@ export async function runFit(
   req: DESeq2FitRequest,
   onProgress?: (line: string) => void,
 ): Promise<DESeq2FitResult> {
-  const webR = await getPrimary(onProgress);
+  const webR = await getPrimary();
 
   const { genes, samples, counts } = parseFeatureCountsTsv(req.countsTsv);
   if (samples.length !== req.design.length) {

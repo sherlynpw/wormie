@@ -147,15 +147,19 @@ export interface SearchOpts {
   limit?: number;
 }
 
+// One bound JSON array instead of a placeholder per id: a pasted list of a few
+// thousand ids, bound three times, passes SQLite's variable limit otherwise.
+const JSON_LIST = '(SELECT value FROM json_each(?))';
+const jsonList = (ids: string[]) => JSON.stringify(ids);
+
 export async function getGenesByIds(ids: string[]): Promise<GeneRow[]> {
   if (ids.length === 0) return [];
-  const placeholders = ids.map(() => '?').join(',');
   const rows = await query<GeneRow>(
     `${await baseSelect()}
 		 FROM annotations a${await locationJoin()}
-		 WHERE a.wormbase_gene IN (${placeholders})
+		 WHERE a.wormbase_gene IN ${JSON_LIST}
 		 ORDER BY ${NAME_RANK}`,
-    ids,
+    [jsonList(ids)],
   );
   return rows.map(scrubDescriptions);
 }
@@ -376,14 +380,13 @@ export interface OrthologHit {
 export async function resolveOrthologs(tokens: string[], species: string): Promise<OrthologHit[]> {
   const unique = [...new Set(tokens.map((t) => t.trim()).filter(Boolean))];
   if (unique.length === 0) return [];
-  const placeholders = unique.map(() => '?').join(',');
   const rows = await query<{ input: string; wormbase_gene: string }>(
     `SELECT lower(ortholog_symbol) AS input, wormbase_gene FROM orthologs
-       WHERE species = ? AND lower(ortholog_symbol) IN (${placeholders})
+       WHERE species = ? AND lower(ortholog_symbol) IN ${JSON_LIST}
      UNION
      SELECT ortholog_id AS input, wormbase_gene FROM orthologs
-       WHERE species = ? AND ortholog_id IN (${placeholders})`,
-    [species, ...unique.map((t) => t.toLowerCase()), species, ...unique],
+       WHERE species = ? AND ortholog_id IN ${JSON_LIST}`,
+    [species, jsonList(unique.map((t) => t.toLowerCase())), species, jsonList(unique)],
   );
   const byInput = new Map<string, Set<string>>();
   for (const t of unique) byInput.set(t, new Set());
@@ -539,17 +542,16 @@ export async function bulkLookup(
 }
 
 async function searchByGeneList(ids: string[], limit: number, offset = 0): Promise<GeneRow[]> {
-  const placeholders = ids.map(() => '?').join(',');
-  const lower = ids.map((id) => id.toLowerCase());
+  const lower = jsonList(ids.map((id) => id.toLowerCase()));
   const rows = await query<GeneRow>(
     `${await baseSelect()}
 		 FROM annotations a${await locationJoin()}
-		 WHERE a.wormbase_gene IN (${placeholders})
-		    OR LOWER(a.gene_name) IN (${placeholders})
-		    OR LOWER(a.sequence_name) IN (${placeholders})
+		 WHERE a.wormbase_gene IN ${JSON_LIST}
+		    OR LOWER(a.gene_name) IN ${JSON_LIST}
+		    OR LOWER(a.sequence_name) IN ${JSON_LIST}
 		 ORDER BY ${NAME_RANK}
 		 LIMIT ? OFFSET ?`,
-    [...ids, ...lower, ...lower, limit, offset],
+    [jsonList(ids), lower, lower, limit, offset],
   );
   return rows.map(scrubDescriptions);
 }
@@ -698,15 +700,14 @@ function routeQuery(
   // Hybrid pre-filter: when IDs are mixed with ops (e.g. "WBGene00018330 desc:presyn"),
   // restrict to those IDs first. CTE matches wormbase_gene OR gene_name OR sequence_name.
   if (parsed.ids.length > 0) {
-    const placeholders = parsed.ids.map(() => '?').join(',');
-    const lowered = parsed.ids.map((t) => t.toLowerCase());
+    const lowered = jsonList(parsed.ids.map((t) => t.toLowerCase()));
     intersects.push(
       `SELECT a.wormbase_gene FROM annotations a
-		   WHERE a.wormbase_gene IN (${placeholders})
-		      OR LOWER(a.gene_name) IN (${placeholders})
-		      OR LOWER(a.sequence_name) IN (${placeholders})`,
+		   WHERE a.wormbase_gene IN ${JSON_LIST}
+		      OR LOWER(a.gene_name) IN ${JSON_LIST}
+		      OR LOWER(a.sequence_name) IN ${JSON_LIST}`,
     );
-    params.push(...parsed.ids, ...lowered, ...lowered);
+    params.push(jsonList(parsed.ids), lowered, lowered);
   }
 
   // Explicit AND/OR/NOT with a prefix that is not FTS-routable (go:, expressed:, ...)
@@ -2109,14 +2110,13 @@ function matchedGenesSubquery(input: string): { sql: string; params: unknown[] }
   if (parsed.mode === 'empty') return null;
 
   if (parsed.mode === 'genelist') {
-    const placeholders = parsed.ids.map(() => '?').join(',');
-    const lower = parsed.ids.map((id) => id.toLowerCase());
+    const lower = jsonList(parsed.ids.map((id) => id.toLowerCase()));
     return {
       sql: `SELECT a.wormbase_gene FROM annotations a
-			      WHERE a.wormbase_gene IN (${placeholders})
-			         OR LOWER(a.gene_name) IN (${placeholders})
-			         OR LOWER(a.sequence_name) IN (${placeholders})`,
-      params: [...parsed.ids, ...lower, ...lower],
+			      WHERE a.wormbase_gene IN ${JSON_LIST}
+			         OR LOWER(a.gene_name) IN ${JSON_LIST}
+			         OR LOWER(a.sequence_name) IN ${JSON_LIST}`,
+      params: [jsonList(parsed.ids), lower, lower],
     };
   }
 

@@ -24,6 +24,9 @@ export function countsLayout(text: string): CountsLayout | null {
   if (lines.length < 1) return null;
   const delim = lines[0].includes('\t') ? '\t' : ',';
   const header = lines[0].split(delim).map(unquote);
+  // Spreadsheet exports pad every line with empty trailing fields, which would
+  // otherwise become nameless samples.
+  while (header.length > 1 && header[header.length - 1] === '') header.pop();
   const isFeatureCounts = FEATURECOUNTS_META.every((m, i) => header[i + 1]?.toLowerCase() === m);
   if (isFeatureCounts) return { delim, header: header.slice(6), sampleStart: 6 };
   // R's write.table() omits the row-name column from the header, so it is one field short.
@@ -40,6 +43,10 @@ export function parseCountsTable(text: string): {
   genes: string[];
   samples: string[];
   counts: number[][];
+  /** Cells that were empty or not a number and were read as 0. */
+  nonNumeric: number;
+  /** Gene ids that appear more than once; DESeq2 suffixes the repeats. */
+  duplicates: number;
 } {
   const layout = countsLayout(text);
   const lines = dataLines(text);
@@ -47,16 +54,24 @@ export function parseCountsTable(text: string): {
   const { delim, header: samples, sampleStart } = layout;
   const genes: string[] = [];
   const counts: number[][] = [];
+  let nonNumeric = 0;
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(delim);
     if (cols.length < sampleStart + samples.length) continue;
     genes.push(unquote(cols[0]));
     counts.push(
       // Merged salmon / nf-core matrices hold estimated counts; DESeq2 needs integers.
-      cols
-        .slice(sampleStart, sampleStart + samples.length)
-        .map((s) => Math.round(Number(unquote(s))) || 0),
+      cols.slice(sampleStart, sampleStart + samples.length).map((s) => {
+        const v = unquote(s);
+        const n = Number(v);
+        if (v === '' || Number.isNaN(n)) {
+          nonNumeric++;
+          return 0;
+        }
+        return Math.round(n) || 0;
+      }),
     );
   }
-  return { genes, samples, counts };
+  const duplicates = genes.length - new Set(genes).size;
+  return { genes, samples, counts, nonNumeric, duplicates };
 }

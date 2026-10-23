@@ -157,10 +157,12 @@ export async function runNta(
         }>(
           `SELECT DISTINCT gene_a AS a, gene_b AS b, symbol_a, symbol_b, experimental_type
            FROM interactions
-           WHERE gene_a IN (${uniq.map(() => '?').join(',')})
-             AND gene_b IN (${uniq.map(() => '?').join(',')})
+           WHERE gene_a IN (SELECT value FROM json_each(?))
+             AND gene_b IN (SELECT value FROM json_each(?))
              ${edgeKind === 'all' ? '' : 'AND experimental_type = ?'}`,
-          edgeKind === 'all' ? [...uniq, ...uniq] : [...uniq, ...uniq, edgeKind],
+          edgeKind === 'all'
+            ? [JSON.stringify(uniq), JSON.stringify(uniq)]
+            : [JSON.stringify(uniq), JSON.stringify(uniq), edgeKind],
         );
   const edges: NtaEdge[] = innerRows.map((r) => ({
     a: r.a,
