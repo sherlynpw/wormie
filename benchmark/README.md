@@ -33,17 +33,17 @@ Add `--full` to `gen-data.mjs` for the L/XL stress tiers. `bench-r.R` and
 
 ## Files
 
-| File                 | Role                                                        |
-| -------------------- | ----------------------------------------------------------- |
-| `gen-data.mjs`       | deterministic synthetic counts, GMTs, ranked lists, queries |
-| `bench-r.R`          | native R: DESeq2, fgseaSimple, fora, GSVA ssgsea            |
-| `bench-browser.mjs`  | Playwright driver calling `window.__bench` (dev build)      |
-| `bench-startup.mjs`  | WebR startup: bundle, boot, `library(DESeq2)`, pool member  |
-| `compare.mjs`        | joins both arms, emits `results/report.md`                  |
-| `bench-go-wormie.ts` | production enrichment module on the shipped GO annotations  |
-| `bench-go-r.R`       | `clusterProfiler::enrichGO` on the same genes and universe  |
-| `compare-go.mjs`     | joins the GO arms, emits `results/report-go.md`             |
-| `data/`, `results/`  | generated, git-ignored; `report.md` is the paper artifact   |
+| File                 | Role                                                          |
+| -------------------- | ------------------------------------------------------------- |
+| `gen-data.mjs`       | deterministic synthetic counts, GMTs, ranked lists, queries   |
+| `bench-r.R`          | native R: DESeq2, fgseaSimple, clusterProfiler enricher, GSVA |
+| `bench-browser.mjs`  | Playwright driver calling `window.__bench` (dev build)        |
+| `bench-startup.mjs`  | WebR startup: bundle, boot, `library(DESeq2)`, pool member    |
+| `compare.mjs`        | joins both arms, emits `results/report.md`                    |
+| `bench-go-wormie.ts` | production enrichment module on the shipped GO annotations    |
+| `bench-go-r.R`       | `clusterProfiler::enrichGO` on the same genes and universe    |
+| `compare-go.mjs`     | joins the GO arms, emits `results/report-go.md`               |
+| `data/`, `results/`  | generated, git-ignored; `report.md` is the paper artifact     |
 
 A tenth of the generated gene sets are concentrated at the top of the ranked
 list, and a few of them are over-represented in the ORA query. Without that
@@ -57,7 +57,7 @@ ssGSEA, via `runCustomSsgsea`) have a browser arm.
 ## Requirements
 
 - Node + Playwright (system Chromium at `/usr/sbin/chromium` is auto-detected)
-- R with `DESeq2`, `apeglm`, `fgsea`, `GSVA`, `jsonlite`
+- R with `DESeq2`, `apeglm`, `fgsea`, `GSVA`, `clusterProfiler`, `jsonlite`
 - For the GO comparison: `clusterProfiler`, `org.Ce.eg.db`
 
 ### Matching the browser's DESeq2

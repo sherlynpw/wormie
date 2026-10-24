@@ -6,6 +6,7 @@ suppressMessages({
   library(jsonlite)
   library(DESeq2)
   library(fgsea)
+  library(clusterProfiler)
 })
 hasGSVA <- requireNamespace("GSVA", quietly = TRUE)
 
@@ -125,20 +126,26 @@ if (want("gsea")) {
 }
 
 if (want("ora")) {
+  # clusterProfiler is the package the paper names for over-representation. Like
+  # WormIE it drops sets with no query gene before the BH step, where fgsea's fora
+  # adjusts across every set that passes the size filter.
   for (o in manifest$ora) {
     query <- readLines(dpath(o$query))
     query <- query[nzchar(query)]
     sets <- read_gmt(o$gmt)
     universe <- unique(unlist(sets))
-    run <- timed(fora(pathways = sets, genes = query, universe = universe, minSize = 1),
+    term2gene <- data.frame(term = rep(names(sets), lengths(sets)), gene = unlist(sets, use.names = FALSE))
+    run <- timed(enricher(gene = query, universe = universe, TERM2GENE = term2gene,
+                          minGSSize = 1, maxGSSize = 1e5, pvalueCutoff = 1, qvalueCutoff = 1),
                  repeats)
-    fo <- run$result
+    eo <- as.data.frame(run$result)
+    frac <- function(x) as.integer(sub("/.*", "", x))
     out$ora[[length(out$ora) + 1]] <- list(
       universe = o$universe, nSets = o$nSets, querySize = o$querySize,
       msMedian = median(run$ms), msAll = run$ms,
-      results = lapply(seq_len(nrow(fo)), function(i) list(
-        term_id = fo$pathway[i], k = fo$overlap[i], K = fo$size[i],
-        p = fo$pval[i], q = fo$padj[i])))
+      results = lapply(seq_len(nrow(eo)), function(i) list(
+        term_id = eo$ID[i], k = frac(eo$GeneRatio[i]), K = frac(eo$BgRatio[i]),
+        p = eo$pvalue[i], q = eo$p.adjust[i])))
     cat(sprintf("-- ora u%d n%d k%d: %.0fms\n", o$universe, o$nSets, o$querySize,
                 median(run$ms)))
   }
