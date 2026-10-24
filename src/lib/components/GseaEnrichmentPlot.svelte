@@ -121,10 +121,13 @@
     const stride = Math.max(1, Math.floor(N / plotW));
     const pathParts: string[] = [];
     pathParts.push(`M ${xScale(0)} ${yScale(0)}`);
+    // The stride can skip the peak, so the curve is anchored at it and at the end.
     for (let i = 1; i <= N; i += stride) {
+      if (i > argMax && i - stride < argMax) {
+        pathParts.push(`L ${xScale(argMax).toFixed(1)} ${yScale(ys[argMax]).toFixed(2)}`);
+      }
       pathParts.push(`L ${xScale(i).toFixed(1)} ${yScale(ys[i]).toFixed(2)}`);
     }
-    // Always include the final point.
     pathParts.push(`L ${xScale(N).toFixed(1)} ${yScale(ys[N]).toFixed(2)}`);
 
     const leadingSet = new Set(leadingEdge);
