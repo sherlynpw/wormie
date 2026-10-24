@@ -65,10 +65,13 @@ export const FTS_OP_COLUMNS: Partial<Record<OpKey, readonly FtsField[]>> = {
   desc: ['gene_class_description', 'concise_description', 'legacy_description'],
   seq: ['sequence_name'],
   pathway: ['pathways'],
+  // Builds before 2026-10-24 have no domains column; queries.ts falls back to
+  // the gene_domain table there.
+  domain: ['domains'],
 };
 
 // Keys that accept `:` syntax. `go`, `cat`, `neuronal`, `syn`, `status`, `type`,
-// `wb`, `chr`, `domain` and `expressed` go through table subqueries rather than genes_fts.
+// `wb`, `chr` and `expressed` go through table subqueries rather than genes_fts.
 export const FTS_OP_KEYS: OpKey[] = [
   'go',
   'cat',
@@ -236,13 +239,15 @@ export function parseQuery(input: string): ParsedQuery {
   const isList =
     ops.length === 0 && idTokens.length === free.length && (idTokens.length >= 2 || singleId);
   if (isList) {
+    // The id column is matched case-sensitively; "wbgene00001250" is still that gene.
+    const canon = (t: string) => (WBGENE_RE.test(t) ? 'WBGene' + t.slice(6) : t);
     return {
       mode: 'genelist',
       raw,
       freeText: '',
       freeTextTokens: [],
       ops: [],
-      ids: idTokens,
+      ids: idTokens.map(canon),
       sequence: [],
     };
   }
@@ -295,6 +300,7 @@ export const ALL_FTS_FIELDS = [
   'orthologs',
   'synaptogenesis',
   'pathways',
+  'domains',
 ] as const;
 export type FtsField = (typeof ALL_FTS_FIELDS)[number];
 
@@ -320,6 +326,15 @@ function encodeFtsToken(t: string): string {
     return stem ? `"${stem}"*` : '';
   }
   return `"${t.replace(/"/g, '')}"`;
+}
+
+// A quoted operator value is one phrase, so cat:"amino acid" means that
+// category, not every category with "amino" or "acid" in it.
+export function opValueTokens(value: string): string[] {
+  const v = value.trim().replace(/^"+|"+$/g, '');
+  // The tokenizer splits on whitespace, so a value with a space was quoted.
+  if (/\s/.test(v)) return [`"${v.replace(/"/g, '')}"`];
+  return v ? [v] : [];
 }
 
 export function escapeFts(tokens: string[], fields?: readonly FtsField[]): string {

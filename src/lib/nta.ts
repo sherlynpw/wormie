@@ -164,13 +164,17 @@ export async function runNta(
             ? [JSON.stringify(uniq), JSON.stringify(uniq)]
             : [JSON.stringify(uniq), JSON.stringify(uniq), edgeKind],
         );
-  const edges: NtaEdge[] = innerRows.map((r) => ({
-    a: r.a,
-    b: r.b,
-    symbol_a: r.symbol_a ?? undefined,
-    symbol_b: r.symbol_b ?? undefined,
-    experimental_type: r.experimental_type,
-  }));
+  // BioGRID lists self-interactions; the statistic counts a < b only, so the
+  // edge list and the connected count must leave them out too.
+  const edges: NtaEdge[] = innerRows
+    .filter((r) => r.a !== r.b)
+    .map((r) => ({
+      a: r.a,
+      b: r.b,
+      symbol_a: r.symbol_a ?? undefined,
+      symbol_b: r.symbol_b ?? undefined,
+      experimental_type: r.experimental_type,
+    }));
 
   // Genes absent from the graph contribute no edges under observed or null.
   const present = uniq.filter((g) => byNode.has(g));

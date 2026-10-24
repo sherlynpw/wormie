@@ -10,12 +10,21 @@
   import Check from 'lucide-svelte/icons/check';
   import { ALL_FTS_FIELDS, DEFAULT_FTS_FIELDS, type FtsField } from '$lib/search';
   import { KEGG_ENABLED } from '$lib/config';
-  import { suggestGenes, suggestTerms, type SuggestRow, type TermSuggestion } from '$lib/queries';
+  import {
+    availableFtsFields,
+    suggestGenes,
+    suggestTerms,
+    type SuggestRow,
+    type TermSuggestion,
+  } from '$lib/queries';
 
-  // KEGG excluded from the build hides the pathways field option (license).
-  const VISIBLE_FTS_FIELDS: readonly FtsField[] = KEGG_ENABLED
-    ? ALL_FTS_FIELDS
-    : ALL_FTS_FIELDS.filter((f) => f !== 'pathways');
+  // KEGG excluded from the build hides the pathways field option (license); a
+  // database built before the domains column hides that one.
+  const VISIBLE_FTS_FIELDS = $derived<readonly FtsField[]>(
+    availableFtsFields(
+      KEGG_ENABLED ? ALL_FTS_FIELDS : ALL_FTS_FIELDS.filter((f) => f !== 'pathways'),
+    ),
+  );
   import { encodeIds } from '$lib/share';
   import { cn } from '$lib/utils';
   import { toast } from 'svelte-sonner';
@@ -68,6 +77,7 @@
     orthologs: 'Ortholog symbols',
     synaptogenesis: 'Synapse panel',
     pathways: 'KEGG pathways',
+    domains: 'Protein domains',
   };
 
   const activeFields = $derived.by<FtsField[]>(() => {
@@ -102,6 +112,9 @@
   );
 
   async function pushQuery(q: string, replace: boolean) {
+    // The debounce can fire after a hand-off has left the page; rewriting that
+    // route's URL with the search text would break the destination.
+    if (page.url.pathname !== '/') return;
     const url = new URL(page.url);
     url.searchParams.delete('page');
     if (!q) {
@@ -140,7 +153,7 @@
     const cur = new Set(activeFields);
     if (cur.has(f)) cur.delete(f);
     else cur.add(f);
-    const arr = ALL_FTS_FIELDS.filter((x) => cur.has(x));
+    const arr = availableFtsFields(ALL_FTS_FIELDS).filter((x) => cur.has(x));
     const url = new URL(page.url);
     // Empty selection falls back to default (no `fields` param); selecting all writes explicitly
     // so the user's intent survives navigation.
@@ -214,6 +227,11 @@
     suggestOpen = rows.length > 0 || terms.length > 0;
     highlightIdx = -1;
   }
+
+  $effect(() => () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    if (suggestTimer) clearTimeout(suggestTimer);
+  });
 
   function onInput() {
     if (debounceTimer) clearTimeout(debounceTimer);

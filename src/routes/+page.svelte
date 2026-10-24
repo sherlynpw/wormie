@@ -3,7 +3,14 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { untrack, onMount } from 'svelte';
-  import { runSearch, getFacets, getMatchedIds, type GeneRow, type Facets } from '$lib/queries';
+  import {
+    availableFtsFields,
+    runSearch,
+    getFacets,
+    getMatchedIds,
+    type GeneRow,
+    type Facets,
+  } from '$lib/queries';
   import { readIdsFromUrl } from '$lib/share';
   import { cn } from '$lib/utils';
   import { exportTsv, exportCsv } from '$lib/exports';
@@ -113,8 +120,9 @@
   const activeFields = $derived.by<FtsField[] | undefined>(() => {
     if (!fieldsParam) return DEFAULT_FTS_FIELDS as FtsField[];
     const set = new Set(fieldsParam.split(','));
-    const out = ALL_FTS_FIELDS.filter((f) => set.has(f));
-    return out.length === ALL_FTS_FIELDS.length ? undefined : out;
+    const all = availableFtsFields(ALL_FTS_FIELDS);
+    const out = all.filter((f) => set.has(f));
+    return out.length === all.length ? undefined : out;
   });
   const view = $derived(page.url.searchParams.get('view') ?? 'cards');
   // Default 'live' hides dead genes; ?status=all disables the filter.
@@ -128,6 +136,7 @@
     if (!statusFilter || statusFilter === 'all') return q;
     // Gene-list mode: skip status filter (user asked for specific genes; appending any op also breaks genelist parsing).
     if (q && parseQuery(q).mode === 'genelist') return q;
+    if (/(^|\s)status:/i.test(q)) return q;
     return `${q} status:${statusFilter}`.trim();
   });
   const totalPages = $derived(facets ? Math.max(1, Math.ceil(facets.n_genes / PAGE_SIZE)) : 1);
@@ -164,7 +173,7 @@
     loading = true;
     const t0 = performance.now();
     const offset = (pageNum - 1) * PAGE_SIZE;
-    const facetsPromise = getFacets(eq);
+    const facetsPromise = getFacets(eq, af);
     const resultPromise = nl
       ? runSearch(eq, PAGE_SIZE, offset, af)
       : Promise.resolve<{ rows: GeneRow[]; parsed: ParsedQuery | null }>({
@@ -294,7 +303,7 @@
     if (exporting) return;
     exporting = true;
     try {
-      const ids = await getMatchedIds(effectiveQuery, 50_000);
+      const ids = await getMatchedIds(effectiveQuery, 50_000, activeFields);
       if (!ids.length) {
         toast.error('No results to export');
         return;
@@ -314,7 +323,7 @@
     if (sending) return;
     sending = true;
     try {
-      const ids = await getMatchedIds(effectiveQuery, 50_000);
+      const ids = await getMatchedIds(effectiveQuery, 50_000, activeFields);
       if (!ids.length) {
         toast.error('No results to send');
         return;
@@ -348,7 +357,8 @@
   {#if needsGeneList}
     <PageHint id="home-search" title="What this step does">
       Finds genes, and hands the result to any analysis on the left. Typing plain words searches
-      names and descriptions, so <code>insulin</code> returns genes whose text mentions it.
+      gene names and IDs; open <b>Search in</b> to include descriptions and annotations, so that
+      <code>insulin</code> also returns genes whose text mentions it.
       <br /><br />
       To ask a sharper question, put a filter in front of the word. Looking for the genes annotated to
       insulin signalling, rather than the ones that merely mention it? Search
@@ -467,6 +477,24 @@
 
   {#if !viewHeader}
     <FacetsBar {facets} {elapsedMs} />
+  {/if}
+
+  {#if needsGeneList && !loading && rows.length === 0 && parsed?.mode === 'search' && activeFields}
+    <div class="flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm">
+      <span class="text-muted-foreground"> No matches in gene names and IDs. </span>
+      <button
+        type="button"
+        class="text-primary underline-offset-2 hover:underline"
+        onclick={() => {
+          const url = new URL(page.url);
+          url.searchParams.set('fields', availableFtsFields(ALL_FTS_FIELDS).join(','));
+          url.searchParams.delete('page');
+          goto(resolve((url.pathname + url.search) as '/'), { keepFocus: true, noScroll: true });
+        }}
+      >
+        Search all fields, including descriptions and annotations
+      </button>
+    </div>
   {/if}
 
   {#if hasResults}

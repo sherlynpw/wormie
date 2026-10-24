@@ -100,6 +100,18 @@
           icon: GitCompare,
         },
         {
+          href: resolve('/gsea/overlap'),
+          match: '/gsea/overlap',
+          label: 'Leading-edge overlap',
+          icon: GitCompare,
+        },
+        {
+          href: resolve('/gsea/intersect'),
+          match: '/gsea/intersect',
+          label: 'GSEA intersect',
+          icon: GitCompare,
+        },
+        {
           href: resolve('/ssgsea'),
           match: '/ssgsea',
           label: 'Per-sample set scores',

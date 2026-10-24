@@ -624,10 +624,14 @@ export async function runGseaSync(
   // signFrac is fgsea's denomProb: the share of null ES with the observed sign. The
   // permutation p is conditional on that sign, so the unconditional multilevel
   // estimate is divided by it to put both on the same scale.
-  function nesForSize(es: number, k: number): { nes: number; pval: number; signFrac: number } {
+  function nesForSize(
+    es: number,
+    k: number,
+  ): { nes: number; pval: number; signFrac: number; nSign: number } {
     const buckets = nullByBucket.get(bucketKeyForSize(k))!;
     const nAll = buckets.nPos + buckets.nNeg;
-    const signFrac = ((es >= 0 ? buckets.nPos : buckets.nNeg) + 1) / (nAll + 1);
+    const nSign = es >= 0 ? buckets.nPos : buckets.nNeg;
+    const signFrac = (nSign + 1) / (nAll + 1);
     if (es >= 0) {
       let sum = 0;
       for (const v of buckets.pos) sum += v;
@@ -637,7 +641,7 @@ export async function runGseaSync(
       let more = 0;
       for (const v of buckets.pos) if (v >= es) more++;
       const pval = (more + 1) / (buckets.pos.length + 1);
-      return { nes, pval, signFrac };
+      return { nes, pval, signFrac, nSign };
     } else {
       let sum = 0;
       for (const v of buckets.neg) sum += v;
@@ -647,14 +651,19 @@ export async function runGseaSync(
       let more = 0;
       for (const v of buckets.neg) if (v <= es) more++;
       const pval = (more + 1) / (buckets.neg.length + 1);
-      return { nes, pval, signFrac };
+      return { nes, pval, signFrac, nSign };
     }
   }
 
   const signFracs: number[] = [];
+  const floorCutoffs: number[] = [];
   const enriched: GseaResult[] = candidates.map((c) => {
-    const { nes, pval, signFrac } = nesForSize(c.es, c.positions.length);
+    const { nes, pval, signFrac, nSign } = nesForSize(c.es, c.positions.length);
     signFracs.push(signFrac);
+    // The permutation p is conditional on the sign, so its floor is 1/(nSign+1),
+    // not 1/(nperm+1): a set whose null ES rarely shares its sign bottoms out
+    // near 3/nperm and would otherwise never be refined however extreme it is.
+    floorCutoffs.push(3 / (nSign + 1));
     // Leading edge: positions <= peak (positive ES) or >= peak (negative ES).
     let leading: number[];
     if (c.es >= 0) leading = c.positions.filter((x) => x <= c.peak);
@@ -677,16 +686,15 @@ export async function runGseaSync(
   });
 
   // Multilevel refinement (Korotkevich et al. 2016/2019): any term within 3x
-  // of the permutation floor (1/(nperm+1)) gets a per-term multilevel estimate
-  // that reaches p << 1/nperm without additional permutations.
+  // of its permutation floor gets a per-term multilevel estimate that reaches
+  // p << 1/nperm without additional permutations.
   const useMultilevel = opts.multilevel !== false;
   if (useMultilevel) {
     const M_ml = opts.multilevelM ?? 500;
     const mhSteps = opts.multilevelMhSteps ?? 10;
-    const refineCutoff = 3 / (nperm + 1);
     const toRefine: number[] = [];
     for (let i = 0; i < enriched.length; i++) {
-      if (enriched[i].p <= refineCutoff) toRefine.push(i);
+      if (enriched[i].p <= floorCutoffs[i]) toRefine.push(i);
     }
     if (toRefine.length > 0) {
       report?.(`Multilevel refinement (${toRefine.length} terms)...`, 0, toRefine.length);

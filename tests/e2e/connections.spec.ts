@@ -129,7 +129,8 @@ test('home matched results -> Over-representation', async ({ page }) => {
   await page.goto('/?view=table');
   const input = page.getByPlaceholder(/Search by gene name/i);
   await input.fill('daf-16, daf-2, age-1');
-  await expect(page.getByText(/of\s+[1-9]/)).toBeVisible({ timeout: 60_000 });
+  // Wait for the filtered count, not the unfiltered table's "of 52,110".
+  await expect(page.getByText(/of\s+3\b/)).toBeVisible({ timeout: 60_000 });
   // The send runs match + gzip through the DB worker before navigating; a
   // fresh tab can lose that first round-trip to host re-election, so retry
   // the click-and-navigate as a unit (which is also what a user does).

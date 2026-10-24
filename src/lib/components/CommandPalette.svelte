@@ -332,6 +332,28 @@
               Enrichment overlap
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
+              value="leading-edge overlap gsea upset genes"
+              onSelect={() => navigate('/gsea/overlap')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <BarChart class="h-4 w-4 text-muted-foreground" />
+              Leading-edge overlap
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="gsea intersect recurring terms saved runs bundles"
+              onSelect={() => navigate('/gsea/intersect')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <BarChart class="h-4 w-4 text-muted-foreground" />
+              GSEA intersect
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
               value="gsea preranked ranked-list enrichment"
               onSelect={() => navigate('/gsea')}
               class={cn(

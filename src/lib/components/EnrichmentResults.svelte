@@ -49,6 +49,7 @@
     imported,
     onHighlight,
     onResults,
+    onActive,
     initialBackground = null,
   }: {
     ids: string[];
@@ -59,6 +60,8 @@
     // Called whenever live results change so the parent can stash them in a saved Session
     // for restore without recomputing.
     onResults?: (results: Partial<Record<EnrichmentKind, EnrichmentResult[]>>) => void;
+    /** Fires with the kind whose tab is showing, for the methods text. */
+    onActive?: (kind: EnrichmentKind) => void;
     // Null leaves the ORA default, the full annotated genome.
     initialBackground?: { genes: string[]; label: string } | null;
   } = $props();
@@ -93,6 +96,7 @@
   const KINDS = ENRICHMENT_KINDS;
 
   let active = $state<EnrichmentKind>('go');
+  $effect(() => onActive?.(active));
   let viewMode = $state<'table' | 'plot' | 'cnet' | 'heatmap'>('table');
   // Lazy name resolution: a bulk upfront query over all overlaps froze the page on large input
   // sets (5-20k tokens in the fuzzy SQL path). Resolve only on expand, scoped to that term's hits.
