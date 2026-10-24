@@ -194,7 +194,9 @@ try {
       const sets = parseGmt(read(g.gmt));
       const times = [];
       let last;
-      for (let i = 0; i < repeats; i++) {
+      // One untimed pass per case, like bench-r.R's warmup: the first call also
+      // spawns the permutation worker pool.
+      for (let i = -1; i < repeats; i++) {
         try {
           last = await page.evaluate(
             // multilevel: false and sizes 1-100000 match bench-r.R's fgseaSimple call.
@@ -206,7 +208,7 @@ try {
               }),
             { ranked, sets, nperm: g.nperm },
           );
-          times.push(last.engineMs);
+          if (i >= 0) times.push(last.engineMs);
         } catch (e) {
           console.error(`   gsea run ${i} FAILED: ${e?.message || e}`);
         }
