@@ -84,6 +84,7 @@
   }
   let importedResults = $state<Partial<Record<EnrichmentKind, EnrichmentResult[]>> | null>(null);
   let latestResults = $state<Partial<Record<EnrichmentKind, EnrichmentResult[]>>>({});
+  let activeKind = $state<EnrichmentKind>('go');
   let importStats = $state<{
     total: number;
     dropped: number;
@@ -940,7 +941,12 @@
   </Card>
 
   {#if (mode === 'deseq2' || mode === 'results') && importedResults}
-    <EnrichmentResults ids={[]} imported={importedResults} onResults={(r) => (latestResults = r)} />
+    <EnrichmentResults
+      ids={[]}
+      imported={importedResults}
+      onResults={(r) => (latestResults = r)}
+      onActive={(k) => (activeKind = k)}
+    />
   {:else if ids.length > 0 && geneMeta.length > 0}
     <Card>
       <CardHeader class="pb-3">
@@ -962,13 +968,14 @@
       <MethodsButton
         ctx={{
           tool: 'enrichment',
-          params: { kind: 'multi' },
+          params: { kind: activeKind },
           inputSummary: `${ids.length} input genes`,
         }}
       />
     </div>
     <EnrichmentResults
       {ids}
+      onActive={(k) => (activeKind = k)}
       imported={importedResults ?? undefined}
       onHighlight={highlightTerm}
       onResults={(r) => (latestResults = r)}
