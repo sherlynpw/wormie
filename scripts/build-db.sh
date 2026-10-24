@@ -1956,11 +1956,21 @@ for wb, pname in cur.execute(
 ):
     pathway_per_gene.setdefault(wb, set()).add(pname)
 
+# Per-gene InterPro domain names and accessions, so "forkhead" or "PF00250"
+# finds a gene without the domain: prefix. Chromosomes and life stages stay out
+# of free text, where they would match thousands of genes.
+domain_per_gene = {}
+for wb, acc, dname in cur.execute("SELECT wormbase_gene, accession, name FROM gene_domain"):
+    s = domain_per_gene.setdefault(wb, set())
+    s.add(acc)
+    if dname: s.add(dname)
+
 cur.executescript("""
 CREATE VIRTUAL TABLE genes_fts USING fts5(
   wormbase_gene UNINDEXED, gene_name, wb_id, entrez_id, sequence_name, other_names,
   gene_class_description, concise_description, legacy_description,
   phenotypes, alleles, tissues, go_terms, wormcat, neuronal, orthologs, synaptogenesis, pathways,
+  domains,
   tokenize = "unicode61 remove_diacritics 2"
 );
 """)
@@ -1979,16 +1989,18 @@ for wb, name, seq, other, gc, cd, ld in cur.execute(
     orth = ' '.join(ortho_per_gene.get(wb, ()))
     syn = ' '.join(synapto_per_gene.get(wb, ()))
     pw = ' '.join(pathway_per_gene.get(wb, ()))
+    dm = ' '.join(sorted(domain_per_gene.get(wb, ())))
     entrez = wb_to_entrez_map.get(wb, '')
     fts_rows.append((
         wb, name or '', wb, entrez, seq or '', other or '', gc or '', cd or '', ld or '',
-        ph, al, ts, go, wc, nu, orth, syn, pw
+        ph, al, ts, go, wc, nu, orth, syn, pw, dm
     ))
 cur.executemany(
     "INSERT INTO genes_fts(wormbase_gene, gene_name, wb_id, entrez_id, sequence_name, other_names,"
     " gene_class_description, concise_description, legacy_description,"
-    " phenotypes, alleles, tissues, go_terms, wormcat, neuronal, orthologs, synaptogenesis, pathways)"
-    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+    " phenotypes, alleles, tissues, go_terms, wormcat, neuronal, orthologs, synaptogenesis, pathways,"
+    " domains)"
+    " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
     fts_rows
 )
 print(f'genes_fts: {len(fts_rows)} rows (full per-gene index)', file=sys.stderr)

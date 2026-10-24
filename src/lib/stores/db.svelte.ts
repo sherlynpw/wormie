@@ -1,4 +1,5 @@
 import { initDb, query } from '$lib/db/client';
+import { detectSearchSchema } from '$lib/queries';
 
 type Phase = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -130,6 +131,7 @@ class DbStore {
       // The worker falls back to any cached build when the requested one is
       // missing, so label what actually loaded rather than what was asked for.
       if (opened?.version) this.version = opened.version;
+      await detectSearchSchema();
       if (!pinned) writePin(this.version);
       const stats = await query<{
         n_genes: number;

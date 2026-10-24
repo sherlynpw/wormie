@@ -1,4 +1,5 @@
 import { query } from '$lib/db/client';
+import { searchSchema } from '$lib/stores/search-schema.svelte';
 import { GO_POSITIVE, CENGEN_MIN_THRESHOLD } from '$lib/db/term-filters';
 import {
   buildWormcatTerms,
@@ -8,6 +9,7 @@ import {
 import type { EnrichmentKind } from '$lib/db/client';
 import type { Gene } from '$lib/types';
 import {
+  opValueTokens,
   escapeFts,
   parseQuery,
   FTS_OP_COLUMNS,
@@ -32,17 +34,34 @@ type MatchField =
   | 'wormcat'
   | 'neuronal'
   | 'orthologs'
-  | 'synaptogenesis';
+  | 'synaptogenesis'
+  | 'domains';
+// snippet() column indexes count every column of genes_fts in table order,
+// unindexed ones included (wormbase_gene 0 ... legacy_description 8).
 const MATCH_COLS: { idx: number; field: MatchField; label: string }[] = [
-  { idx: 7, field: 'phenotypes', label: 'Phenotypes' },
-  { idx: 8, field: 'alleles', label: 'Alleles' },
-  { idx: 9, field: 'tissues', label: 'Tissues' },
-  { idx: 10, field: 'go_terms', label: 'GO' },
-  { idx: 11, field: 'wormcat', label: 'WormCat' },
-  { idx: 12, field: 'neuronal', label: 'Neuronal' },
-  { idx: 13, field: 'orthologs', label: 'Orthologs' },
-  { idx: 14, field: 'synaptogenesis', label: 'Synapse panel' },
+  { idx: 9, field: 'phenotypes', label: 'Phenotypes' },
+  { idx: 10, field: 'alleles', label: 'Alleles' },
+  { idx: 11, field: 'tissues', label: 'Tissues' },
+  { idx: 12, field: 'go_terms', label: 'GO' },
+  { idx: 13, field: 'wormcat', label: 'WormCat' },
+  { idx: 14, field: 'neuronal', label: 'Neuronal' },
+  { idx: 15, field: 'orthologs', label: 'Orthologs' },
+  { idx: 16, field: 'synaptogenesis', label: 'Synapse panel' },
 ];
+const DOMAINS_MATCH_COL = { idx: 18, field: 'domains' as MatchField, label: 'Domain' };
+function matchCols() {
+  return searchSchema.domains ? [...MATCH_COLS, DOMAINS_MATCH_COL] : MATCH_COLS;
+}
+
+/** Drops full-text fields the loaded build does not have. */
+export function availableFtsFields(fields: readonly FtsField[]): FtsField[] {
+  return fields.filter((f) => f !== 'domains' || searchSchema.domains);
+}
+
+/** Reads the optional search columns once the database is open. */
+export async function detectSearchSchema(): Promise<void> {
+  searchSchema.domains = await hasColumn('genes_fts', 'domains');
+}
 
 export interface MatchedField {
   field: MatchField;
@@ -226,12 +245,12 @@ function opSubquery(op: Op): { sql: string; params: unknown[] } | null {
         sql: `SELECT gg.wormbase_gene FROM gene_go gg
 				      JOIN go_fts f ON f.go_id = gg.go_id
 				      WHERE go_fts MATCH ?`,
-        params: [escapeFts(v.split(/\s+/))],
+        params: [escapeFts(opValueTokens(v))],
       };
     case 'cat':
       return {
         sql: `SELECT wormbase_gene FROM wormcat_fts WHERE wormcat_fts MATCH ?`,
-        params: [escapeFts(v.split(/\s+/))],
+        params: [escapeFts(opValueTokens(v))],
       };
     case 'neuronal':
       return {
@@ -260,7 +279,7 @@ function opSubquery(op: Op): { sql: string; params: unknown[] } | null {
         sql: `SELECT gkp.wormbase_gene FROM gene_kegg_pathway gkp
               JOIN kegg_fts f ON f.pathway_id = gkp.pathway_id
               WHERE kegg_fts MATCH ?`,
-        params: [escapeFts(v.split(/\s+/))],
+        params: [escapeFts(opValueTokens(v))],
       };
     case 'wb':
       return {
@@ -589,7 +608,7 @@ function compoundSubquery(
     } else if (item.op.mode === 'like') {
       sq = opLikeSubquery(item.op);
     } else if (FTS_OP_COLUMNS[item.op.key]) {
-      const tokens = item.op.value.split(/\s+/).filter(Boolean);
+      const tokens = opValueTokens(item.op.value);
       const e = tokens.length ? escapeFts(tokens, FTS_OP_COLUMNS[item.op.key]) : '';
       if (e)
         sq = { sql: `SELECT wormbase_gene FROM genes_fts WHERE genes_fts MATCH ?`, params: [e] };
@@ -638,7 +657,7 @@ function buildFtsExpression(
         part = escapeFts([item.token], globalFields);
       } else {
         const cols = FTS_OP_COLUMNS[item.op.key];
-        const tokens = item.op.value.split(/\s+/).filter(Boolean);
+        const tokens = opValueTokens(item.op.value);
         if (cols && tokens.length) part = escapeFts(tokens, cols);
       }
       if (!part) continue;
@@ -662,7 +681,7 @@ function buildFtsExpression(
   for (const op of ftsOps) {
     const cols = FTS_OP_COLUMNS[op.key];
     if (!cols) continue;
-    const tokens = op.value.split(/\s+/).filter(Boolean);
+    const tokens = opValueTokens(op.value);
     if (!tokens.length) continue;
     const e = escapeFts(tokens, cols);
     if (e) parts.push(e);
@@ -690,7 +709,8 @@ function routeQuery(
   const likeOps: Op[] = [];
   for (const op of parsed.ops) {
     if (op.mode === 'like') likeOps.push(op);
-    else if (FTS_OP_COLUMNS[op.key]) ftsOps.push(op);
+    else if (FTS_OP_COLUMNS[op.key] && (op.key !== 'domain' || searchSchema.domains))
+      ftsOps.push(op);
     else tableOps.push(op);
   }
 
@@ -803,10 +823,12 @@ export async function runSearch(
   const wantsSnippets = !!ftsExpr;
   const snippetSelect = wantsSnippets
     ? ',\n' +
-      MATCH_COLS.map(
-        (c) =>
-          `snippet(genes_fts, ${c.idx}, '${MATCH_START}', '${MATCH_END}', '', 8) AS m_${c.field}`,
-      ).join(',\n')
+      matchCols()
+        .map(
+          (c) =>
+            `snippet(genes_fts, ${c.idx}, '${MATCH_START}', '${MATCH_END}', '', 8) AS m_${c.field}`,
+        )
+        .join(',\n')
     : '';
 
   let sql: string;
@@ -834,7 +856,7 @@ export async function runSearch(
     scrubDescriptions(r);
     if (!wantsSnippets) return r;
     const matched: MatchedField[] = [];
-    for (const c of MATCH_COLS) {
+    for (const c of matchCols()) {
       const snip = r[`m_${c.field}`];
       const { matched: m, segments } = parseSnippet(snip ?? null);
       if (m) matched.push({ field: c.field, label: c.label, segments });
@@ -1200,7 +1222,11 @@ export async function suggestTerms(
 }
 
 // Fetch all matched gene IDs (no row body) for Export / "Send to tool" actions. Capped at 100k.
-export async function getMatchedIds(term: string, cap = 100_000): Promise<string[]> {
+export async function getMatchedIds(
+  term: string,
+  cap = 100_000,
+  fields?: readonly FtsField[],
+): Promise<string[]> {
   const parsed = parseQuery(term);
   if (parsed.mode === 'empty') {
     const rows = await query<{ wormbase_gene: string }>(
@@ -1213,7 +1239,7 @@ export async function getMatchedIds(term: string, cap = 100_000): Promise<string
     const rows = await searchByGeneList(parsed.ids, cap, 0);
     return rows.map((r) => r.wormbase_gene);
   }
-  const match = matchedGenesSubquery(term);
+  const match = matchedGenesSubquery(term, fields);
   if (!match) {
     const rows = await query<{ wormbase_gene: string }>(
       `SELECT wormbase_gene FROM annotations LIMIT ?`,
@@ -2105,7 +2131,12 @@ async function chromosomeFacets(
 }
 
 // Returns the matched-genes subquery for the current query, or null if input is empty (no filter).
-function matchedGenesSubquery(input: string): { sql: string; params: unknown[] } | null {
+// `fields` must be the same set the result list searches, or the count, the
+// facets and "send all matches" describe genes the list never shows.
+function matchedGenesSubquery(
+  input: string,
+  fields?: readonly FtsField[],
+): { sql: string; params: unknown[] } | null {
   const parsed = parseQuery(input);
   if (parsed.mode === 'empty') return null;
 
@@ -2120,7 +2151,7 @@ function matchedGenesSubquery(input: string): { sql: string; params: unknown[] }
     };
   }
 
-  const { intersects, params } = routeQuery(parsed, undefined);
+  const { intersects, params } = routeQuery(parsed, fields);
   if (intersects.length === 0) return null;
   return {
     sql: intersects.join(' INTERSECT '),
@@ -2225,9 +2256,9 @@ async function getUnfilteredFacets(): Promise<Facets> {
   return unfilteredFacetsCache;
 }
 
-export async function getFacets(term: string): Promise<Facets> {
+export async function getFacets(term: string, fields?: readonly FtsField[]): Promise<Facets> {
   const parsed = parseQuery(term);
-  const match = matchedGenesSubquery(term);
+  const match = matchedGenesSubquery(term, fields);
   if (!match) return getUnfilteredFacets();
 
   // Fast path for status/type-only filters: IN-subqueries against gene_go (~1M rows), wormcat, and neuronal
