@@ -72,6 +72,9 @@ export function runSsgseaSync(
   const buf = new Int32Array(N);
   const order = new Int32Array(N);
   const inWeight = new Float64Array(N);
+  // Positions at or after a gene in the walk, averaged over its tie block: the
+  // integral of the running sum is the sum of each step times this count.
+  const remaining = new Float64Array(N);
 
   for (let s = 0; s < S; s++) {
     if (s % 4 === 0) report?.(`Sample ${s + 1}/${S}`, s + 1, S);
@@ -81,8 +84,24 @@ export function runSsgseaSync(
     arr.sort((a, b) => col(b) - col(a));
     for (let i = 0; i < N; i++) order[i] = arr[i];
 
-    // |rank|^alpha, rank = 1..N from top (highest expression).
-    for (let i = 0; i < N; i++) inWeight[i] = Math.pow(N - i, alpha);
+    // |rank|^alpha, rank = 1..N from top (highest expression). Tied values share
+    // the average of their ranks, as R's rank() does in GSVA, and also share
+    // their average position in the walk: count data ties most genes with
+    // another, and GSVA's score then depends on the input row order, by up to
+    // half a percent of the score range on a 9-sample count table. Averaging
+    // the position too makes the score a function of the values alone; without
+    // ties both agree with GSVA to the last digit.
+    for (let i = 0; i < N; ) {
+      let j = i + 1;
+      while (j < N && col(order[j]) === col(order[i])) j++;
+      const rank = N - (i + j - 1) / 2;
+      const w = Math.pow(rank, alpha);
+      for (let t = i; t < j; t++) {
+        inWeight[t] = w;
+        remaining[t] = rank;
+      }
+      i = j;
+    }
 
     for (let k = 0; k < filtered.length; k++) {
       const setIdx = filtered[k].idx;
@@ -97,12 +116,10 @@ export function runSsgseaSync(
         continue;
       }
       const outStep = 1 / (N - m);
-      let cum = 0;
       let integral = 0;
       for (let i = 0; i < N; i++) {
-        const hit = inSet[order[i]];
-        cum += hit ? inWeight[i] / Z : -outStep;
-        integral += cum;
+        const step = inSet[order[i]] ? inWeight[i] / Z : -outStep;
+        integral += step * remaining[i];
       }
       scores[k * S + s] = integral;
     }
