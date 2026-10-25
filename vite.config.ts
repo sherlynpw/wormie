@@ -119,7 +119,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['client/**/*.{js,css,ico,svg,png,woff,woff2}', 'prerendered/**/*.html'],
+        globPatterns: ['client/**/*.{js,css,wasm,ico,svg,png,woff,woff2}', 'prerendered/**/*.html'],
         // HEAD requests for the R runtime, answered from the cache offline (static/sw-head.js).
         importScripts: ['sw-head.js'],
         // SQLite is large; cache it on first hit, serve from cache thereafter.
