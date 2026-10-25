@@ -121,8 +121,23 @@
 </script>
 
 <div>
-  <div class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
-    {title}
+  <div class="mb-2 flex items-center justify-between gap-2">
+    <div class="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
+      {title}
+    </div>
+    {#if exportName && N >= 3 && groups.length > 0}
+      <PlotExportMenu
+        getSvg={() => svgEl}
+        baseName={exportName}
+        extra={[
+          {
+            label: 'Items (TSV)',
+            title: 'Every intersection group with its member items',
+            run: exportItems,
+          },
+        ]}
+      />
+    {/if}
   </div>
   {#if N < 3}
     <div class="text-xs italic text-muted-foreground">
@@ -137,22 +152,7 @@
   {:else if groups.length === 0}
     <div class="text-xs italic text-muted-foreground">No items to plot.</div>
   {:else}
-    <div class="relative overflow-x-auto">
-      {#if exportName}
-        <div class="absolute right-1 top-1 z-10">
-          <PlotExportMenu
-            getSvg={() => svgEl}
-            baseName={exportName}
-            extra={[
-              {
-                label: 'Items (TSV)',
-                title: 'Every intersection group with its member items',
-                run: exportItems,
-              },
-            ]}
-          />
-        </div>
-      {/if}
+    <div class="overflow-x-auto">
       <svg
         bind:this={svgEl}
         viewBox="0 0 {svgW} {svgH}"
@@ -183,8 +183,7 @@
             y={barAreaTop + (barAreaH - h)}
             width="18"
             height={h}
-            fill="hsl(var(--accent))"
-            opacity="0.9"
+            fill="hsl(var(--primary))"
           />
           <text
             {x}
@@ -230,9 +229,8 @@
               y1={dotAreaTop + Math.min(...indices) * rowH + rowH / 2}
               x2={cx}
               y2={dotAreaTop + Math.max(...indices) * rowH + rowH / 2}
-              stroke="hsl(var(--accent))"
+              stroke="hsl(var(--primary))"
               stroke-width="2"
-              opacity="0.7"
             />
           {/if}
           {#each sets as _, ri (ri)}
@@ -241,8 +239,8 @@
               {cx}
               cy={dotAreaTop + ri * rowH + rowH / 2}
               r="5"
-              fill={filled ? 'hsl(var(--accent))' : 'transparent'}
-              stroke={filled ? 'hsl(var(--accent))' : 'hsl(var(--border))'}
+              fill={filled ? 'hsl(var(--primary))' : 'transparent'}
+              stroke={filled ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
               stroke-width="1"
             />
           {/each}
