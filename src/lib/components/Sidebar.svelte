@@ -108,7 +108,7 @@
         {
           href: resolve('/gsea/intersect'),
           match: '/gsea/intersect',
-          label: 'GSEA intersect',
+          label: 'Ranked-list consensus',
           icon: GitCompare,
         },
         {

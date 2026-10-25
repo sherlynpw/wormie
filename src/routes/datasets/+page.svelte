@@ -46,7 +46,7 @@
     ],
     gmt: [{ path: '/gmt', param: 'gmt', label: 'Custom gene sets' }],
     counts: [{ path: '/ssgsea', param: 'counts', label: 'Per-sample set scores' }],
-    'gsea-bundle': [{ path: '/gsea/intersect', param: 'bundle', label: 'GSEA intersect' }],
+    'gsea-bundle': [{ path: '/gsea/intersect', param: 'bundle', label: 'Ranked-list consensus' }],
     // Placeholder replaced by sessionTargets() at render time.
     session: [{ path: '', param: 'session', label: 'Open session' }],
   };

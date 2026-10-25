@@ -320,7 +320,7 @@ test('datasets Open in -> Gene overlap fills a slot', async ({ page }) => {
   await expect(page.getByPlaceholder('List name').first()).toHaveValue('conn list');
 });
 
-test('datasets Open in -> GSEA intersect loads a bundle', async ({ page }) => {
+test('datasets Open in -> Ranked-list consensus loads a bundle', async ({ page }) => {
   const bundle = {
     format: 'wb.gsea.bundle.v1',
     kind: 'go',
@@ -347,7 +347,7 @@ test('datasets Open in -> GSEA intersect loads a bundle', async ({ page }) => {
   });
   await page.goto('/datasets');
   await expect(page.getByText('conn bundle')).toBeVisible({ timeout: 15_000 });
-  await page.getByTitle('Open in GSEA intersect').click();
+  await page.getByTitle('Open in Ranked-list consensus').click();
   await expect(page).toHaveURL(/\/gsea\/intersect\?load=bundle/, { timeout: 15_000 });
   // The loaded-toast names the bundle and its term count; exact-match the row label.
   await expect(page.getByText('conn bundle', { exact: true })).toBeVisible({ timeout: 15_000 });

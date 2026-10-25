@@ -373,7 +373,7 @@
         href={resolve('/gsea/intersect')}
         title="Terms recurring across saved GSEA runs (bundles)"
       >
-        GSEA intersect
+        Ranked-list consensus
       </Button>
     </div>
   </div>

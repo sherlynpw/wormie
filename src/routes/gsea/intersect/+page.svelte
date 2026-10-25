@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Cross-comparison GSEA intersect: accepts .bundle.json files from the GseaResults "JSON" button,
+  // Ranked-list consensus across comparisons: accepts .bundle.json files from the GseaResults "JSON" button,
   // reports terms passing in K-of-N bundles, ranked by |median NES| x mean leading-edge Jaccard.
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Badge } from '$lib/components/ui/badge';
@@ -61,7 +61,7 @@
     ingestText(await f.text(), f.name.replace(/\.bundle\.json$/, ''));
   }
 
-  // The datasets page sends "Open in -> GSEA intersect" as ?load=bundle&id=.
+  // The datasets page sends "Open in -> Ranked-list consensus" as ?load=bundle&id=.
   onMount(async () => {
     const params = page.url.searchParams;
     const id = params.get('id');
@@ -182,12 +182,12 @@
 </script>
 
 <svelte:head>
-  <title>GSEA intersect · wormie.rs.ht</title>
+  <title>Ranked-list consensus · wormie.rs.ht</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
   <header class="space-y-1">
-    <h1 class="text-2xl font-semibold">GSEA intersect</h1>
+    <h1 class="text-2xl font-semibold">Ranked-list consensus</h1>
     <p class="text-sm text-muted-foreground">Terms that recur across saved GSEA runs</p>
   </header>
 
@@ -200,7 +200,7 @@
 
   <Card>
     <CardHeader>
-      <CardTitle class="text-xl">GSEA leading-edge intersect</CardTitle>
+      <CardTitle class="text-xl">Consensus across ranked-list results</CardTitle>
     </CardHeader>
     <CardContent class="space-y-3">
       <p class="text-sm text-muted-foreground">
@@ -268,8 +268,8 @@
 
       {#if kindsMixed}
         <div class="text-xs text-amber-700 dark:text-amber-400">
-          Bundles mix kinds (GO + WormCat etc). Intersect still runs but term IDs from different
-          namespaces won't merge. Usually you want one kind per intersect.
+          Bundles mix kinds (GO + WormCat etc). The run still works but term IDs from different
+          namespaces won't merge. Usually you want one kind per run.
         </div>
       {/if}
 
@@ -329,7 +329,7 @@
   {#if bundles.length < 2}
     <Card>
       <CardContent class="pt-6 text-sm text-muted-foreground">
-        Add at least two bundles to compute an intersect.
+        Add at least two bundles to find consensus terms.
       </CardContent>
     </Card>
   {:else if intersected.length === 0}
