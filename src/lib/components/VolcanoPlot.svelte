@@ -151,9 +151,15 @@
   // Resolve gene tokens to canonical names.
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   const nameMap = new Map<string, string>();
+  // The gene page resolves an ID or a gene name, not a sequence name, so links use the ID.
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  const idMap = new Map<string, string>();
   let nameMapVersion = $state(0);
   function applyMeta(m: Map<string, GeneNameInfo>) {
-    for (const [k, v] of m) nameMap.set(k, v.gene_name || v.sequence_name || k);
+    for (const [k, v] of m) {
+      nameMap.set(k, v.gene_name || v.sequence_name || k);
+      if (v.wormbase_gene) idMap.set(k, v.wormbase_gene);
+    }
     nameMapVersion++;
   }
   $effect(() => {
@@ -367,11 +373,7 @@
       <g>
         {#each baseline as p (p.gene)}
           <!-- svelte-ignore a11y_consider_explicit_label -->
-          <a
-            href={resolve(`/gene/${nameMap.get(p.gene) ?? p.gene}`)}
-            target="_blank"
-            rel="noopener"
-          >
+          <a href={resolve(`/gene/${idMap.get(p.gene) ?? p.gene}`)} target="_blank" rel="noopener">
             <circle
               cx={xFor(p)}
               cy={yFor(p)}
@@ -387,11 +389,7 @@
       <g>
         {#each overlay as p (p.gene)}
           <!-- svelte-ignore a11y_consider_explicit_label -->
-          <a
-            href={resolve(`/gene/${nameMap.get(p.gene) ?? p.gene}`)}
-            target="_blank"
-            rel="noopener"
-          >
+          <a href={resolve(`/gene/${idMap.get(p.gene) ?? p.gene}`)} target="_blank" rel="noopener">
             <circle
               cx={xFor(p)}
               cy={yFor(p)}
