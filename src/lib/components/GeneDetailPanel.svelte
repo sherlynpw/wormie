@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import StripPlot, { type StripPoint } from './StripPlot.svelte';
   import CengenStripPlot from './CengenStripPlot.svelte';
   import type { CengenExpressionRow } from '$lib/queries';
@@ -54,6 +55,15 @@
       <span class="text-base font-semibold">{displayLabel}</span>
       {#if displayLabel !== gene}
         <span class="font-mono text-xs text-muted-foreground">{gene}</span>
+      {/if}
+      {#if wormbaseGene}
+        <a
+          href={resolve(`/gene/${wormbaseGene}`)}
+          target="_blank"
+          rel="noopener"
+          class="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >Gene page</a
+        >
       {/if}
     </div>
     <div class="flex items-center gap-2 text-xs">
