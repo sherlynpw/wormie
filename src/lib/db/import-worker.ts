@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
-import { openGzipReader } from './fetch-stream';
+import { openDbReader } from './fetch-stream';
 import { installPool } from './opfs-pool';
 
 // One-shot worker: installs OPFS-SAH-Pool VFS, streams the gzipped DB into
@@ -51,7 +51,7 @@ async function run(req: Req) {
     let totalCompressed = 0;
     let lastPosted = 0;
     let latest = 0;
-    const opened = await openGzipReader(req.dbUrl, (received) => {
+    const opened = await openDbReader(req.dbUrl, (received) => {
       latest = received;
       // Throttle: the network can deliver many small chunks per frame.
       if (received - lastPosted < 1 << 20) return;

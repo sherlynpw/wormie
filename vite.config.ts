@@ -95,7 +95,7 @@ export default defineConfig({
     sveltekit(),
     SvelteKitPWA({
       strategies: 'generateSW',
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       scope: '/',
       base: '/',
       manifest: {
@@ -119,7 +119,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['client/**/*.{js,css,ico,svg,png,woff,woff2}', 'prerendered/**/*.html'],
+        globPatterns: ['client/**/*.{js,css,wasm,ico,svg,png,woff,woff2}', 'prerendered/**/*.html'],
         // HEAD requests for the R runtime, answered from the cache offline (static/sw-head.js).
         importScripts: ['sw-head.js'],
         // SQLite is large; cache it on first hit, serve from cache thereafter.
@@ -128,13 +128,13 @@ export default defineConfig({
             // The client appends `?v=<version>` for cache busting, so the
             // regex has to match either end-of-string or the start of the
             // query. Without the `(\?|$)` alternation, versioned requests
-            // miss the CacheFirst rule and re-download the whole DB gzip on
+            // miss the CacheFirst rule and re-download the whole DB on
             // every visit.
-            urlPattern: /\/data\/wormie\.sqlite\.gz(\?|$)/,
+            urlPattern: /\/data\/wormie\.sqlite\.(gz|zst)(\?|$)/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'wormie-sqlite',
-              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              expiration: { maxEntries: 3, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] },
               rangeRequests: true,
             },

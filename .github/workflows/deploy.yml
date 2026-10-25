@@ -74,16 +74,24 @@ jobs:
           path: .cache
           key: data-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}
 
-      - name: Cache built DB output
+      - name: DB cache key
+        id: db-key
+        run: echo "key=db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-kegg${{ env.DISABLE_KEGG || 'on' }}-${{ hashFiles('scripts/build-db.sh', 'data/**') }}" >> "$GITHUB_OUTPUT"
+
+      # Restore and save are split because the stash step below moves the DB out of
+      # static/data before the job ends, so an end-of-job save found nothing and every
+      # push rebuilt the DB under a new version, making every visitor download it again.
+      - name: Restore built DB output
         id: db-cache
         if: ${{ github.event_name == 'push' && github.event.inputs.force_refresh != 'true' }}
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             static/data/wormie.sqlite.gz
+            static/data/wormie.sqlite.zst
             static/data/version.json
             static/data/unresolved-symbols.txt
-          key: db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-kegg${{ env.DISABLE_KEGG || 'on' }}-${{ hashFiles('scripts/build-db.sh', 'data/**') }}
+          key: ${{ steps.db-key.outputs.key }}
           restore-keys: |
             db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-kegg${{ env.DISABLE_KEGG || 'on' }}-
             db-${{ steps.wb.outputs.release }}-${{ steps.wb.outputs.week }}-kegg${{ env.DISABLE_KEGG || 'on' }}
@@ -103,7 +111,22 @@ jobs:
           set -euo pipefail
           mkdir -p deploy-data
           ls -lh static/data/
+          # A cache restored from before the zstd copy existed has only the .gz:
+          # derive the .zst and advertise it so every deploy ships both.
+          if [ ! -f static/data/wormie.sqlite.zst ]; then
+            command -v zstd >/dev/null || { echo "::error::zstd not found on the runner"; exit 1; }
+            gunzip -c static/data/wormie.sqlite.gz | zstd -19 -T0 -q -f -o static/data/wormie.sqlite.zst
+          fi
+          python3 - <<'PY'
+          import json, os
+          p = "static/data/version.json"
+          d = json.load(open(p))
+          d["zst_file"] = "wormie.sqlite.zst"
+          d["zst_size"] = os.path.getsize("static/data/wormie.sqlite.zst")
+          json.dump(d, open(p, "w"), indent=2)
+          PY
           mv static/data/wormie.sqlite.gz deploy-data/
+          [ -f static/data/wormie.sqlite.zst ] && mv static/data/wormie.sqlite.zst deploy-data/ || true
           mv static/data/version.json deploy-data/
           [ -f static/data/annotation.saf.gz ] && mv static/data/annotation.saf.gz deploy-data/ || true
           [ -f static/data/unresolved-symbols.txt ] && mv static/data/unresolved-symbols.txt deploy-data/ || true
@@ -126,6 +149,26 @@ jobs:
           path: deploy-data
           retention-days: 7
           if-no-files-found: error
+
+      - name: Put the DB back for the cache save
+        if: ${{ steps.db-cache.outputs.cache-hit != 'true' }}
+        run: |
+          set -euo pipefail
+          cp deploy-data/wormie.sqlite.gz deploy-data/version.json static/data/
+          [ -f deploy-data/wormie.sqlite.zst ] && cp deploy-data/wormie.sqlite.zst static/data/ || true
+          [ -f deploy-data/unresolved-symbols.txt ] && cp deploy-data/unresolved-symbols.txt static/data/ || true
+
+      # Scheduled builds save too, so pushes later in the week reuse the Monday build.
+      - name: Save built DB output
+        if: ${{ steps.db-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            static/data/wormie.sqlite.gz
+            static/data/wormie.sqlite.zst
+            static/data/version.json
+            static/data/unresolved-symbols.txt
+          key: ${{ steps.db-key.outputs.key }}
 
   deploy:
     needs: build
@@ -195,6 +238,11 @@ jobs:
           fi
           aws s3 cp deploy-data/wormie.sqlite.gz "s3://wormie-data/wormie.sqlite.gz" \
             --endpoint-url "$R2_ENDPOINT" --content-type application/gzip
+          # Before version.json: it must never point at a file not yet uploaded.
+          if [ -f deploy-data/wormie.sqlite.zst ]; then
+            aws s3 cp deploy-data/wormie.sqlite.zst "s3://wormie-data/wormie.sqlite.zst" \
+              --endpoint-url "$R2_ENDPOINT" --content-type application/zstd
+          fi
           aws s3 cp deploy-data/version.json "s3://wormie-data/version.json" \
             --endpoint-url "$R2_ENDPOINT" --content-type application/json
           if [ -f deploy-data/annotation.saf.gz ]; then

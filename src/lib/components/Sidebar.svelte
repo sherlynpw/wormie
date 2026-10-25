@@ -342,11 +342,24 @@
       {:else if db.pinExpired}
         <div class="mb-2 rounded border border-dashed px-2 py-1.5 text-[0.65rem] leading-snug">
           <div class="text-muted-foreground">
-            Build {db.pinExpired} could not be confirmed on this device, so {db.version} was loaded.
+            Build {db.pinExpired} was not found on this device, so {db.version} was loaded.
           </div>
           <button
             type="button"
             onclick={() => db.dismissPinExpired()}
+            class="mt-1 rounded border px-1.5 py-0.5 transition-colors hover:bg-accent"
+          >
+            Dismiss
+          </button>
+        </div>
+      {:else if db.pinSchemaReplaced}
+        <div class="mb-2 rounded border border-dashed px-2 py-1.5 text-[0.65rem] leading-snug">
+          <div class="text-muted-foreground">
+            This version of the app needs a newer database, so build {db.version} replaced {db.pinSchemaReplaced}.
+          </div>
+          <button
+            type="button"
+            onclick={() => db.dismissPinSchemaReplaced()}
             class="mt-1 rounded border px-1.5 py-0.5 transition-colors hover:bg-accent"
           >
             Dismiss

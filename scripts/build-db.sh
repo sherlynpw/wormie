@@ -17,6 +17,12 @@ WORMCAT_CSV="${WORMCAT_CSV:-$ROOT/data/wormcat_whole_genome_v2.csv}"
 NEURONAL_CSV="${NEURONAL_CSV:-$ROOT/data/neuronal_genes.csv}"
 SYNAPTO_TSV="${SYNAPTO_TSV:-$ROOT/data/synaptogenesis_genes.tsv}"
 
+# Database structure version, stored as PRAGMA user_version and in version.json.
+# Raise it when the app comes to depend on a structure older builds lack, together
+# with MIN_SCHEMA in src/lib/db/schema.ts.
+SCHEMA_VERSION=1
+export SCHEMA_VERSION
+
 mkdir -p "$CACHE" "$DEST_DIR"
 
 # WS298 is WormBase's final major release, so pin rather than auto-detect.
@@ -656,7 +662,9 @@ CREATE TABLE go_relations (
 );
 CREATE TABLE go_alt_ids (alt_id TEXT PRIMARY KEY, go_id TEXT NOT NULL);
 CREATE TABLE go_synonyms (go_id TEXT NOT NULL, synonym TEXT NOT NULL);
-CREATE INDEX idx_gorel_child  ON go_relations(child_id);
+-- No per-gene indexes on tables whose PRIMARY KEY already leads with the gene
+-- (or child) column: SQLite looks up by that prefix through the PK, and the
+-- duplicate index only adds download size.
 CREATE INDEX idx_gorel_parent ON go_relations(parent_id);
 CREATE INDEX idx_go_syn ON go_synonyms(go_id);
 """)
@@ -790,7 +798,6 @@ CREATE TABLE orthologs (
   is_best_score INTEGER, is_best_rev_score INTEGER,
   PRIMARY KEY (wormbase_gene, taxon_id, ortholog_id)
 );
-CREATE INDEX idx_ortho_wb ON orthologs(wormbase_gene);
 CREATE INDEX idx_ortho_taxon ON orthologs(taxon_id);
 CREATE INDEX idx_ortho_symbol ON orthologs(ortholog_symbol);
 """)
@@ -871,7 +878,6 @@ CREATE TABLE string_interactions (
   database INTEGER, textmining INTEGER,
   PRIMARY KEY (gene_a, gene_b)
 ) WITHOUT ROWID;
-CREATE INDEX idx_string_a ON string_interactions(gene_a);
 CREATE INDEX idx_string_b ON string_interactions(gene_b);
 """)
 try:
@@ -1004,7 +1010,6 @@ CREATE TABLE phenotype_relations (
   child_id TEXT NOT NULL, parent_id TEXT NOT NULL,
   PRIMARY KEY (child_id, parent_id)
 );
-CREATE INDEX idx_pheno_rel_child  ON phenotype_relations(child_id);
 CREATE INDEX idx_pheno_rel_parent ON phenotype_relations(parent_id);
 """)
 cur.executemany('INSERT OR IGNORE INTO phenotype_relations VALUES (?,?)', pheno_rels)
@@ -1029,7 +1034,6 @@ CREATE TABLE allele_phenotype (
   PRIMARY KEY (allele_id, wormbase_gene, term_id, reference)
 );
 CREATE INDEX idx_allele_pheno_gene   ON allele_phenotype(wormbase_gene);
-CREATE INDEX idx_allele_pheno_allele ON allele_phenotype(allele_id);
 CREATE INDEX idx_allele_pheno_term   ON allele_phenotype(term_id);
 """)
 gp_rows = []; ap_rows = []
@@ -1138,7 +1142,6 @@ CREATE TABLE gene_anatomy (
   wormbase_gene TEXT NOT NULL, term_id TEXT NOT NULL, evidence_code TEXT,
   PRIMARY KEY (wormbase_gene, term_id, evidence_code)
 );
-CREATE INDEX idx_gene_anat_gene ON gene_anatomy(wormbase_gene);
 CREATE INDEX idx_gene_anat_term ON gene_anatomy(term_id);
 """)
 anat_terms = []
@@ -1216,7 +1219,6 @@ CREATE TABLE cengen_expression (
   tmm REAL NOT NULL,
   PRIMARY KEY (wormbase_gene, neuron_type)
 ) WITHOUT ROWID;
-CREATE INDEX idx_cengen_gene ON cengen_expression(wormbase_gene);
 CREATE INDEX idx_cengen_neuron ON cengen_expression(neuron_type);
 -- Binary "expressed" calls per (gene, neuron) at the most-stringent CeNGEN
 -- threshold passed (1=liberal, 2=medium, 3=conservative, 4=stringent). FACS-
@@ -1227,7 +1229,6 @@ CREATE TABLE cengen_calls (
   max_threshold INTEGER NOT NULL,
   PRIMARY KEY (wormbase_gene, neuron_type)
 ) WITHOUT ROWID;
-CREATE INDEX idx_cengen_calls_gene ON cengen_calls(wormbase_gene);
 CREATE INDEX idx_cengen_calls_neuron ON cengen_calls(neuron_type);
 """)
 NEURON_RE = re.compile(r'^(.+?)r\d+$')
@@ -1371,7 +1372,6 @@ CREATE TABLE gene_disease (
   reference TEXT,
   PRIMARY KEY (wormbase_gene, do_id)
 ) WITHOUT ROWID;
-CREATE INDEX idx_gene_disease_gene ON gene_disease(wormbase_gene);
 CREATE INDEX idx_gene_disease_do   ON gene_disease(do_id);
 """)
 dz_acc = {}
@@ -1426,7 +1426,6 @@ CREATE TABLE cengen_coexpression (
   rank_other    INTEGER NOT NULL,
   PRIMARY KEY (wormbase_gene, neighbor)
 ) WITHOUT ROWID;
-CREATE INDEX idx_cengen_coexpr_gene ON cengen_coexpression(wormbase_gene);
 """)
 def _betacf(a, b, x, itmax=300, eps=3e-16):
     """Continued fraction for the incomplete beta function (Lentz's method)."""
@@ -1599,7 +1598,6 @@ CREATE TABLE gene_kegg_pathway (
   PRIMARY KEY (wormbase_gene, pathway_id)
 ) WITHOUT ROWID;
 CREATE INDEX idx_gkp_path ON gene_kegg_pathway(pathway_id);
-CREATE INDEX idx_gkp_wb ON gene_kegg_pathway(wormbase_gene);
 """)
 
 
@@ -2039,7 +2037,6 @@ CREATE TABLE gene_paper (
   pmid          TEXT NOT NULL,
   PRIMARY KEY (wormbase_gene, pmid)
 );
-CREATE INDEX idx_gene_paper_gene ON gene_paper(wormbase_gene);
 """)
 gp_rows = []
 with open(gene2pubmed_ce) as fh:
@@ -2281,7 +2278,7 @@ if failures:
 print(f'output assertions: {len(MIN_ROWS)} tables above their row floors', file=sys.stderr)
 
 conn.commit()
-conn.executescript('VACUUM; ANALYZE;')
+conn.executescript(f"PRAGMA user_version = {int(os.environ['SCHEMA_VERSION'])}; VACUUM; ANALYZE;")
 conn.close()
 PY
 
@@ -2290,6 +2287,15 @@ RAW_SIZE=$(stat -c%s "$TMP_DB" 2>/dev/null || stat -f%z "$TMP_DB")
 
 gzip -9c "$TMP_DB" >"$DEST_DIR/wormie.sqlite.gz"
 GZ_SIZE=$(stat -c%s "$DEST_DIR/wormie.sqlite.gz" 2>/dev/null || stat -f%z "$DEST_DIR/wormie.sqlite.gz")
+
+# zstd copy: ~40% smaller than gzip. No --long/--ultra so the client decoder's
+# window stays small.
+if ! command -v zstd >/dev/null 2>&1; then
+  echo "error: zstd is required to write wormie.sqlite.zst." >&2
+  exit 1
+fi
+zstd -19 -T0 -q -f "$TMP_DB" -o "$DEST_DIR/wormie.sqlite.zst"
+ZST_SIZE=$(stat -c%s "$DEST_DIR/wormie.sqlite.zst" 2>/dev/null || stat -f%z "$DEST_DIR/wormie.sqlite.zst")
 
 # Pull a few real version stamps out of cached files
 set +o pipefail
@@ -2371,9 +2377,12 @@ fi
 cat >"$DEST_DIR/version.json" <<EOF
 {
   "version": "$VERSION",
+  "schema": $SCHEMA_VERSION,
   "db_file": "wormie.sqlite.gz",
   "raw_size": $RAW_SIZE,
   "gz_size": $GZ_SIZE,
+  "zst_file": "wormie.sqlite.zst",
+  "zst_size": $ZST_SIZE,
   "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "annotation": {
     "file": "$ANNOTATION_FILE",
@@ -2423,9 +2432,10 @@ print("version.json validated")
 ' "$DEST_DIR/version.json"
 
 echo
-echo "Built $DEST_DIR/wormie.sqlite.gz:"
+echo "Built $DEST_DIR/wormie.sqlite.gz and wormie.sqlite.zst:"
 echo "  raw:  $(numfmt --to=iec $RAW_SIZE 2>/dev/null || echo "$RAW_SIZE bytes")"
 echo "  gzip: $(numfmt --to=iec $GZ_SIZE 2>/dev/null || echo "$GZ_SIZE bytes")"
+echo "  zstd: $(numfmt --to=iec $ZST_SIZE 2>/dev/null || echo "$ZST_SIZE bytes")"
 echo "  WS:   $WB_RELEASE"
 echo "  BioGRID: $BIOGRID_VERSION"
 echo "  version: $VERSION"

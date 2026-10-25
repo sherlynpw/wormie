@@ -1,30 +1,86 @@
-// Shared fetch+gunzip streaming primitive for the main DB worker (in-memory
+// Shared fetch+decompress streaming primitive for the main DB worker (in-memory
 // fallback) and import worker (OPFS-SAH-Pool chunked importDb).
-// Auto-detects gzip via magic bytes: in dev Vite/browser may transparently
+// Auto-detects gzip or zstd via magic bytes: in dev Vite/browser may transparently
 // decompress (Content-Encoding: gzip), but in prod (Cloudflare Workers + R2)
-// the .gz is served as-is and we decompress here.
+// the file is served as-is and we decompress here. DecompressionStream has no
+// zstd, so zstd goes through fzstd.
 
-export interface GzipReader {
+import { Decompress } from 'fzstd';
+
+export type DbCompression = 'gzip' | 'zstd' | 'none';
+
+export interface DbReader {
   reader: ReadableStreamDefaultReader<Uint8Array>;
   totalCompressed: number; // Content-Length of compressed body; 0 if absent
-  isGzip: boolean; // true if decompression was applied
+  compression: DbCompression; // what was detected and decoded
 }
 
-// `onCompressed` fires per network chunk with cumulative raw (pre-gunzip) bytes.
-export async function openGzipReader(
-  url: string,
-  onCompressed?: (received: number) => void,
-): Promise<GzipReader> {
+const ZSTD_URL = '.sqlite.zst';
+const GZIP_URL = '.sqlite.gz';
+
+// fzstd emits freshly allocated blocks (it copies them into its own window), so
+// they are safe to enqueue without a defensive copy.
+function zstdTransform(): TransformStream<Uint8Array, Uint8Array> {
+  let dec: Decompress;
+  return new TransformStream<Uint8Array, Uint8Array>({
+    start(controller) {
+      dec = new Decompress((chunk) => {
+        if (chunk.length) controller.enqueue(chunk);
+      });
+    },
+    transform(chunk) {
+      dec.push(chunk);
+    },
+    flush() {
+      dec.push(new Uint8Array(0), true);
+    },
+  });
+}
+
+async function tryFetch(url: string): Promise<Response> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Fetch ${url} failed: ${res.status}`);
+  // A static host with an SPA fallback answers a missing file with index.html and 200.
+  if ((res.headers.get('content-type') ?? '').startsWith('text/html')) {
+    throw new Error(`Fetch ${url} returned HTML`);
+  }
+  return res;
+}
+
+async function fetchDb(url: string): Promise<Response> {
+  try {
+    return await tryFetch(url);
+  } catch (err) {
+    // A client can hold a version.json that advertises the zstd copy before the
+    // file is reachable (partial deploy, gz-only cache); the gzip sibling always exists.
+    if (!url.includes(ZSTD_URL)) throw err;
+    return await tryFetch(url.replace(ZSTD_URL, GZIP_URL));
+  }
+}
+
+// `onCompressed` fires per network chunk with cumulative raw (pre-decompress) bytes.
+export async function openDbReader(
+  url: string,
+  onCompressed?: (received: number) => void,
+): Promise<DbReader> {
+  const res = await fetchDb(url);
   const totalCompressed = Number(res.headers.get('content-length')) || 0;
 
   const baseReader = res.body!.getReader();
   const firstChunk = await baseReader.read();
   if (firstChunk.done || !firstChunk.value) throw new Error('Empty response body');
 
-  const isGzip =
-    firstChunk.value.length >= 2 && firstChunk.value[0] === 0x1f && firstChunk.value[1] === 0x8b;
+  const head = firstChunk.value;
+  const compression: DbCompression =
+    head.length >= 2 && head[0] === 0x1f && head[1] === 0x8b
+      ? 'gzip'
+      : head.length >= 4 &&
+          head[0] === 0x28 &&
+          head[1] === 0xb5 &&
+          head[2] === 0x2f &&
+          head[3] === 0xfd
+        ? 'zstd'
+        : 'none';
 
   let rawReceived = firstChunk.value.length;
   onCompressed?.(rawReceived);
@@ -44,23 +100,29 @@ export async function openGzipReader(
     },
   });
 
-  const stream = isGzip
-    ? rebuilt.pipeThrough(
-        new DecompressionStream('gzip') as unknown as ReadableWritablePair<Uint8Array, Uint8Array>,
-      )
-    : rebuilt;
-  return { reader: stream.getReader(), totalCompressed, isGzip };
+  const stream =
+    compression === 'gzip'
+      ? rebuilt.pipeThrough(
+          new DecompressionStream('gzip') as unknown as ReadableWritablePair<
+            Uint8Array,
+            Uint8Array
+          >,
+        )
+      : compression === 'zstd'
+        ? rebuilt.pipeThrough(zstdTransform())
+        : rebuilt;
+  return { reader: stream.getReader(), totalCompressed, compression };
 }
 
-// Consume a gzip stream into a single Uint8Array (in-memory fallback path only).
+// Consume a compressed stream into a single Uint8Array (in-memory fallback path only).
 // `onProgress` fires per network chunk with cumulative compressed bytes.
-// Import worker uses openGzipReader directly to avoid materializing the full DB.
+// Import worker uses openDbReader directly to avoid materializing the full DB.
 export async function fetchAndDecompress(
   url: string,
   onProgress?: (received: number, total: number) => void,
 ): Promise<Uint8Array> {
   let totalCompressed = 0;
-  const { reader, totalCompressed: total } = await openGzipReader(url, (r) =>
+  const { reader, totalCompressed: total } = await openDbReader(url, (r) =>
     onProgress?.(r, totalCompressed),
   );
   totalCompressed = total;

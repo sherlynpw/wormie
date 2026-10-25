@@ -21,27 +21,30 @@ function writePin(v: string): void {
   }
 }
 
-// Each deploy overwrites the single R2 artifact, so an older build survives only
-// as the service worker's cache entry. Without this check the request would be
-// served the newest bytes under the old label.
-async function pinnedBuildCached(url: string): Promise<boolean> {
-  try {
-    if (typeof caches === 'undefined') return false;
-    return !!(await caches.match(url));
-  } catch {
-    return false;
-  }
-}
-
 // null means the live version could not be resolved, which must stay
 // distinguishable from a real build id.
-async function fetchLatestVersion(): Promise<{ version: string; gzSize: number } | null> {
+async function fetchLatestVersion(): Promise<{
+  version: string;
+  gzSize: number;
+  zstFile: string;
+  zstSize: number;
+} | null> {
   try {
     const res = await fetch('/data/version.json', { cache: 'no-store' });
     if (!res.ok) return null;
-    const v = (await res.json()) as { version?: string; gz_size?: number };
+    const v = (await res.json()) as {
+      version?: string;
+      gz_size?: number;
+      zst_file?: string;
+      zst_size?: number;
+    };
     if (!v?.version) return null;
-    return { version: v.version, gzSize: typeof v.gz_size === 'number' ? v.gz_size : 0 };
+    return {
+      version: v.version,
+      gzSize: typeof v.gz_size === 'number' ? v.gz_size : 0,
+      zstFile: typeof v.zst_file === 'string' ? v.zst_file : '',
+      zstSize: typeof v.zst_size === 'number' ? v.zst_size : 0,
+    };
   } catch {
     return null;
   }
@@ -60,12 +63,14 @@ class DbStore {
   totalNeuronal = $state<number>(0);
   /** Build actually loaded. */
   version = $state<string>('');
-  /** Compressed size of the newest published build in bytes, 0 until version.json has been read. */
-  gzSize = $state<number>(0);
+  /** Download size of the newest published build in bytes, 0 until version.json has been read. */
+  downloadSize = $state<number>(0);
   /** Newest published build, when it differs from the one loaded. */
   updateAvailable = $state<string>('');
   /** Set when a pinned build could not be confirmed and the newest was loaded. */
   pinExpired = $state<string>('');
+  /** Set when a pinned build was below the app's minimum schema and the newest was loaded. */
+  pinSchemaReplaced = $state<string>('');
 
   /** Adopt the newest published build and reload; the worker holds the old one open. */
   adoptLatest(): void {
@@ -76,6 +81,10 @@ class DbStore {
 
   dismissPinExpired(): void {
     this.pinExpired = '';
+  }
+
+  dismissPinSchemaReplaced(): void {
+    this.pinSchemaReplaced = '';
   }
 
   /**
@@ -93,24 +102,18 @@ class DbStore {
     const pinned = readPin();
     const published = await fetchLatestVersion();
     const latest = published?.version ?? null;
-    this.gzSize = published?.gzSize ?? 0;
+
+    // Prefer the zstd copy when published; offline, ask for it anyway because the
+    // fetch layer falls back to the gzip name a gz-only cache holds.
+    const zstUrl = published?.zstFile ? `/data/${published.zstFile}` : null;
+    const downloadUrl = zstUrl ?? (published ? dbUrl : dbUrl.replace(/\.gz$/, '.zst'));
+    this.downloadSize = zstUrl ? published!.zstSize : (published?.gzSize ?? 0);
 
     let version: string;
     if (latest) {
       // Stay on the loaded build so an analysis in progress isn't re-based; the
       // newer one is offered instead of applied.
       version = latest;
-      if (pinned && pinned !== latest) {
-        if (await pinnedBuildCached(`${dbUrl}?v=${encodeURIComponent(pinned)}`)) {
-          version = pinned;
-          this.updateAvailable = latest;
-        } else {
-          // The probe only sees the service worker cache; the durable copy lives in
-          // OPFS keyed by version. A cache eviction is therefore not proof the build
-          // is gone, so the pin is left in place to recover on a later load.
-          this.pinExpired = pinned;
-        }
-      }
     } else {
       // Offline, or version.json is unreachable. Keep whatever this device
       // already has: a build we could not resolve is not evidence that a newer
@@ -122,11 +125,12 @@ class DbStore {
 
     // Cache-bust via version query param: avoids stale bytes after a pipeline
     // rebuild given the long edge TTL set in src/worker.ts.
-    const versionedUrl = `${dbUrl}?v=${encodeURIComponent(version)}`;
+    const versionedUrl = `${downloadUrl}?v=${encodeURIComponent(version)}`;
     try {
       const opened = await initDb({
         dbUrl: versionedUrl,
         version,
+        pinnedVersion: latest && pinned && pinned !== latest ? pinned : undefined,
         onStatus: (m) => (this.status = m),
         onProgress: (r, t) => {
           this.progress = r;
@@ -136,8 +140,14 @@ class DbStore {
       // The worker falls back to any cached build when the requested one is
       // missing, so label what actually loaded rather than what was asked for.
       if (opened?.version) this.version = opened.version;
+      if (latest && pinned && pinned !== latest) {
+        if (opened?.version === pinned) this.updateAvailable = latest;
+        if (opened?.pinStatus === 'missing') this.pinExpired = pinned;
+        else if (opened?.pinStatus === 'schema') this.pinSchemaReplaced = pinned;
+      }
       await detectSearchSchema();
-      if (!pinned) writePin(this.version);
+      // The OPFS check is authoritative, so the pin follows the build actually loaded.
+      if (latest ? this.version !== pinned : !pinned) writePin(this.version);
       const stats = await query<{
         n_genes: number;
         n_go: number;

@@ -14,6 +14,10 @@
         onNeedRefresh() {
           needRefresh = true;
         },
+        onRegisteredSW(_url, registration) {
+          // A tab left open would otherwise never look for a new app version.
+          if (registration) setInterval(() => void registration.update(), 60 * 60 * 1000);
+        },
         onOfflineReady() {
           // could show a toast here
         },
