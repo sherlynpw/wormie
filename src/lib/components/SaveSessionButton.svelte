@@ -110,7 +110,7 @@
         }}
       />
       <div class="text-[0.65rem] text-muted-foreground">
-        Captures current inputs + parameters. Re-open later from Datasets.
+        Saves the current inputs and settings. Open it again later from the Datasets page.
       </div>
       {#if getResults && resultsSize !== null && resultsSize > 0}
         <label class="flex items-center gap-2 text-xs">

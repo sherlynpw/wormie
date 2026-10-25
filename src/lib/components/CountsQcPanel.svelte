@@ -121,12 +121,16 @@
   </section>
 
   <section>
-    <h3 class="mb-2 text-sm font-semibold">Sample correlation (1 − cor on log2-CPM)</h3>
+    <h3 class="mb-2 text-sm font-semibold">
+      Sample distance (1 minus correlation, on log2 counts per million (CPM))
+    </h3>
     <SampleDistanceHeatmap samples={matrix.samples} matrix={dist} />
   </section>
 
   <section>
-    <h3 class="mb-2 text-sm font-semibold">PCA · top {topVar} variable genes (log2-CPM)</h3>
+    <h3 class="mb-2 text-sm font-semibold">
+      Principal component analysis (PCA) · top {topVar} most variable genes (log2 counts per million (CPM))
+    </h3>
     <PCAScatter
       {points}
       {reference}

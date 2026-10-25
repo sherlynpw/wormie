@@ -89,7 +89,7 @@
     {title}
   </div>
   {#if N < 2}
-    <div class="text-xs italic text-muted-foreground">Need at least 2 genes.</div>
+    <div class="text-xs italic text-muted-foreground">Need at least 2 sets to compare.</div>
   {:else}
     <div class="max-w-full overflow-x-auto">
       <table class="border-collapse text-xs">
@@ -166,8 +166,9 @@
       </table>
     </div>
     <div class="mt-1 text-[0.6rem] text-muted-foreground">
-      Jaccard = |A ∩ B| / |A ∪ B|. Numbers in parentheses are set sizes. Hover or click a cell to
-      list the shared items.
+      Jaccard index = items in both lists / items in either list (1 means identical, 0 means nothing
+      shared). Numbers in parentheses are list sizes. Hover or click a cell to list the shared
+      items.
     </div>
     {#if activeCell}
       <OverlapItemsPanel

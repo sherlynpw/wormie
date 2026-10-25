@@ -353,32 +353,36 @@
 
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Custom gene sets</h1>
-    <p class="text-sm text-muted-foreground">Annotations you supply, not the built-in ones</p>
+    <p class="text-sm text-muted-foreground">Tests your genes against gene sets that you provide</p>
   </header>
 
   <PageHint id="gmt" title="What this step does">
-    Enrichment elsewhere on the site tests your genes against GO terms, phenotypes, WormCat
-    categories and tissues. Often the grouping you actually care about is not one of those: the
-    targets of a transcription factor from a recent paper, the hits of someone else's screen, genes
-    a reviewer asked you to check, or a pathway you curated yourself. Put those groups in a file and
-    test against them here instead.
+    The other enrichment pages test your genes against built-in groups: Gene Ontology (GO) terms,
+    phenotypes, WormCat categories and tissues. Use this page when your groups are different, for
+    example the targets of a transcription factor from a paper, the hits of another screen, or a
+    pathway you wrote yourself. Put the groups in a file and test against them here.
     <br /><br />
-    The file format is called GMT and it is plain text: one gene set per line, the set's name first, then
-    a description, then its genes, each separated by a tab. A spreadsheet saved as tab-separated text
-    will do. MSigDB publishes thousands of ready-made ones. If the sets name human genes, switch on
-    <b>map orthologs</b> and they are translated to their worm counterparts first. Then paste a gene list,
-    such as the genes that changed in your experiment, to test which sets it is enriched for, or paste
-    a ranked list to run GSEA against the same sets.
+    Input 1: a file in gene matrix transposed (GMT) format. It is plain text with one gene set per line:
+    the set name, a description, then the genes, each separated by a tab. A spreadsheet saved as tab-separated
+    text also works. The Molecular Signatures Database (MSigDB) publishes many ready-made GMT files. If
+    the sets contain human genes, switch on <b>map orthologs</b>. The genes are then translated to
+    their C. elegans orthologs first.
+    <br /><br />
+    Input 2: a gene list, such as the genes that changed in your experiment. The tool tests which sets
+    are over-represented in the list (over-representation analysis, ORA). Or paste a ranked list, one
+    score per gene. The tool then runs gene set enrichment analysis (GSEA) against the same sets.
   </PageHint>
 
   <Card>
     <CardHeader>
       <CardTitle class="text-xl">Custom gene sets</CardTitle>
       <div class="text-sm text-muted-foreground">
-        Paste or upload a GMT collection (MSigDB / Reactome / KEGG / custom WormCat exports) and run
-        over-representation or ranked-list enrichment against your genes. Set names work as term IDs
-        in results. Gene IDs are bulk-resolved to WBGene before analysis, so symbols and sequence
-        names both work.
+        Paste or upload a gene matrix transposed (GMT) collection, such as exports from the
+        Molecular Signatures Database (MSigDB), Reactome, the Kyoto Encyclopedia of Genes and
+        Genomes (KEGG) or WormCat, or your own. Then run over-representation analysis (ORA) or
+        ranked-list enrichment on your genes. Set names are used as term IDs in the results. Gene
+        IDs are converted to WormBase gene IDs (WBGene) before analysis, so gene symbols and
+        sequence names both work.
       </div>
     </CardHeader>
     <CardContent class="space-y-3">
@@ -432,10 +436,11 @@
         />
         <Button variant="ghost" size="sm" onclick={loadGmtExample}>Try example</Button>
         <ControlHint id="gmt-format" title="GMT format">
-          One set per line: <code
+          Gene matrix transposed (GMT) format has one set per line: <code
             >set_name &lt;tab&gt; description &lt;tab&gt; gene1 &lt;tab&gt; gene2 ...</code
-          >. Gene tokens can be WBGene IDs, sequence names, gene-class names, or even human symbols
-          (auto-resolved via WormBase orthologs). Drop a <code>.gmt</code> file here or use Load saved.
+          >. Genes can be WormBase gene IDs (WBGene), sequence names, gene-class names, or human
+          gene symbols (matched through WormBase orthologs). Drop a <code>.gmt</code> file here or use
+          Load saved.
         </ControlHint>
         {#if parsedSets.length > 0}
           <Badge variant="muted" class="text-[0.65rem]">
@@ -459,11 +464,13 @@
         <CardTitle class="inline-flex items-center gap-1.5 text-base">
           Run analysis
           <ControlHint id="gmt-mode" title="Over-representation vs ranked-list enrichment">
-            <b>Over-representation</b> (hypergeometric): tests whether your gene list overlaps each
-            custom set more than chance. Use when you have an already-filtered list of "interesting"
-            genes.<br /><br />
-            <b>Ranked-list enrichment</b> (preranked GSEA): walks the full ranked stat list, no cutoff.
-            Use when you have a signed score per gene (Wald stat, log2FC).
+            <b>Over-representation analysis (ORA)</b> uses the hypergeometric test. It tests whether
+            your gene list shares more genes with each custom set than expected by chance. Use it
+            when you already have a filtered list of genes, such as genes that passed a cutoff.<br
+            /><br />
+            <b>Ranked-list enrichment</b> is preranked gene set enrichment analysis (GSEA). It goes through
+            all genes in ranked order and needs no cutoff. Use it when you have a score with a sign for
+            every gene, such as the Wald statistic (the DESeq2 test score) or log2 fold change.
           </ControlHint>
         </CardTitle>
         <div class="mt-2 flex flex-wrap items-center gap-2">
@@ -508,7 +515,7 @@
             {#if selection.ids.length > 0}
               <Button
                 variant="outline"
-                title="Fill the gene list with your current selection"
+                title="Fill the gene list with the genes you selected on another page"
                 onclick={() => (geneListText = selection.ids.join('\n'))}
               >
                 From selection ({selection.ids.length})
@@ -553,7 +560,7 @@
       {#if enrichResults || gseaResults}
         <label
           class="inline-flex items-center gap-1 text-xs text-muted-foreground"
-          title="Hide terms above this q-value"
+          title="Hide terms with a q-value (p-value corrected for testing many terms) above this number"
         >
           <span>show q ≤</span>
           <input
@@ -606,9 +613,10 @@
     {#if resultCount === 0}
       <Card>
         <CardContent class="pt-6 text-sm text-muted-foreground">
-          No terms passed the filter for your input. With small gene lists, lower the input
-          threshold or check that your GMT gene IDs resolve (sequence names, symbols, and WBGene IDs
-          all work). For GSEA, sets smaller than min size 5 are dropped.
+          No terms passed the filter for your input. With a small gene list, lower the cutoff you
+          used to make the list. Also check that the genes in your GMT file are recognized (sequence
+          names, gene symbols and WormBase gene IDs all work). In GSEA, sets with fewer than 5 genes
+          are dropped.
         </CardContent>
       </Card>
     {:else if viewMode === 'plot'}
@@ -622,8 +630,8 @@
     {:else}
       {#if enrichResults && shownEnrich && shownEnrich.length > 0}
         <p class="mb-2 text-xs text-muted-foreground">
-          Universe: the {shownEnrich[0].N.toLocaleString()} genes across your sets, not the whole genome.
-          Fold enrichment is measured against that.
+          Background (the genes that count as possible hits): the {shownEnrich[0].N.toLocaleString()}
+          genes found in any of your sets, not the whole genome. Fold enrichment is measured against that.
         </p>
       {/if}
       <div class="overflow-x-auto rounded-lg border bg-card">
@@ -638,37 +646,38 @@
               {#if enrichResults}
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  title="k: genes from your list in this term. n: your genes carrying any annotation in this domain."
+                  title="k: genes from your list in this set. n: genes from your list found in any of your sets."
                   >k / n</th
                 >
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  title="K: genes in this set. N: the union of genes across all your sets, which is the universe here."
+                  title="K: genes in this set. N: all genes found in any of your sets, which is the background here."
                   >K / N</th
                 >
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  title="Observed over expected, (k/n) divided by (K/N). Above 1 means the term is over-represented."
+                  title="Fold enrichment: observed over expected, (k/n) divided by (K/N). Above 1 means the set is over-represented."
                   >fold</th
                 >
               {:else}
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  title="Genes in the set that are also present in your ranked list.">size</th
+                  title="Number of genes in the set that are also in your ranked list.">size</th
                 >
                 <th
                   class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  title="Enrichment score normalized by the permutation mean, so sets of different sizes compare."
+                  title="Normalized enrichment score (NES): the enrichment score divided by its mean under permutation, so sets of different sizes can be compared."
                   >NES</th
                 >
               {/if}
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                title="Raw permutation p-value, before correction for testing many sets.">p</th
+                title="Permutation p-value, before correction for testing many sets.">p</th
               >
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                title="Benjamini-Hochberg false discovery rate across every set tested.">q (BH)</th
+                title="q-value: p-value corrected with the Benjamini-Hochberg (BH) false discovery rate (FDR) method, across every set tested."
+                >q (BH)</th
               >
             </tr>
           </thead>

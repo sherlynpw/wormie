@@ -51,14 +51,19 @@
 
 <div class="space-y-3">
   <div class="flex flex-wrap items-center gap-3 text-sm">
-    <span>
+    <span
+      title="Residual degrees of freedom (df): samples minus fitted model terms. More means a more reliable variance estimate."
+    >
       {result.rows.length} sets tested · {nSig} with adjusted p &lt; 0.05 · {result.residualDf} residual
       df · limma {result.limmaVersion}
     </span>
-    <label class="inline-flex items-center gap-1">
+    <label
+      class="inline-flex items-center gap-1"
+      title="Show only gene sets with an adjusted p-value below 0.05"
+    >
       <input type="checkbox" bind:checked={onlySignificant} /> significant only
     </label>
-    <label>
+    <label title="Number of gene sets to show, best adjusted p-value first">
       Top
       <input
         type="number"
@@ -78,11 +83,27 @@
       <thead class="text-left text-muted-foreground">
         <tr>
           <th class="py-1 pr-3">Set</th>
-          <th class="py-1 pr-3">Genes</th>
-          <th class="py-1 pr-3 text-right">{estimateLabel}</th>
-          {#if single}<th class="py-1 pr-3 text-right">t</th>{/if}
-          <th class="py-1 pr-3 text-right">p</th>
-          <th class="py-1 pr-3 text-right">adj. p</th>
+          <th class="py-1 pr-3" title="Genes of the set found in your matrix">Genes</th>
+          <th
+            class="py-1 pr-3 text-right"
+            title={single
+              ? 'Size and direction of the change in score'
+              : 'F statistic: how much the scores differ between levels, relative to the variation within levels'}
+            >{estimateLabel}</th
+          >
+          {#if single}<th
+              class="py-1 pr-3 text-right"
+              title="t statistic: the estimate divided by its standard error">t</th
+            >{/if}
+          <th
+            class="py-1 pr-3 text-right"
+            title="p-value before adjustment for testing many gene sets">p</th
+          >
+          <th
+            class="py-1 pr-3 text-right"
+            title="p-value adjusted across gene sets by the Benjamini-Hochberg method (false discovery rate)"
+            >adj. p</th
+          >
         </tr>
       </thead>
       <tbody>

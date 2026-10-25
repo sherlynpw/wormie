@@ -81,14 +81,14 @@
 <div class="space-y-3">
   <div class="flex flex-wrap items-center gap-3 text-sm">
     <span>{results.length} sets · {sampleNames.length} samples</span>
-    <label>
+    <label title="Order the rows by the variance of their scores across samples, or by term ID">
       Sort
       <select class="ml-1 rounded border bg-background px-1 py-0.5" bind:value={sortKey}>
         <option value="var">variance ↓</option>
         <option value="term">term_id</option>
       </select>
     </label>
-    <label>
+    <label title="Number of gene sets to show">
       Top
       <input
         type="number"
@@ -102,7 +102,9 @@
       >Export TSV</button
     >
     <PlotExportMenu getSvg={() => svgEl} baseName="ssgsea_scores" />
-    <span class="text-muted-foreground">colormap: purple (low) ↔ 0 ↔ orange (high)</span>
+    <span class="text-muted-foreground"
+      >Color: purple for low scores, orange for high scores, 0 in between</span
+    >
   </div>
 
   <div class="overflow-x-auto">

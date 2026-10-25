@@ -161,7 +161,7 @@
               <div
                 class="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                Concise desc.
+                Concise description
               </div>
               <div class="font-semibold">{overview.n_with_concise} / {overview.n_selected}</div>
             </div>
@@ -169,7 +169,7 @@
               <div
                 class="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                With GO
+                With Gene Ontology (GO) terms
               </div>
               <div class="font-semibold">{overview.n_with_go} / {overview.n_selected}</div>
               <div class="text-[0.65rem] text-muted-foreground">
@@ -188,7 +188,7 @@
               <div
                 class="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                Legacy desc.
+                Legacy description
               </div>
               <div class="font-semibold">{overview.n_with_legacy} / {overview.n_selected}</div>
             </div>
@@ -245,7 +245,8 @@
           </div>
         {:else if selection.ids.length > 100}
           <div class="border-t pt-3 text-xs italic text-muted-foreground">
-            CeNGEN heatmap omitted (selection has >100 genes; render would be cramped).
+            The CeNGEN (C. elegans Neuronal Gene Expression Network) heatmap is not shown for more
+            than 100 genes, because it would be too crowded.
           </div>
         {/if}
 

@@ -50,7 +50,8 @@
 {:else}
   <div class="mb-2 flex items-center justify-between">
     <div class="text-xs text-muted-foreground">
-      Showing {genes.length.toLocaleString()} genes (virtualized).
+      Showing {genes.length.toLocaleString()} genes. Only the rows in view are drawn, to keep the page
+      fast.
     </div>
     <button
       type="button"

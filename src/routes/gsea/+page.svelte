@@ -312,16 +312,16 @@
         }
         if (negs === 0 && pos > 0) {
           toast.warning('All scores are positive', {
-            description: `GSEA needs signed scores (e.g. DESeq2 stat). abs(stat) / -log10(padj) / padj will not produce meaningful enrichment. Range: ${min.toFixed(2)} to ${max.toFixed(2)}`,
+            description: `Ranked-list enrichment needs signed scores, for example the DESeq2 stat. Absolute values, -log10(padj) and padj give no meaningful result. Range: ${min.toFixed(2)} to ${max.toFixed(2)}`,
           });
         } else if (pos === 0 && negs > 0) {
           toast.warning('All scores are negative', {
-            description: `GSEA needs both up and down signals. Did you negate the score column? Range: ${min.toFixed(2)} to ${max.toFixed(2)}`,
+            description: `The scores need both positive and negative values. Did you negate the score column? Range: ${min.toFixed(2)} to ${max.toFixed(2)}`,
           });
         } else if (zeros > resolved.length * 0.3) {
           toast.warning(`${zeros} of ${resolved.length} scores are zero`, {
             description:
-              'Many tied zeros will compress the ranked walk. Prefer DESeq2 stat over padj.',
+              'Genes tied at 0 keep the order you pasted them in. Rank by the DESeq2 Wald statistic (stat), which has fewer ties than the adjusted p-value (padj).',
           });
         }
       }
@@ -371,7 +371,7 @@
         variant="outline"
         size="sm"
         href={resolve('/gsea/intersect')}
-        title="Terms recurring across saved GSEA runs (bundles)"
+        title="Gene sets that pass in several saved ranked-list runs (bundles) with the same direction"
       >
         Ranked-list consensus
       </Button>
@@ -380,29 +380,35 @@
 
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Ranked-list enrichment</h1>
-    <p class="text-sm text-muted-foreground">Gene sets concentrated at one end of a ranking</p>
+    <p class="text-sm text-muted-foreground">
+      Gene sets whose members sit near the top or bottom of a ranked gene list
+    </p>
   </header>
 
   <PageHint id="gsea" title="What this step does">
     Over-representation needs you to draw a line: a gene is in your list or it is not. That throws
     away everything just below the line, and a real but modest response often leaves no single gene
     significant. Ranked-list enrichment (preranked GSEA) draws no line. Order every gene by a
-    statistic — usually the one from a differential expression run, where the largest positive
-    values are the most convincingly up and the largest negative the most convincingly down — then,
-    for each gene set, ask whether its members cluster near one end of that ordering or are
-    scattered through it. A set whose genes all shift a little together will show up here and not in
-    an over-representation test. Each set gets a <b>NES</b> (positive means shifted toward the top of
-    your ranking, negative toward the bottom) and a q-value; for GSEA q ≤ 0.25 is the conventional cutoff,
-    deliberately looser than the 0.05 used elsewhere. Click any set to see where its genes fell.
+    statistic (usually the one from a differential expression run, where the largest positive values
+    are the most convincingly up and the largest negative the most convincingly down). Then, for
+    each gene set, ask whether its members cluster near one end of that ordering or are scattered
+    through it. A set whose genes all shift a little together will show up here and not in an
+    over-representation test. Each set gets a <b>normalized enrichment score (NES)</b> (positive means
+    shifted toward the top of your ranking, negative toward the bottom) and a q-value (p-value adjusted
+    for testing many sets, the false discovery rate). For gene set enrichment analysis (GSEA), a q-value
+    of 0.25 or lower is the usual cutoff, looser than the 0.05 used elsewhere. Click any set to see where
+    its genes fell.
   </PageHint>
 
   <Card>
     <CardHeader>
       <CardTitle class="text-xl">Ranked-list enrichment</CardTitle>
       <div class="text-sm text-muted-foreground">
-        Weighted running enrichment score (Subramanian et al. 2005), gene-set permutation for
-        p-values (fgsea-style preranked). Paste a ranked list of (gene, score). Score is typically
-        the Wald statistic from a DESeq2 contrast (recommended) or log2 fold-change.
+        Paste a ranked list with one gene and one score per line. Each gene set gets a running
+        enrichment score (Subramanian et al. 2005): a sum that steps up at each member of the set
+        and down at each non-member. P-values come from permutations, as in fgsea (an R package for
+        fast preranked GSEA). The score is typically the Wald statistic from a DESeq2 contrast
+        (recommended) or the log2 fold change.
       </div>
     </CardHeader>
     <CardContent class="space-y-3">
@@ -424,7 +430,7 @@
           <Input bind:value={scoreCol} type="number" min="1" class="h-8 w-20 text-sm" />
         </label>
         <div class="ml-auto text-xs text-muted-foreground">
-          Tab-, comma-, or whitespace-separated. Header row auto-detected.
+          Tab-, comma-, or whitespace-separated. A header row is detected automatically.
           <button type="button" onclick={loadExample} class="ml-2 text-primary hover:underline">
             Try example
           </button>
@@ -464,9 +470,9 @@
           {resolving ? 'Resolving...' : 'Resolve & run'}
         </Button>
         <ControlHint id="gsea-resolve" title="Resolve & run">
-          Maps gene names → WBGene IDs, then auto-runs GSEA on the active term kind. Subsequent tab
-          switches (GO → Phenotype → WormCat ...) reuse the same ranked list. Cached so identical
-          runs return instantly.
+          Maps gene names to WormBase gene IDs (WBGene), then runs gene set enrichment analysis
+          (GSEA) on the active term kind. Switching to another tab (GO, Phenotype, WormCat, ...)
+          reuses the same ranked list. Results are cached, so an identical run returns at once.
         </ControlHint>
         {#if ranked.length > 0}
           <span class="text-xs text-muted-foreground">
@@ -477,9 +483,9 @@
             Share link
           </Button>
           <ControlHint id="gsea-share" title="Share link">
-            Copies a self-contained URL whose <code>#b=...</code> fragment is a gzipped base64 of your
-            ranked list. Opening the URL restores everything. The fragment stays in the browser, never
-            sent to a server.
+            Copies a URL that holds your ranked list in its <code>#b=...</code> part (compressed with
+            gzip, then written as base64 text). Opening the URL restores the analysis. The browser never
+            sends that part to a server.
           </ControlHint>
         {/if}
       </div>

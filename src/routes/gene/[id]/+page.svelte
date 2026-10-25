@@ -572,10 +572,11 @@
     {/if}
 
     <PageHint id="gene-detail" title="What's on this page">
-      Concise + automated descriptions, gene class, sequence/Entrez/Reactome cross-links, curated GO
-      annotations (direct, not propagated), phenotypes from RNAi+allele data, expression patterns,
-      interactions, orthologs, and citations. Hover any other gene or term to preview without
-      leaving the page.
+      Everything the database holds for one gene: descriptions, gene class, links to other
+      databases, Gene Ontology (GO) annotations, phenotypes from RNA interference (RNAi) and allele
+      (mutant) experiments, expression, interactions, orthologs (matching genes in other species),
+      and citations. GO annotations shown are the ones curated for this gene, not inherited from
+      parent terms. Hover over any other gene or term to preview it without leaving the page.
     </PageHint>
 
     {#if loading}
@@ -632,7 +633,7 @@
                   )}&tracks=Curated_Genes"
                   target="_blank"
                   rel="noopener"
-                  title="Genetic map position (interpolated, as WormBase reports it) and WBcel235 coordinates; opens this region in the WormBase genome browser"
+                  title="Genetic map position in centimorgans (cM), estimated by WormBase from nearby mapped genes, and genome coordinates in the WBcel235 assembly. Opens this region in the WormBase genome browser"
                 >
                   {#if gene.cm != null}
                     {gene.chromosome}:{gene.cm.toFixed(2)} cM
@@ -678,18 +679,22 @@
               <Badge variant="muted">{gene.gene_type}</Badge>
             {/if}
             {#if modelSummary}
-              <Badge variant="outline" title="Transcripts in the WormBase canonical gene set"
+              <Badge
+                variant="outline"
+                title="Number of transcripts in the WormBase canonical gene set"
                 >{modelSummary.n} {modelSummary.n === 1 ? 'transcript' : 'isoforms'}</Badge
               >
               <Badge variant="outline" title="Exons per transcript"
                 >{modelSummary.exons} exons</Badge
               >
               {#if modelSummary.aa}
-                <Badge variant="outline" title="Protein length across isoforms"
+                <Badge variant="outline" title="Protein length in amino acids (aa), across isoforms"
                   >{modelSummary.aa} aa</Badge
                 >
               {:else}
-                <Badge variant="outline" title="Transcript length">{modelSummary.nt} nt</Badge>
+                <Badge variant="outline" title="Transcript length in nucleotides (nt)"
+                  >{modelSummary.nt} nt</Badge
+                >
               {/if}
             {/if}
             {#if gene.status && gene.status !== 'Live'}
@@ -795,9 +800,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Gene model
               <ControlHint id="gene-model" title="Gene model">
-                Transcripts of this gene in the WormBase canonical gene set for this build's
-                release, with exon count, spliced length and coding length. Protein length is the
-                coding length divided by three. Isoform letters follow the WormBase sequence name.
+                The transcripts of this gene in the WormBase canonical gene set for this database
+                release. Each row gives the exon count, the spliced length (exons only) and the
+                coding length. Protein length is the coding length divided by three. Isoform letters
+                follow the WormBase sequence name.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">{transcripts.length}</span>
@@ -853,11 +859,12 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Protein domains
               <ControlHint id="gene-domains" title="Protein domains">
-                Domains and families found on this gene's proteins by InterProScan, as WormBase
-                distributes them: InterPro entries first, then the member databases (Pfam, SMART,
-                PANTHER, SUPERFAMILY, PROSITE, PRINTS). An accession opens the search for every gene
-                carrying it; the Protein domains enrichment kind tests a gene list against the
-                InterPro entries.
+                Protein domains and families found on this gene's proteins by InterProScan, a
+                program that scans protein sequences against domain databases. The list is as
+                WormBase distributes it: InterPro entries first, then the member databases (Pfam,
+                SMART, PANTHER, SUPERFAMILY, PROSITE, PRINTS). Clicking an accession (the entry ID)
+                searches for every gene with that domain. The Protein domains option in the
+                over-representation tool tests a gene list against the InterPro entries.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">{domains.length}</span>
@@ -890,8 +897,9 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Phylogenetic footprint
               <ControlHint id="gene-phylo" title="Phylogenetic footprint">
-                Conservation across model organisms via Alliance ortholog calls. Bar indicates
-                whether a high-confidence one-to-one ortholog exists in each species.
+                Shows which model organisms have an ortholog (the matching gene in another species)
+                of this gene, using ortholog calls from the Alliance of Genome Resources. A star on
+                a tile means a high-confidence one-to-one ortholog exists in that species.
               </ControlHint>
             </CardTitle>
           </CardHeader>
@@ -920,7 +928,7 @@
                   </span>
                   <span class="text-[0.6rem] text-muted-foreground">{p.short}</span>
                   {#if p.tier === 'none'}
-                    <span class="font-mono text-[0.6rem] text-muted-foreground">—</span>
+                    <span class="font-mono text-[0.6rem] text-muted-foreground">-</span>
                   {:else}
                     <span
                       class="inline-flex items-center gap-0.5 font-mono text-[0.6rem] tabular-nums"
@@ -935,9 +943,9 @@
               {/each}
             </div>
             <div class="mt-2 text-[0.65rem] text-muted-foreground">
-              <span class="font-semibold">★</span> = high-confidence one-to-one ortholog flagged by Alliance.
-              Lighter tiles have orthologs but no best-score call; dashed tiles have none. Hover any tile
-              for best-score symbols.
+              <span class="font-semibold">★</span> = high-confidence one-to-one ortholog flagged by the
+              Alliance of Genome Resources. Lighter tiles have orthologs but no best-score call. Dashed
+              tiles have none. Hover over a tile to see the best-score gene symbols.
             </div>
           </CardContent>
         </Card>
@@ -947,9 +955,9 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Orthologs
               <ControlHint id="gene-orthologs" title="Orthologs">
-                Per-species ortholog calls with the originating prediction algorithms (InParanoid,
-                OrthoFinder, PANTHER, Compara, etc.) and the count of supporting methods. The
-                Alliance "best" call is highlighted.
+                Orthologs in each species, with the prediction methods that support each call (for
+                example InParanoid, OrthoFinder, PANTHER, Compara) and how many methods agree. The
+                Alliance of Genome Resources "best" call, its top-scoring ortholog, is highlighted.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -1031,8 +1039,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               External resources
               <ControlHint id="gene-external" title="External resources">
-                Cross-references from WormBase: UniProt (protein), RefSeq (NCBI transcript), INSDC
-                (sequence). Click any to jump to the canonical record.
+                Links to this gene's records in other databases, taken from WormBase: UniProt
+                (protein), RefSeq (National Center for Biotechnology Information (NCBI) transcript
+                records) and the International Nucleotide Sequence Database Collaboration (INSDC)
+                (sequence records). Click one to open that record.
               </ControlHint>
             </CardTitle>
           </CardHeader>
@@ -1110,9 +1120,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Alleles
               <ControlHint id="gene-alleles" title="Alleles">
-                Alleles of this gene with recorded phenotypes, by WormBase allele name (WBVar ID on
-                hover), with how many phenotypes each has. Each links to its WormBase variation
-                page, which describes the molecular change.
+                Alleles (mutant versions) of this gene that have recorded phenotypes, listed by
+                WormBase allele name, with the number of phenotypes for each. Hover to see the
+                WormBase variation ID (WBVar ID). Each allele links to its WormBase variation page,
+                which describes the molecular change.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -1201,9 +1212,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Phenotypes
               <ControlHint id="gene-pheno" title="Phenotypes">
-                Phenotypes observed when this gene is perturbed (RNAi or allele). Grouped by
-                phenotype ontology term; numbers indicate distinct alleles/experiments. Hover any
-                term for the WBPhenotype definition.
+                Phenotypes seen when this gene is perturbed by RNA interference (RNAi) or by an
+                allele (a mutant version of the gene). Each phenotype is a term from the WormBase
+                Phenotype Ontology (WBPhenotype). The number is how many distinct alleles or
+                experiments support the term. Hover over a term to see its definition.
               </ControlHint>
             </CardTitle>
             {@const rnaiOnlyCount = phenotypes.filter((p) => p.n_alleles === 0).length}
@@ -1318,9 +1330,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Human diseases
               <ControlHint id="gene-diseases" title="Disease associations">
-                Disease Ontology (DOID) terms linked to this gene by the Alliance of Genome
-                Resources, inferred via human ortholog or assigned directly by WB curators. Number
-                is the count of supporting evidence rows.
+                Disease Ontology (DO) terms linked to this gene by the Alliance of Genome Resources.
+                A link is either inferred from the human ortholog (the matching human gene) or
+                assigned directly by WormBase curators. The number is how many evidence records
+                support the link.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -1366,9 +1379,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               GO annotations
               <ControlHint id="gene-go-list" title="GO annotations">
-                Direct curated GO terms (no ancestor propagation), grouped by namespace and sorted
-                by evidence-code reliability (experimental first). Hover any term for its
-                definition.
+                Gene Ontology (GO) terms curated directly for this gene. Terms inherited from parent
+                terms are not included. Terms are grouped by GO namespace (biological process,
+                molecular function or cellular component) and sorted by evidence type, with
+                experimental evidence first. Hover over a term to see its definition.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">{goAnnotations.length}</span>
@@ -1438,8 +1452,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               WormCat
               <ControlHint id="gene-wormcat" title="WormCat classification">
-                WormCat 2.0 functional category, three levels deep. Used by /enrichment and /gsea as
-                a coarser, worm-specific alternative to GO.
+                The WormCat 2.0 functional category of this gene, in up to three levels. WormCat is
+                a set of categories made for C. elegans genes. They are broader than Gene Ontology
+                (GO) terms. The over-representation tool and the ranked-list enrichment tool can
+                test them.
               </ControlHint>
             </CardTitle>
           </CardHeader>
@@ -1473,8 +1489,9 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Neuronal classification
               <ControlHint id="gene-neuronal" title="Neuronal classification">
-                Hobert-lab catalogue of neuronal genes, classified by function (transcription
-                factor, neuropeptide, receptor, etc.) and by supercategory.
+                The Hobert lab's catalogue of neuronal genes. Each gene is classed by function (for
+                example transcription factor, neuropeptide or receptor) and by a broader
+                supercategory.
               </ControlHint>
             </CardTitle>
           </CardHeader>
@@ -1504,15 +1521,15 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Synapse development and function panel
               <ControlHint id="gene-synaptogenesis" title="Synapse development and function panel">
-                178 genes in 12 functional classes, from activity-regulated transcription through
-                synaptic machinery to neurotransmitter identity. The papers listed are the primary
-                research articles this gene was curated from; the reviews behind each class are on
-                the panel view.
+                A curated panel of 178 genes in 12 functional classes, from activity-regulated
+                transcription through synaptic machinery to neurotransmitter identity. The papers
+                listed are the primary research articles this gene was curated from. The reviews
+                behind each class are on the panel view.
               </ControlHint>
             </CardTitle>
             <div class="text-xs text-muted-foreground">
-              Curated from the literature by the Richardson Lab. Not exhaustive and may contain
-              errors; corrections are welcome.
+              Curated from the literature by the Richardson Lab. The list is not complete and may
+              contain errors. Corrections are welcome.
             </div>
           </CardHeader>
           <CardContent class="space-y-3 pt-0">
@@ -1543,7 +1560,7 @@
                           href={synaptoDoiHref(r.doi)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
+                          title={`${r.authors} (${r.year}): ${fmtTitle(r.title)}. ${r.journal}`}
                           class="inline-block rounded border bg-background px-1.5 py-0.5 text-[0.65rem] text-muted-foreground hover:bg-accent"
                         >
                           {synaptoRefLabel(r)}
@@ -1605,14 +1622,17 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Expression across life stages
               <ControlHint id="gene-stages" title="Expression across life stages">
-                Median FPKM per stage over the RNA-seq libraries WormBase classes as controls (wild
-                type, untreated), the grey bars of the WormBase expression plot. Reads were aligned
-                with STAR and quantified with cufflinks by WormBase; n is the number of libraries
-                behind each bar. Stages with no control library are left out.
+                Median expression per life stage, in fragments per kilobase of transcript per
+                million mapped reads (FPKM). It uses the RNA-seq libraries that WormBase classes as
+                controls (wild type, untreated), which are the grey bars of the WormBase expression
+                plot. WormBase aligned the reads with STAR and quantified them with cufflinks. n is
+                the number of libraries behind each bar. Stages with no control library are left
+                out.
               </ControlHint>
             </CardTitle>
             <div class="text-xs text-muted-foreground">
-              When this gene is expressed, from the WormBase control RNA-seq set.
+              Expression of this gene at each life stage, from the WormBase control RNA sequencing
+              (RNA-seq) libraries.
             </div>
           </CardHeader>
           <CardContent class="pt-0">
@@ -1632,9 +1652,10 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Tissue expression
               <ControlHint id="gene-tissue" title="Tissue expression">
-                From the Alliance expression atlas (modENCODE + EBI Expression Atlas aggregates),
-                mapped to WormBase Anatomy (WBbt) terms. Reflects published in-situ and RNA-seq
-                calls.
+                Tissues where this gene is expressed, from the Alliance of Genome Resources
+                expression data (modENCODE and European Bioinformatics Institute (EBI) Expression
+                Atlas), mapped to WormBase Anatomy (WBbt) terms. It reflects published in situ
+                (staining in the whole animal) and RNA sequencing (RNA-seq) calls.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -1685,12 +1706,14 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Neuronal expression (CeNGEN L4)
               <ControlHint id="gene-cengen" title="CeNGEN L4 expression">
-                Bars show CeNGEN's integrated expression for the 52 neuron types sequenced in bulk
-                after sorting, with transcripts that leaked in from other cell types subtracted
-                using the single-cell atlas (Barrett et al. 2025); dots are the single-cell
-                threshold calls for all 128 classes. The bulk values are deeper but not the same
-                quantity as the per-neuron TPM in CeNGEN's single-cell app, so compare ranks within
-                a neuron rather than numbers.
+                Expression in L4 larval neurons from CeNGEN (C. elegans Neuronal Gene Expression
+                Network). Bars show the combined expression for the 52 neuron types sequenced in
+                bulk after sorting. Transcripts that leaked in from other cell types are subtracted
+                using the single-cell atlas (Barrett et al. 2025). Dots are the single-cell
+                threshold calls (expressed or not) for all 128 neuron classes. The bulk values
+                detect more genes, but they are not the same quantity as the transcripts per million
+                (TPM) in the CeNGEN single-cell app. Compare ranks within one neuron, not the
+                numbers.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -1716,8 +1739,9 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Interactions
               <ControlHint id="gene-interactions" title="Interactions">
-                BioGRID physical + genetic interactions. Click any partner to recenter, or open the
-                interactive network view for the local neighborhood.
+                Physical and genetic interactions from the Biological General Repository for
+                Interaction Datasets (BioGRID). Click a partner gene to make it the center, or open
+                the network view to see the genes around this one.
               </ControlHint>
             </CardTitle>
             <div class="flex items-center gap-3">
@@ -1813,18 +1837,20 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Similar genes
               <ControlHint id="gene-similar" title="Similar genes">
-                Ranked by shared GO and WormCat annotations, both IDF-weighted so a rare category
-                counts for more than a broad one, plus shared neuronal categories and interaction
-                partners. GO ancestors count at reduced weight and only a few levels up, so
-                similarity isn't dominated by trivial parents.
+                Genes ranked by how many annotations they share with this gene: Gene Ontology (GO)
+                terms and WormCat categories, plus neuronal categories and interaction partners. GO
+                and WormCat matches are weighted by inverse document frequency (IDF), so a rare
+                category counts for more than a broad one. Parent GO terms count at reduced weight
+                and only a few levels up, so broad parent terms do not dominate.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
               showing {Math.min(similarShown, similar.length)} of top {similar.length} ranked
             </span>
             <div class="text-xs text-muted-foreground">
-              Ranked by IDF-weighted shared GO terms (with is_a ancestors) and WormCat categories,
-              plus shared neuronal categories and interaction partners.
+              Ranked by shared Gene Ontology (GO) terms (including parent terms) and WormCat
+              categories, plus shared neuronal categories and interaction partners. Rare terms count
+              for more.
             </div>
           </CardHeader>
           <CardContent class="space-y-2 pt-0">
@@ -1842,7 +1868,7 @@
                       <Badge
                         variant="muted"
                         class="px-1 py-0 text-[0.55rem] tabular-nums"
-                        title="Direct GO terms shared (IDF-weighted score: {s.shared_go_score.toFixed(
+                        title="Gene Ontology (GO) terms shared directly (inverse-document-frequency-weighted score: {s.shared_go_score.toFixed(
                           1,
                         )})"
                       >
@@ -1911,11 +1937,13 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Co-expressions across neuron types
               <ControlHint id="gene-cengen-coexpr" title="CeNGEN co-expression">
-                Genes whose expression across CeNGEN's 52 bulk-sequenced neuron types best matches
-                this gene (Pearson on log1p TMM). A pair is kept only if it is significant at p &lt;
-                0.001 and each gene is among the other's 200 strongest partners. Rows are ordered by
+                Genes with a similar expression pattern to this gene across the 52 neuron types that
+                CeNGEN (C. elegans Neuronal Gene Expression Network) sequenced in bulk. The
+                similarity is the Pearson correlation of log1p (log of 1 plus the value) of trimmed
+                mean of M-values (TMM) normalized expression. A pair is kept only if p &lt; 0.001
+                and each gene is among the other's 200 strongest partners. Rows are ordered by
                 mutual rank, so #3/#4 is a tighter pair than #3/#180. A gene can appear here with no
-                expression card above, which shows only values over 0.5 TMM.
+                expression card above, because that card shows only values over 0.5 TMM.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -1958,13 +1986,14 @@
             </div>
             {#if coexprFiltered.length === 0}
               <div class="text-xs italic text-muted-foreground">
-                No co-expressed neighbors meet the filter. Try a looser threshold or "all (global)".
+                No co-expressed genes meet the filter. Try a looser threshold or choose "(all,
+                global)".
               </div>
             {:else}
               <div class="grid grid-cols-[auto_auto_1fr] items-baseline gap-x-3 gap-y-1 text-xs">
                 <span
                   class="cursor-help text-right text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  title="Pearson correlation on log1p(expression) across CeNGEN’s 52 bulk-sequenced neuron types.&#10;Scale (higher = more similar expression pattern):&#10;  1.00&#9;identical pattern&#10;  0.8 – 0.99&#9;very tight: same neuron-type specificity&#10;  0.5 – 0.8&#9;strong: shared dominant neuron classes&#10;  0.3 – 0.5&#9;moderate: overlapping but distinct programs&#10;  0.1 – 0.3&#9;weak: barely above coincidence"
+                  title="Pearson correlation (how closely two expression patterns rise and fall together) of log1p (log of 1 plus the value) expression across the 52 neuron types that CeNGEN (C. elegans Neuronal Gene Expression Network) sequenced in bulk.&#10;Scale (higher = more similar expression pattern):&#10;  1.00&#9;identical pattern&#10;  0.8 to 0.99&#9;very tight: same neuron-type specificity&#10;  0.5 to 0.8&#9;strong: shared dominant neuron classes&#10;  0.3 to 0.5&#9;moderate: overlapping but distinct programs&#10;  0.1 to 0.3&#9;weak: barely above coincidence"
                 >
                   Pearson
                 </span>
@@ -2034,8 +2063,8 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               References
               <ControlHint id="gene-refs" title="References">
-                Publications citing this gene, aggregated from GO and phenotype annotation
-                references. Skips curation-only refs (GO_REF:*).
+                Publications cited for this gene in its Gene Ontology (GO) and phenotype
+                annotations. References used only for curation (GO_REF:*) are left out.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -2044,7 +2073,8 @@
           </CardHeader>
           <CardContent class="pt-0">
             <div class="mb-2 text-[0.65rem] text-muted-foreground">
-              Top papers cited across GO annotations and allele-mediated phenotypes for this gene.
+              The papers cited most often in this gene's Gene Ontology (GO) annotations and allele
+              phenotypes.
             </div>
             <div class="flex flex-col divide-y">
               {#each papersExpanded ? papers : papers.slice(0, CHIP_LIMIT) as p (p.reference)}
@@ -2099,8 +2129,9 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               All literature
               <ControlHint id="gene-literature" title="All literature">
-                Comprehensive list of publications linked to this gene by NCBI (gene2pubmed),
-                resolved to titles and DOIs where available.
+                All publications that the National Center for Biotechnology Information (NCBI) links
+                to this gene (from its gene2pubmed file), with titles and digital object identifiers
+                (DOIs) where available.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">

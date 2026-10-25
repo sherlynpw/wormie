@@ -116,12 +116,12 @@
         bind:value={noteValue}
         onkeydown={onKey}
         rows="4"
-        placeholder="Personal note (private, browser-only). ⌘+Enter saves, Esc cancels."
+        placeholder="Personal note. It stays private in this browser. Cmd+Enter (Ctrl+Enter on Windows) saves, Esc cancels."
         class="w-full resize-y rounded border bg-background px-2 py-1.5 text-sm"
       ></textarea>
       <div class="space-y-1">
         <div class="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground">
-          Tags (comma-separated, lowercase)
+          Tags (separated by commas, lowercase)
         </div>
         <input
           bind:value={tagsValue}

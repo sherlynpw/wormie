@@ -107,7 +107,7 @@
   {/if}
   {#if rows.length === 0 || cols.length === 0}
     <div class="py-4 text-center text-xs italic text-muted-foreground">
-      No terms with overlap data.
+      No terms have genes from your list to show.
     </div>
   {:else}
     <svg
@@ -191,11 +191,11 @@
     <div class="mt-2 flex flex-wrap items-center gap-3 text-[0.6rem] text-muted-foreground">
       <span class="inline-flex items-center gap-1">
         <span class="inline-block h-2 w-4" style="background: {rangeColor(0)}"></span>
-        weak (high q)
+        weaker (higher q-value)
       </span>
       <span class="inline-flex items-center gap-1">
         <span class="inline-block h-2 w-4" style="background: {rangeColor(1)}"></span>
-        strong (low q)
+        stronger (lower q-value)
       </span>
       <span class="ml-auto font-mono">{rows.length} terms × {cols.length} genes</span>
     </div>

@@ -80,12 +80,16 @@
       />
     </label>
     <label class="inline-flex items-center gap-1">
-      <input type="checkbox" bind:checked={onlyExperimental} /> experimental evidence only
+      <input type="checkbox" bind:checked={onlyExperimental} /> only partners with experimental evidence
     </label>
   </div>
 
   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.65rem] text-muted-foreground">
-    <span>Evidence channels, left to right:</span>
+    <span
+      >STRING (Search Tool for the Retrieval of Interacting Genes/Proteins) predicts protein
+      interactions. The score runs from 0 to 1000, and higher means more confidence. Bars show the
+      score from each of seven evidence channels, left to right:</span
+    >
     {#each CHANNELS as ch (ch.key)}
       <span class="inline-flex cursor-help items-center gap-1" title={ch.desc}>
         <span class="inline-block h-2.5 w-2.5 rounded-[2px]" style="background-color: {ch.color}"

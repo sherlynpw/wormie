@@ -39,8 +39,8 @@
       {/each}
     </div>
     <div class="text-[0.6rem] text-muted-foreground">
-      Bar = relative evidence count vs the largest category. Numbers: distinct child terms / total
-      evidence rows.
+      Bar length: evidence records compared with the largest category. Numbers: distinct child
+      phenotype terms, then total evidence records.
     </div>
   </div>
 {/if}

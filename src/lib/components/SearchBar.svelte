@@ -360,45 +360,73 @@
     {
       label: 'Annotations',
       ops: [
-        { key: 'go', example: 'go:apoptosis', help: 'GO term (name or ID)' },
-        { key: 'cat', example: 'cat:"cell cycle"', help: 'WormCat category (quote multi-word)' },
-        { key: 'pheno', example: 'pheno:locomotion', help: 'WBPhenotype term' },
-        { key: 'neuronal', example: 'neuronal:GABA', help: 'Neuronal classification' },
+        { key: 'go', example: 'go:apoptosis', help: 'Gene Ontology (GO) term, by name or ID' },
+        {
+          key: 'cat',
+          example: 'cat:"cell cycle"',
+          help: 'WormCat category (put multi-word names in quotes)',
+        },
+        {
+          key: 'pheno',
+          example: 'pheno:locomotion',
+          help: 'Term from the WormBase Phenotype Ontology (WBPhenotype)',
+        },
+        {
+          key: 'neuronal',
+          example: 'neuronal:GABA',
+          help: 'Neuronal gene classification from the Hobert lab catalogue',
+        },
         {
           key: 'syn',
           example: 'syn:innexin',
-          help: 'Synapse panel class / subclass / notes (quote multi-word)',
+          help: 'Synapse panel class, subclass or notes (put multi-word text in quotes)',
         },
       ],
     },
     {
       label: 'Expression',
       ops: [
-        { key: 'expressed', example: 'expressed:AVA', help: 'Expressed in a CeNGEN neuron class' },
-        { key: 'tissue', example: 'tissue:neuron', help: 'WBbt anatomy term' },
+        {
+          key: 'expressed',
+          example: 'expressed:AVA',
+          help: 'Expressed in a neuron class of CeNGEN (C. elegans Neuronal Gene Expression Network)',
+        },
+        {
+          key: 'tissue',
+          example: 'tissue:neuron',
+          help: 'Term from the WormBase anatomy ontology (WBbt)',
+        },
       ],
     },
     {
       label: 'Conservation',
       ops: [
-        { key: 'ortho', example: 'ortho:human', help: 'Has an ortholog in this species / symbol' },
+        {
+          key: 'ortho',
+          example: 'ortho:human',
+          help: 'Has an ortholog (matching gene) in this species, or with this gene symbol',
+        },
         {
           key: 'domain',
           example: 'domain:forkhead',
-          help: 'Protein domain (name or Pfam / InterPro accession)',
+          help: 'Protein domain, by name or by Pfam or InterPro accession (entry ID)',
         },
       ],
     },
     {
       label: 'Identifiers',
       ops: [
-        { key: 'name', example: 'name:daf*', help: 'Gene name / synonym (FTS)' },
-        { key: 'seq', example: 'seq:Y110A7A.10', help: 'Sequence name (FTS)' },
-        { key: 'wb', example: 'wb:WBGene00000912', help: 'WBGene ID (exact, or wb~ for a glob)' },
+        { key: 'name', example: 'name:daf*', help: 'Gene name or synonym (full-text search, FTS)' },
+        { key: 'seq', example: 'seq:Y110A7A.10', help: 'Sequence name (full-text search, FTS)' },
+        {
+          key: 'wb',
+          example: 'wb:WBGene00000912',
+          help: 'WormBase gene ID (WBGene ID), exact match. Use wb~ for a wildcard',
+        },
         { key: 'chr', example: 'chr:X', help: 'Chromosome (I to V, X, MtDNA)' },
         { key: 'desc', example: 'desc:insulin', help: 'Any description field' },
-        { key: 'allele', example: 'allele:e1370', help: 'Allele ID / symbol' },
-        { key: 'type', example: 'type:protein_coding', help: 'Biotype' },
+        { key: 'allele', example: 'allele:e1370', help: 'Allele (mutant version) ID or symbol' },
+        { key: 'type', example: 'type:protein_coding', help: 'Gene type, such as protein_coding' },
       ],
     },
   ];
@@ -596,7 +624,7 @@
               type="button"
               onclick={() => insertOp(op.key)}
               class="inline-flex items-baseline gap-1 rounded border bg-card px-1.5 py-0.5 font-mono text-[0.7rem] text-foreground transition-colors hover:bg-accent"
-              title={`${op.help} — example: ${op.example}`}
+              title={`${op.help}. Example: ${op.example}`}
             >
               {op.key}<span class="text-muted-foreground">:</span>
             </button>

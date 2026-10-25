@@ -67,9 +67,12 @@
   </div>
 
   <PageHint id="cell-type-detail" title="One neuron type">
-    Genes called expressed in <span class="font-mono">{data.neuronClass}</span> from CeNGEN's FACS-calibrated
-    single-cell RNA-Seq (Taylor et al. 2021). Threshold sets the call confidence: liberal recovers the
-    most genes, stringent keeps only the highest-confidence calls.
+    Genes called expressed in <span class="font-mono">{data.neuronClass}</span> by CeNGEN (C. elegans
+    Neuronal Gene Expression Network), which used single-cell RNA sequencing with thresholds calibrated
+    on cells sorted by fluorescence-activated cell sorting (FACS) (Taylor et al. 2021). The threshold
+    sets how sure a call must be. Liberal returns the most genes. Stringent keeps only the most certain
+    calls. Bulk TMM is the expression level in sorted bulk samples, given as trimmed mean of M-values
+    (TMM, a normalized count).
   </PageHint>
 
   <Card>
@@ -82,10 +85,10 @@
             bind:value={minThreshold}
             class="rounded border bg-card px-2 py-1 font-mono text-sm"
           >
-            <option value={1}>1 — liberal</option>
-            <option value={2}>2 — medium</option>
-            <option value={3}>3 — conservative</option>
-            <option value={4}>4 — stringent</option>
+            <option value={1}>1: liberal</option>
+            <option value={2}>2: medium</option>
+            <option value={3}>3: conservative</option>
+            <option value={4}>4: stringent</option>
           </select>
         </label>
         {#if rows !== null}
@@ -151,7 +154,7 @@
                   <td
                     class="px-3 py-2 text-right align-middle font-mono tabular-nums text-muted-foreground"
                   >
-                    {r.tmm !== null ? r.tmm.toFixed(1) : '—'}
+                    {r.tmm !== null ? r.tmm.toFixed(1) : '-'}
                   </td>
                 </tr>
               {/each}

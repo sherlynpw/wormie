@@ -116,10 +116,10 @@
 {:else}
   <div class="space-y-3">
     <p class="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-      This panel was curated from the literature by the Richardson Lab. Each assignment was checked
-      against the cited references to the best of our ability, but the panel is not exhaustive and
-      may contain errors. It is one example of a lab-curated gene list integrated into WormIE. We
-      welcome corrections and suggestions for additional genes.
+      The Richardson Lab curated this panel from the literature. Each assignment was checked against
+      the cited references, but the panel is not complete and may contain errors. It is one example
+      of a lab-curated gene list in this tool. Corrections and suggestions for more genes are
+      welcome.
     </p>
     <div class="flex flex-wrap items-center gap-1">
       <Button variant="outline" size="sm" onclick={expandAll}>
@@ -174,7 +174,7 @@
                         href={doiHref(r.doi)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
+                        title={`${r.authors} (${r.year}): ${fmtTitle(r.title)}. ${r.journal}`}
                         class="inline-block rounded border bg-background px-1.5 py-0.5 font-mono text-[0.6rem] text-muted-foreground hover:bg-accent"
                       >
                         {rid}
@@ -218,7 +218,7 @@
                             <div class="flex flex-wrap items-center gap-1.5">
                               <GenePill id={g.wormbase_gene} name={g.gene_name} />
                               {#if g.notes}
-                                <span class="text-xs text-muted-foreground">— {g.notes}</span>
+                                <span class="text-xs text-muted-foreground">({g.notes})</span>
                               {/if}
                               {#each (g.refs ?? '').split(';').filter(Boolean) as rid (rid)}
                                 {@const r = refById(rid)}
@@ -228,7 +228,7 @@
                                     href={doiHref(r.doi)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    title={`${r.authors} (${r.year}) — ${fmtTitle(r.title)}. ${r.journal}`}
+                                    title={`${r.authors} (${r.year}): ${fmtTitle(r.title)}. ${r.journal}`}
                                     class="inline-block rounded border bg-background px-1.5 py-0.5 text-[0.65rem] text-muted-foreground hover:bg-accent"
                                   >
                                     {refShortLabel(r)}

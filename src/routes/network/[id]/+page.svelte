@@ -597,8 +597,11 @@
   </Button>
 
   <PageHint id="network" title="Interaction neighborhood">
-    BioGRID-derived interactions for this gene. Click any neighbor to recenter the network on that
-    gene. Edges are weighted by evidence count; only direct interactions are shown (no propagation).
+    Interactions for this gene from the Biological General Repository for Interaction Datasets
+    (BioGRID). Each dot is a gene and each line is a recorded interaction. Click a neighbor gene to
+    make it the center. Lines are weighted by the number of evidence records. Only interactions
+    recorded in BioGRID are shown, and none are inferred. A hop is one interaction step away from
+    the center gene.
   </PageHint>
 
   {#if loading}
@@ -634,7 +637,7 @@
             {/if}
             {#if expansion.truncated && maxNodes > 0}
               <Badge variant="outline" class="border-amber-500 text-amber-700 dark:text-amber-300">
-                truncated at {maxNodes.toLocaleString()} nodes — set node cap to&nbsp;<span
+                truncated at {maxNodes.toLocaleString()} nodes. Set node cap to&nbsp;<span
                   class="font-mono">-1</span
                 >&nbsp;for unlimited or narrow the filter
               </Badge>
@@ -682,7 +685,7 @@
       </label>
       <label
         class="inline-flex items-center gap-1.5"
-        title="Hide intermediate bridge genes. Each reached target becomes a single dashed edge from the focal, labelled with hop count. Requires a target filter."
+        title="Hide the genes between the center gene and the targets. Each target reached is shown as one dashed line from the center gene, labelled with the number of hops. Needs a target filter."
       >
         <input
           type="checkbox"
@@ -698,7 +701,7 @@
       </label>
       <label
         class="inline-flex items-center gap-1.5"
-        title="Skip rendering the SvelteFlow viz. Useful for large extractions where you only want the TSV exports."
+        title="Do not draw the network. Use this for large networks when you only want the tab-separated values (TSV) file exports."
       >
         <input type="checkbox" bind:checked={skipViz} class="rounded" />
         <span class="text-muted-foreground">Skip viz (data only)</span>
@@ -716,8 +719,8 @@
           onclick={exportPaths}
           disabled={!expansion || expansion.paths.length === 0}
           title={!expansion || expansion.paths.length === 0
-            ? 'Paths are only emitted when a target filter (neuronal / WormCat / dataset) is applied.'
-            : `Export ${expansion.paths.length} shortest paths to each reachable target.`}
+            ? 'Paths are only exported when a target filter (neuronal / WormCat / dataset) is applied.'
+            : `Export the ${expansion.paths.length} shortest paths from the center gene to each target it reaches.`}
         >
           <Download class="h-3 w-3" /> Paths
         </Button>
@@ -727,8 +730,8 @@
           onclick={exportTargets}
           disabled={!expansion || filterSource.kind === 'none'}
           title={filterSource.kind === 'none'
-            ? 'Targets export only available when a filter (neuronal / WormCat / dataset) is selected.'
-            : 'Export the filter target set with reached/hops columns relative to this focal.'}
+            ? 'The targets export needs a filter (neuronal / WormCat / dataset) to be selected.'
+            : 'Export the filter target set, with columns showing whether each target was reached and in how many hops from this gene.'}
         >
           <Download class="h-3 w-3" /> Targets
         </Button>
@@ -766,7 +769,7 @@
 
       <label
         class="inline-flex items-center gap-1.5"
-        title="Walk depth from the focal gene. Use -1 for unlimited (BFS runs to natural termination)."
+        title="How many interaction steps to follow from the center gene. Use -1 for no limit (the search stops when no new genes are found)."
       >
         <span class="text-muted-foreground">Max hops:</span>
         <input
@@ -787,7 +790,7 @@
 
       <label
         class="inline-flex items-center gap-1.5"
-        title="Soft cap on visible nodes in the viz. -1 = unlimited (batch mode always ignores this)."
+        title="Most genes to draw in the network. -1 means no limit. Batch mode ignores this limit."
       >
         <span class="text-muted-foreground">Node cap:</span>
         <input
@@ -807,8 +810,9 @@
       </label>
 
       <span class="ml-auto text-muted-foreground">
-        Use&nbsp;<span class="font-mono">-1</span>&nbsp;for unlimited on either field. Hub genes at
-        3+ hops can blow up the viz; switch to batch mode for data-only at any size.
+        Use&nbsp;<span class="font-mono">-1</span>&nbsp;for no limit in either field. A hub gene (a
+        gene with very many interactions) at 3 or more hops can give a network too large to draw.
+        For that case use batch mode, which gives data only at any size.
       </span>
     </div>
 
@@ -818,7 +822,7 @@
           class="flex flex-wrap items-center gap-2 rounded-md border border-amber-400/40 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-200"
         >
           <span class="font-semibold">{expansion.nodes.size} nodes in view.</span>
-          Rendering that many in SvelteFlow may lag. Consider
+          Drawing that many may be slow. Consider
           <button
             type="button"
             class="rounded border border-dashed px-1.5 py-0.5 hover:bg-amber-100 dark:hover:bg-amber-900/40"
@@ -888,12 +892,12 @@
       <CardHeader class="pb-3">
         <CardTitle class="text-base">Batch expansion (data only)</CardTitle>
         <div class="text-xs text-muted-foreground">
-          Run the same filter / hops / edge-types against multiple focal genes. Output combines
-          every focal's nodes / edges / paths into a single TSV with a
-          <span class="font-mono">focal_id</span> column. Input accepts WBGene IDs or gene names,
-          comma- / whitespace- / newline-separated. The viz node cap above is ignored here — batch
-          is data-only and runs each focal to natural BFS completion (frontier dry-up or
-          <span class="font-mono">Max hops</span>).
+          Run the same filter, hops and edge types for several center genes. The output joins the
+          genes, interactions and paths of every center gene into one tab-separated values (TSV)
+          file with a <span class="font-mono">focal_id</span> column. Enter WormBase gene IDs
+          (WBGene IDs) or gene names, separated by commas, spaces or new lines. The node limit above
+          is ignored here. Each center gene is followed until no new genes are found or until
+          <span class="font-mono">Max hops</span> is reached.
         </div>
       </CardHeader>
       <CardContent class="space-y-2">
@@ -950,7 +954,7 @@
                 onclick={exportBatchPaths}
                 disabled={totalPaths === 0}
                 title={totalPaths === 0
-                  ? 'Paths require a target filter (neuronal / WormCat / dataset) to be set above.'
+                  ? 'Paths need a target filter (neuronal / WormCat / dataset) to be set above.'
                   : ''}
               >
                 <Download class="h-3 w-3" /> Batch paths
@@ -961,8 +965,8 @@
                 onclick={exportBatchTargets}
                 disabled={filterSource.kind === 'none'}
                 title={filterSource.kind === 'none'
-                  ? 'Targets export only available when a filter is selected.'
-                  : 'Export filter target × focal reachability table.'}
+                  ? 'The targets export needs a filter to be selected.'
+                  : 'Export a table of which targets each center gene reaches.'}
               >
                 <Download class="h-3 w-3" /> Batch targets
               </Button>

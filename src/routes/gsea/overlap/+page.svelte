@@ -209,21 +209,27 @@
 
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Leading-edge overlap</h1>
-    <p class="text-sm text-muted-foreground">Driver genes shared across GSEA runs</p>
+    <p class="text-sm text-muted-foreground">
+      Genes that drive the score in more than one ranked-list result
+    </p>
   </header>
 
-  <PageHint id="gsea-overlap" title="GSEA leading-edge overlap (UpSet)">
-    Paste 2+ GSEA result TSVs (the wormie.rs.ht export format with a
-    <code>leading_edge</code> column) and see which driver genes are shared across contrasts. Each slot's
-    gene set is the union of leading-edge genes across its significant terms (q ≤ cutoff, direction filter
-    applied). Useful for "does the same module light up in two analyses?"
+  <PageHint id="gsea-overlap" title="Leading-edge overlap (UpSet plot)">
+    Input: two or more result tables from ranked-list enrichment (gene set enrichment analysis,
+    GSEA), as tab-separated text (TSV) exported from this site, with a <code>leading_edge</code> column.
+    The leading edge of a gene set is the group of genes that drive its score. For each input, the page
+    pools the leading-edge genes of every gene set with a q-value (false discovery rate, FDR) at or below
+    the cutoff, after the direction filter (sign of the normalized enrichment score, NES). Output: an
+    UpSet plot (bars that count the genes shared by each combination of inputs), a Jaccard index heatmap
+    (shared genes divided by all genes in both inputs), and a table of the genes in each combination.
+    Choose this page to check whether two comparisons are driven by the same genes.
   </PageHint>
 
   <Card>
     <CardHeader>
       <CardTitle class="text-lg">Inputs</CardTitle>
       <div class="text-sm text-muted-foreground">
-        One GSEA result TSV per slot. Columns: <code
+        One ranked-list enrichment result table (TSV) per slot. Columns: <code
           >term_id, name, namespace, size, es, nes, p, q, leading_edge</code
         >
         (the
@@ -248,7 +254,7 @@
                     (e.currentTarget as HTMLSelectElement).value = '';
                   }}
                   class="h-8 rounded border bg-background px-2 text-xs"
-                  title="Load from a saved GSEA session with results"
+                  title="Load results from a saved ranked-list enrichment session"
                 >
                   <option value="">Load saved session…</option>
                   {#each gseaSessions as s (s.id)}
@@ -384,7 +390,7 @@
               if (n === 0) toast.message('No plots to export');
               else toast.success(`Exported ${n} plot${n === 1 ? '' : 's'} as SVG`);
             }}
-            title="Snapshot every visible plot on this page and zip them"
+            title="Save every visible plot on this page as SVG files in one zip"
           >
             <ImageIcon class="h-4 w-4" /> Snapshot plots (zip)
           </Button>
@@ -506,7 +512,8 @@
     </Card>
   {:else if nonEmptySlots < 2}
     <div class="rounded-md border bg-card px-3 py-4 text-sm text-muted-foreground">
-      Add GSEA result TSVs to at least two slots to see the leading-edge overlap.
+      Add a ranked-list enrichment result table (TSV) to at least two slots to compare leading
+      edges.
     </div>
   {/if}
 </div>

@@ -62,7 +62,7 @@
   });
 
   function fmtDate(s: string | undefined): string {
-    if (!s) return '–';
+    if (!s) return '-';
     return s.slice(0, 10);
   }
 </script>
@@ -98,7 +98,7 @@
         </span>
         <span class="text-muted-foreground">BioGRID</span>
         <span>{v.sources?.biogrid?.version ?? '?'}</span>
-        <span class="text-muted-foreground">Alliance expr.</span>
+        <span class="text-muted-foreground">Alliance expression</span>
         <span>{v.sources?.alliance_expression?.version ?? '?'}</span>
         {#if v.sources?.cengen?.release}
           <span class="text-muted-foreground">CeNGEN</span>

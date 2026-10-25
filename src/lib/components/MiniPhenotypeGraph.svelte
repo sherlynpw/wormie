@@ -159,8 +159,8 @@
         class="rounded border bg-card px-1.5 py-0.5 font-mono text-xs"
       >
         <option value="radial">radial</option>
-        <option value="dagre-TB">tree (top→bottom)</option>
-        <option value="dagre-LR">tree (left→right)</option>
+        <option value="dagre-TB">tree, top to bottom</option>
+        <option value="dagre-LR">tree, left to right</option>
       </select>
     </label>
   </div>
@@ -189,7 +189,8 @@
     {/if}
   </div>
   <div class="text-[0.6rem] text-muted-foreground">
-    Initial view: up to 25 most-supported phenotypes + their direct parents. Click any node's
-    <span class="font-mono">+</span> handle to grow that branch.
+    The first view shows up to 25 phenotypes with the most supporting records, and their direct
+    parent terms. Click the <span class="font-mono">+</span> handle on a node to show more terms in that
+    branch.
   </div>
 </div>

@@ -306,12 +306,12 @@
   </header>
 
   <PageHint id="ssgsea.intro" title="What this step does">
-    The method is single-sample GSEA (ssGSEA). Each sample is scored on its own: its genes are
-    sorted from highest to lowest expression, and the score says how near the top of that sample's
-    ranking a gene set's members sit. Positive means concentrated near the top, negative near the
-    bottom. Nothing is compared, so this is the method to reach for when there are no two groups to
-    contrast: a time course, a panel of strains, single worms. Every set scored in every sample
-    gives one matrix:
+    The method is single-sample gene set enrichment analysis (ssGSEA). Each sample is scored on its
+    own: its genes are sorted from highest to lowest expression, and the score says how near the top
+    of that sample's ranking a gene set's members sit. Positive means concentrated near the top,
+    negative near the bottom. Nothing is compared between samples, so use this when there are no two
+    groups to contrast: a time course, a panel of strains, single worms. Every set scored in every
+    sample gives one matrix:
     <pre
       class="my-2 overflow-x-auto rounded bg-background/60 p-2 font-mono text-[0.65rem] leading-relaxed">                 WT.D1  WT.D3  WT.D7  mut.D1  mut.D3  mut.D7
 neuronal          0.31   0.28   0.19    0.30    0.44    0.52
@@ -324,9 +324,9 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
     <br /><br />
     <b>The scores are descriptive, not a test.</b> There are no p-values in the matrix, so a
     difference between 0.44 and 0.30 is a starting point rather than a result. To make a claim, use
-    the <b>Test a trend</b> step below the scores: it fits one linear model per set across the samples,
-    which is how the GSVA authors recommend testing per-sample scores. With one sample per condition no
-    test is possible and the plot is the whole story.
+    the <b>Test a trend</b> step below the scores: it fits one linear model per set across the samples.
+    The authors of gene set variation analysis (GSVA) recommend this for testing per-sample scores. With
+    one sample per condition no test is possible, so read the plot as a description only.
   </PageHint>
 
   <div class="grid gap-4 md:grid-cols-2">
@@ -340,15 +340,15 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
           >
           button on the differential expression page sends one of these for you.
           <br /><br />
-          Genes are ranked inside each sample, so library size does not matter and normalising across
-          samples changes nothing: counts, normalized counts and a variance-stabilised matrix all give
+          Genes are ranked inside each sample, so library size does not matter and normalizing across
+          samples changes nothing: counts, normalized counts and a variance-stabilized matrix all give
           the same scores. What matters is whether two genes in the same sample can be compared with each
-          other, which means correcting for gene length. TPM and RPKM do that. Counts do not, so a longer
-          gene ranks above a shorter one at the same expression level, and the same holds for normalized
-          counts and for a variance-stabilised matrix, since neither touches gene length. That bias is
-          the same in every sample, since gene length does not change between samples, so it has little
-          effect on comparing one with another, which is what these scores are for. It matters when one
-          set's score is read against a different set's.
+          other, which means correcting for gene length. Transcripts per million (TPM) and reads per kilobase
+          per million (RPKM) do that. Counts do not, so a longer gene ranks above a shorter one at the
+          same expression level. The same holds for normalized counts and for a variance-stabilized matrix,
+          since neither corrects for gene length. The bias is the same in every sample, so it has little
+          effect when you compare one sample with another. It matters when one set's score is read against
+          a different set's.
         </ControlHint>
         {#if exprSource}
           <span class="ml-1 font-normal text-muted-foreground">· {exprSource}</span>
@@ -370,14 +370,16 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
       <label class="block text-sm font-medium" for="gmt">
         Gene sets
         <ControlHint id="ssgsea-gmt" title="Where gene sets come from">
-          A gene set is just a named group of genes. Use the annotations shipped with the site —
-          WormCat categories, GO terms, phenotypes, tissues — or supply your own as a GMT: one set
-          per line, its name, a description, then its genes, separated by tabs. MSigDB publishes
-          ready-made collections, and a spreadsheet saved as tab-separated text works too.
+          A gene set is just a named group of genes. Use the annotations built into the site:
+          WormCat categories, Gene Ontology (GO) terms, phenotypes, tissues. Or supply your own as a
+          Gene Matrix Transposed (GMT) file: one set per line, its name, a description, then its
+          genes, separated by tabs. The Molecular Signatures Database (MSigDB) publishes ready-made
+          collections, and a spreadsheet saved as tab-separated text works too.
           <br /><br />
           Very small sets score noisily and very large ones say little about any one sample, so the size
-          range filters both ends. Nothing here changes the maths: the score always asks how near the
-          top of a sample's ranking that set's genes sit.
+          range removes both. The size counts only the genes of the set that are in your matrix. The score
+          is always computed the same way: how near the top of a sample's ranking the genes of the set
+          sit.
         </ControlHint>
       </label>
 
@@ -450,7 +452,9 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
   </div>
 
   <section class="flex flex-wrap items-center gap-3 text-sm">
-    <label>
+    <label
+      title="Exponent that weights each gene in a set by its rank in the sample. 0 gives every member equal weight. Higher values give more weight to genes near the top. Default 0.25."
+    >
       α
       <input
         type="number"
@@ -459,7 +463,10 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
         bind:value={alpha}
       />
     </label>
-    <label class="inline-flex items-center gap-1">
+    <label
+      class="inline-flex items-center gap-1"
+      title="Divide all scores by the range (highest minus lowest) across the whole matrix"
+    >
       <input type="checkbox" bind:checked={normalize} /> normalize
     </label>
     <button
@@ -491,17 +498,19 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
         Test a trend
         <ControlHint id="ssgsea-trend" title="What the trend test does">
           For every gene set, its scores across the samples are fitted to a linear model on one
-          column of the sample table: a number such as day or dose gives a slope and a t-test on it;
-          a label such as condition or timepoint gives an F-test across its levels, which catches a
-          rise and fall as well as a steady change; with five or more distinct values a natural
-          spline in the number does the same for a curved time course. The fit is limma's (lmFit,
-          eBayes), which shares variance information across sets, and p-values are adjusted across
-          sets by Benjamini-Hochberg. This is the design the GSVA authors recommend for per-sample
-          scores (Hänzelmann et al. 2013). It runs in the browser through WebR; the first run of a
-          session starts R, which takes a minute.
+          column of the sample table. A number such as day or dose gives a slope and a t-test on it.
+          A label such as condition or timepoint gives an F-test across its levels, which catches a
+          rise and fall as well as a steady change. A natural spline (a smooth curve built from
+          several pieces) of the number does the same for a curved time course; it needs five or
+          more distinct values. The fit uses limma (an R package for linear models; functions lmFit
+          and eBayes), which shares variance information across sets. P-values are adjusted across
+          sets by the Benjamini-Hochberg method, which controls the false discovery rate (FDR). The
+          authors of gene set variation analysis (GSVA) recommend this design for per-sample scores
+          (Hanzelmann et al. 2013). It runs in the browser through WebR (R compiled to run in the
+          browser); the first run of a session starts R, which takes about a minute.
           <br /><br />
-          When every level has one sample there is no variance to test against and the step says so instead
-          of fitting.
+          When every level has one sample there is no variance to test against. The step then says so
+          instead of fitting.
         </ControlHint>
       </h2>
       <div class="grid gap-4 md:grid-cols-2">
@@ -561,6 +570,7 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
                 type="number"
                 min="2"
                 max="6"
+                title="Degrees of freedom (df) of the spline. Higher values allow a more flexible curve."
                 bind:value={splineDf}
                 class="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm"
               />

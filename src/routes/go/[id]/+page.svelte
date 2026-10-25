@@ -230,10 +230,12 @@
     Back to GO browser
   </Button>
 
-  <PageHint id="go-term" title="GO DAG explorer">
-    Click a parent/child chip to walk the ontology. Gene counts use GOALL semantics (the
-    clusterProfiler default): a gene annotated to "cilium" also counts under "cell projection".
-    Per-gene cards still show direct curated annotations only.
+  <PageHint id="go-term" title="Gene Ontology (GO) term graph">
+    Gene Ontology (GO) terms form a tree where a broad term has more specific child terms. Click a
+    parent or child chip to move through the tree. The gene count of a term includes the genes
+    annotated to its child terms (the GOALL method used by clusterProfiler, an R enrichment
+    package). For example, a gene annotated to "cilium" also counts under "cell projection". The
+    list at the bottom of the page and the gene pages show only the annotations curated directly.
   </PageHint>
 
   {#if loading}
@@ -272,7 +274,7 @@
         {/if}
         <div class="mt-2 flex flex-wrap gap-2 text-xs">
           <Badge variant="default" class="bg-accent text-accent-foreground hover:bg-accent">
-            {transitiveCount.toLocaleString()} genes (incl. descendants)
+            {transitiveCount.toLocaleString()} genes (including child terms)
           </Badge>
           <Badge variant="muted">{genes.length} directly annotated</Badge>
           <Badge variant="secondary">{Object.keys(graphNodes).length} nodes in view</Badge>

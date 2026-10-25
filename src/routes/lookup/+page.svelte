@@ -88,28 +88,29 @@
 
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Gene name resolver</h1>
-    <p class="text-sm text-muted-foreground">Any gene name into a WormBase ID</p>
+    <p class="text-sm text-muted-foreground">
+      Match gene names, sequence names, aliases and IDs to WormBase gene IDs
+    </p>
   </header>
 
   <PageHint id="lookup" title="What this step does">
-    One gene answers to several names: a common name (<code>daf-16</code>), a sequence name (<code
+    One gene can have several names: a common name (<code>daf-16</code>), a sequence name (<code
       >R13H8.1</code
-    >), aliases from older papers, an Entrez number, and its permanent WormBase ID (<code
-      >WBGene00000912</code
-    >). Only the WormBase ID is stable, so every tool here keys on it. Paste any mixture of the
-    rest, one per line or comma-separated, and each is matched to its WormBase ID. Anything that
-    matches several genes, or none, is listed separately rather than quietly dropped. A name from an
-    older paper may belong to a gene WormBase has since merged away or withdrawn; those still
-    resolve, and are flagged <b>Dead</b> or <b>Suppressed</b> so you can decide whether to keep them,
-    rather than being silently dropped or silently carried into an analysis.
+    >), aliases from older papers, an Entrez Gene number (from the National Center for Biotechnology
+    Information, NCBI), and its permanent WormBase ID (<code>WBGene00000912</code>). Only the
+    WormBase ID never changes, so every tool here uses it. Paste any mix of these, one per line or
+    separated by commas, and each is matched to its WormBase ID. Entries that match several genes,
+    or none, are listed separately and are not dropped. A name from an older paper may belong to a
+    gene that WormBase has since merged into another gene or withdrawn. These genes are still
+    matched and are marked <b>Dead</b> or <b>Suppressed</b>, so you can decide whether to keep them.
   </PageHint>
 
   <Card>
     <CardHeader class="pb-3">
       <CardTitle class="text-base">Paste gene names or IDs</CardTitle>
       <div class="text-xs text-muted-foreground">
-        Paste a list of WBGene IDs, gene names, sequence names, or aliases. One per line, comma,
-        space, or pipe-separated all work.
+        Paste a list of WormBase gene IDs (WBGene IDs), gene names, sequence names, or aliases.
+        Separate entries with new lines, commas, spaces, or pipes (|).
       </div>
     </CardHeader>
     <CardContent class="space-y-3">
@@ -184,7 +185,7 @@
                     <Badge
                       variant="outline"
                       class="px-1 py-0 font-mono text-[0.55rem]"
-                      title="Genetic map position"
+                      title="Genetic map position (chromosome and centimorgans, cM), estimated by WormBase from nearby mapped genes"
                     >
                       {h.chromosome}{h.cm != null ? `:${h.cm.toFixed(2)}` : ''}
                     </Badge>
@@ -194,7 +195,7 @@
                       variant="outline"
                       class="border-amber-500/50 bg-amber-100 px-1 py-0 text-[0.55rem] text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
                       title={h.status === 'Dead'
-                        ? 'Retired in WormBase: merged into another gene or withdrawn. The ID still resolves, but the gene is no longer current.'
+                        ? 'Retired in WormBase: merged into another gene or withdrawn. The ID is still matched, but the gene is no longer current.'
                         : 'Suppressed in WormBase: the gene model is no longer supported by evidence.'}
                     >
                       {h.status}

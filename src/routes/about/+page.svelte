@@ -42,7 +42,7 @@
       license: 'CC0 (Public Domain)',
       licenseUrl: 'https://wormbase.org/about/policies',
       description:
-        'Gene roster (~52k WBGene IDs incl. Live/Dead/Suppressed), concise + provisional + automated + gene-class descriptions, sequence names, status, gene types, and transcript-level cross-references (NCBI/UniProt/Ensembl/InterPro). Refreshed from the EBI mirror at ftp.ebi.ac.uk/pub/databases/wormbase since downloads.wormbase.org is bot-blocked. Cite WormBase with the WS release number per their citation policy.',
+        'The gene list (about 52,000 WormBase gene IDs, including Live, Dead and Suppressed genes). Also concise, provisional, automated and gene-class descriptions, sequence names, status, gene types, and links to National Center for Biotechnology Information (NCBI), UniProt, Ensembl and InterPro records. Downloaded from the European Bioinformatics Institute (EBI) mirror at ftp.ebi.ac.uk/pub/databases/wormbase, because downloads.wormbase.org blocks automated downloads. When you cite WormBase, give the WS release number, as their citation policy asks.',
     },
     {
       name: 'Gene Ontology',
@@ -52,7 +52,7 @@
       license: 'CC BY 4.0',
       licenseUrl: 'https://geneontology.org/docs/go-citation-policy/',
       description:
-        'go.obo ontology (48k terms across BP/MF/CC) and wb.gaf.gz annotations (104k associations to C. elegans genes). Always pulled fresh from current.geneontology.org at build time.',
+        'The go.obo ontology file (48,000 terms in the three GO branches: biological process, molecular function and cellular component) and the wb.gaf.gz annotation file (104,000 links between GO terms and C. elegans genes). Downloaded fresh from current.geneontology.org each time the database is built.',
     },
     {
       name: 'WormCat',
@@ -62,7 +62,7 @@
       license: 'MIT (tool); cite Holdorf et al. 2019',
       licenseUrl: 'https://github.com/dphiggs01/Wormcat',
       description:
-        'Hierarchical functional categorization of C. elegans genes (Cat1 → Cat2 → Cat3), 31k genes. Tool released under MIT on GitHub; cite the WormCat publication when using data.',
+        'A tree of functional categories for C. elegans genes (category 1, then 2, then 3), covering 31,000 genes. The WormCat tool is released under the MIT license on GitHub. Cite the WormCat publication when you use the data.',
     },
     {
       name: 'BioGRID interactions',
@@ -71,7 +71,7 @@
       license: 'MIT',
       licenseUrl: 'https://wiki.thebiogrid.org/doku.php/terms_and_conditions',
       description:
-        'Physical and genetic gene-gene interactions for C. elegans. Mapped from Entrez to WBGene via the local pipeline. BioGRID releases all files under MIT and asks that you cite original publications plus the BioGRID paper (Stark et al.).',
+        'Physical and genetic interactions between C. elegans genes, from the Biological General Repository for Interaction Datasets (BioGRID). Entrez Gene IDs were mapped to WormBase gene IDs (WBGene IDs) by the local build pipeline. BioGRID releases all files under the MIT license and asks you to cite the original publications and the BioGRID paper (Stark et al.).',
     },
     {
       name: 'Alliance of Genome Resources orthology',
@@ -80,7 +80,7 @@
       license: 'CC0 / CC BY 4.0 (mixed)',
       licenseUrl: 'https://www.alliancegenome.org/terms-of-use',
       description:
-        'Stringent ortholog calls across 9 species (human, mouse, rat, zebrafish, two frogs, fly, yeast, worm). Most Alliance data is CC0, some datasets are CC BY 4.0; see their terms page.',
+        'Stringent ortholog calls (matching genes in other species) across 9 species: human, mouse, rat, zebrafish, two frog species, fly, yeast and worm. Most Alliance of Genome Resources data is CC0 and some datasets are CC BY 4.0. See their terms page.',
     },
     {
       name: 'Neuronal gene classification',
@@ -88,7 +88,7 @@
       url: 'https://wormbase.org/',
       license: 'project-internal',
       description:
-        'Custom neuronal supercategory/category curation for 1.3k C. elegans genes (ion channels, GPCRs, neuropeptides, etc.).',
+        'Neuronal categories for 1,300 C. elegans genes (for example ion channels, G protein-coupled receptors (GPCRs) and neuropeptides), curated for this project.',
     },
     {
       name: 'WormBase anatomy ontology (WBbt)',
@@ -98,7 +98,7 @@
       license: 'CC BY 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
       description:
-        'Anatomical structures and cell types for C. elegans (~7k terms). Underlies the Tissue enrichment tab. Pulled from the obophenotype GitHub mirror since downloads.wormbase.org is bot-blocked.',
+        'The anatomical structures and cell types of C. elegans (about 7,000 terms). The Tissue option in the over-representation tool uses it. Downloaded from the obophenotype GitHub mirror, because downloads.wormbase.org blocks automated downloads.',
     },
     {
       name: 'Alliance expression (gene-tissue)',
@@ -107,7 +107,7 @@
       license: 'CC0 / CC BY 4.0 (mixed)',
       licenseUrl: 'https://www.alliancegenome.org/terms-of-use',
       description:
-        'Harmonized expression assays from Alliance EXPRESSION-ALLIANCE_WB.tsv: which gene was reported expressed in which WBbt anatomical entity. Feeds the Tissue enrichment/GSEA tab. NOT-qualified rows are dropped.',
+        'Expression results from the Alliance of Genome Resources file EXPRESSION-ALLIANCE_WB.tsv. Each row says which gene was reported expressed in which WormBase anatomy (WBbt) term. The Tissue options in the over-representation and ranked-list enrichment tools use it. Rows marked NOT (reported as not expressed) are removed.',
     },
     {
       name: 'WormBase phenotype associations',
@@ -117,7 +117,7 @@
       license: 'CC0 (Public Domain)',
       licenseUrl: 'https://wormbase.org/about/policies',
       description:
-        'Allele-mediated phenotype associations from WormBase phenotype_association.wb (GAF 2.0, ~440k rows). Each row links a gene to a phenotype through an originating WBVar allele, so we populate both gene_phenotype (collapsed by gene) and allele_phenotype (kept per-allele) in one pass. The Phenotype enrichment tab uses the gene-collapsed view; per-gene pages show allele detail.',
+        'Phenotypes linked to alleles, from the WormBase file phenotype_association.wb (Gene Ontology Annotation File (GAF) format 2.0, about 440,000 rows). Each row links a gene to a phenotype through the allele (WBVar ID) that was tested. The build stores two tables from it: gene_phenotype (one entry per gene) and allele_phenotype (one entry per allele). The Phenotype option in the over-representation tool uses the per-gene table. Gene pages show the per-allele detail.',
     },
     {
       name: 'Alliance phenotype JSON',
@@ -126,7 +126,7 @@
       license: 'CC0 / CC BY 4.0 (mixed)',
       licenseUrl: 'https://www.alliancegenome.org/terms-of-use',
       description:
-        'Variant-level phenotype annotations from Alliance PHENOTYPE_WB.json.gz. ~27k records are gene-level (used directly), ~26k are variant-level (remapped to genes via the variant→gene index built from the WormBase GAF with/from column). Adds ~20k phenotype rows on top of the WormBase GAF baseline.',
+        'Phenotype annotations from the Alliance of Genome Resources file PHENOTYPE_WB.json.gz. About 27,000 records are already at gene level and are used as they are. About 26,000 are at variant (allele) level and are mapped to genes through a variant-to-gene index built from the with/from column of the WormBase GAF. Together they add about 20,000 phenotype rows to the WormBase GAF.',
     },
     {
       name: 'Alliance bibliography (references)',
@@ -135,7 +135,7 @@
       license: 'CC0 / CC BY 4.0 (mixed)',
       licenseUrl: 'https://www.alliancegenome.org/terms-of-use',
       description:
-        'Bulk bibliography dump (REFERENCE_WB.json.gz) used to resolve the WBPaper / PMID references cited on each gene page to real paper titles, journals, years, and DOIs. We store only papers actually cited by our GO + phenotype annotations. Papers newer than the dump cutoff fall back to the WBPaper/PMID link.',
+        'A bulk list of publications (REFERENCE_WB.json.gz) used to turn the WormBase paper IDs (WBPaper) and PubMed IDs (PMIDs) cited on each gene page into paper titles, journals, years and digital object identifiers (DOIs). Only papers cited by the Gene Ontology (GO) and phenotype annotations are stored. Papers newer than the list show a link to the WBPaper or PubMed record instead.',
     },
     {
       name: 'NCBI gene2pubmed',
@@ -144,7 +144,7 @@
       license: 'Public Domain (US Government work)',
       licenseUrl: 'https://www.ncbi.nlm.nih.gov/home/about/policies/',
       description:
-        'Gene-to-publication links for C. elegans (tax 6239), joined to genes via the entrez_to_wb map. Drives the comprehensive "All literature" list on each gene page (titles/DOIs resolved from the Alliance bibliography, with a WormBase REST / NCBI esummary fallback for papers the dump lacks).',
+        'Links between C. elegans genes (taxonomy ID 6239) and publications, from the National Center for Biotechnology Information (NCBI), matched to genes through the entrez_to_wb table. This fills the "All literature" list on each gene page. Titles and DOIs come from the Alliance bibliography. For papers missing from it, they come from the WormBase REST service or the NCBI esummary service.',
     },
     {
       name: 'CeNGEN single-cell expression',
@@ -153,7 +153,7 @@
       license: 'CC BY 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
       description:
-        'L4 nervous-system scRNA-Seq atlas from Taylor et al. 2021 (Cell). Four FACS-calibrated binary call matrices (1=liberal, 2=medium, 3=conservative, 4=stringent) for 128 neuron classes + an integrated bulk + single-cell expression table for 52 classes (Barrett et al. 2025, contamination-subtracted). Feeds the Cell-type enrichment/GSEA tab and the /cell-type browse + per-gene heatmap. Cite Taylor et al. 2021.',
+        'The C. elegans Neuronal Gene Expression Network (CeNGEN) atlas of the L4 larval nervous system, made by single-cell RNA sequencing (Taylor et al. 2021, Cell). It has four tables of expressed or not expressed calls, with thresholds calibrated on cells sorted by fluorescence-activated cell sorting (FACS): 1 = liberal, 2 = medium, 3 = conservative, 4 = stringent. They cover 128 neuron classes. It also has a table that combines bulk and single-cell expression for 52 neuron classes, with contamination removed (Barrett et al. 2025). The Cell-type options in the enrichment tools, the /cell-type pages and the heatmap on each gene page use it. Cite Taylor et al. 2021.',
     },
     {
       name: 'WormBase RNAi phenotypes',
@@ -162,7 +162,7 @@
       license: 'CC0 (Public Domain)',
       licenseUrl: 'https://wormbase.org/about/policies',
       description:
-        'rnai_phenotypes.wb.gz — 90k records linking WBRNAi reagents to genes + phenotypes (47k unique reagents across 8k genes). Surfaced as the "RNAi reagents" card on each gene page; each WBRNAi deep-links to wormbase.org for clone-name / library metadata.',
+        'The file rnai_phenotypes.wb.gz, with 90,000 records that link RNA interference (RNAi) reagents (WBRNAi IDs) to genes and phenotypes (47,000 unique reagents across 8,000 genes). Gene pages show it as the "RNAi reagents" card. Each WBRNAi ID links to wormbase.org for the clone name and library.',
     },
     {
       name: 'Alliance disease ontology associations',
@@ -171,7 +171,7 @@
       license: 'CC0 / CC BY 4.0 (mixed)',
       licenseUrl: 'https://www.alliancegenome.org/terms-of-use',
       description:
-        'DISEASE-ALLIANCE_WB.tsv — C. elegans gene → human Disease Ontology terms (~30k pairs), inferred via human ortholog or assigned directly by WB curators. Drives the Disease enrichment tab and the /disease browse route.',
+        'The file DISEASE-ALLIANCE_WB.tsv, which links C. elegans genes to human Disease Ontology (DO) terms (about 30,000 pairs). A link is either inferred from the human ortholog or assigned directly by WormBase curators. The Disease option in the over-representation tool and the /disease pages use it.',
     },
     {
       name: 'STRING-DB v12 (cel, score ≥ 700)',
@@ -180,7 +180,7 @@
       license: 'CC BY 4.0',
       licenseUrl: 'https://string-db.org/cgi/access',
       description:
-        "High-confidence protein-protein interactions for C. elegans from STRING-DB, filtered to combined_score ≥ 700. Each edge ships with all seven STRING evidence channels (neighborhood, fusion, cooccurrence, coexpression, experimental, database, textmining) so the per-gene STRING card can render an evidence breakdown. STRING-protein IDs are joined to WBGene through STRING's own alias table. Cite Szklarczyk et al. 2023.",
+        "Protein-protein interactions for C. elegans from the Search Tool for the Retrieval of Interacting Genes/Proteins (STRING) database, kept only if the combined score is 700 or higher (high confidence). Each interaction has scores for the seven STRING evidence channels (neighborhood, fusion, cooccurrence, coexpression, experimental, database, textmining), so the STRING card on each gene page can show where the evidence comes from. STRING protein IDs are matched to WormBase gene IDs (WBGene IDs) with STRING's own alias table. Cite Szklarczyk et al. 2023.",
     },
     {
       name: 'KEGG cel pathways (incl. KGML + maps)',
@@ -189,7 +189,7 @@
       license: 'Free for academic use (no bundled redistribution)',
       licenseUrl: 'https://www.kegg.jp/kegg/legal.html',
       description:
-        'C. elegans pathway gene sets (~150 maps including Insulin/IGF, TGF-β, FoxO, longevity, autophagy), the KO ↔ worm-gene table, and the pre-rendered pathway map images (lossless WebP) re-encoded from the KEGG PNG output. All assets are pulled at build time from the KEGG REST API and ingested into the local SQLite DB so the /pathway/[id] viewer works fully offline. KEGG REST access is free for academic use; redistribution of the bulk dump is license-restricted (we ship per-pathway assets used to power the local viewer, no full data dump). Cite Kanehisa et al. as KEGG requires.',
+        'C. elegans pathway gene sets from the Kyoto Encyclopedia of Genes and Genomes (KEGG) (about 150 maps, including insulin/IGF, TGF-beta, FoxO, longevity and autophagy), the table linking KEGG Orthology (KO) IDs to worm genes, and the pathway map images (lossless WebP, re-encoded from the KEGG PNG files). All of it is downloaded from the KEGG REST service when the database is built and stored in the local SQLite database, so the /pathway/[id] viewer works offline. KEGG REST access is free for academic use. Redistribution of the full KEGG data is restricted by the license, so this site ships only the per-pathway files that the viewer needs. Cite Kanehisa et al., as KEGG requires.',
     },
     {
       name: 'Synapse development and function panel (v6)',
@@ -197,7 +197,7 @@
       url: 'https://github.com/rayandrew/celegans-pipeline',
       license: 'project-internal',
       description:
-        'A 178-gene panel grouped into 12 functional classes ordered from synapse formation to function (activity-regulated TFs, RNA export, synapse positioning, adhesion, active zone, synapse growth control, cargo transport, SV release, postsynaptic, neurotransmitter identity, innexins, remodeling). Curated by the Richardson Lab; every gene cites at least one primary research article from a list of 139 publications. Drives the Synapse development and function enrichment/GSEA tab and the gene-page panel card.',
+        'A panel of 178 genes in 12 functional classes, ordered from synapse formation to synapse function: activity-regulated transcription factors, RNA export, synapse positioning, adhesion, active zone, synapse growth control, cargo transport, synaptic vesicle (SV) release, postsynaptic, neurotransmitter identity, innexins (gap junction proteins) and remodeling. Curated by the Richardson Lab. Every gene cites at least one primary research article from a list of 139 publications. The Synapse development and function options in the enrichment tools and the panel card on each gene page use it.',
     },
   ]);
 
@@ -355,8 +355,10 @@
     <CardHeader>
       <CardTitle class="text-xl">Data sources and credits</CardTitle>
       <div class="text-sm text-muted-foreground">
-        wormie.rs.ht is a local-first browser for C. elegans gene annotations, classifications, GO
-        ontology, orthology, and interactions. SQLite file.
+        wormie.rs.ht is a browser tool for C. elegans gene annotations, classifications, Gene
+        Ontology (GO) terms, orthologs (matching genes in other species) and interactions. The data
+        is stored in a SQLite database file that your browser downloads once and keeps, so the site
+        works offline.
       </div>
     </CardHeader>
     <CardContent>
@@ -498,8 +500,8 @@
     <CardHeader class="pb-3">
       <CardTitle class="text-base">Data sources</CardTitle>
       <div class="text-xs text-muted-foreground">
-        Each row in the local database is sourced from one of these public datasets. Versions
-        reflect what's currently in this build.
+        Every record in the local database comes from one of these public datasets. The versions are
+        the ones in this build.
       </div>
     </CardHeader>
     <CardContent class="divide-y pt-0">
@@ -577,7 +579,7 @@
     <CardHeader class="pb-3">
       <CardTitle class="text-base">Open source dependencies</CardTitle>
       <div class="text-xs text-muted-foreground">
-        Read directly from package.json at build time. Click any name for license + source.
+        Read from package.json when the site is built. Click a name to see its license and source.
       </div>
     </CardHeader>
     <CardContent class="space-y-3 pt-0">

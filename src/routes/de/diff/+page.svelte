@@ -385,14 +385,15 @@
   </header>
 
   <PageHint id="de-diff" title="What this step does">
-    Two comparisons from the same study — a mutant against wild type at two timepoints, say, or two
-    mutants against one control — plotted against each other, one dot per gene, its fold change in
-    the first comparison on one axis and in the second on the other. Genes along the diagonal behave
-    the same way in both. Genes significant in both comparisons are coloured by how they moved: up
-    in both, down in both, or flipped (up in one and down in the other), usually the interesting
-    minority. Each corner gives its category's genes over all genes in that corner. Pearson r
-    summarises how closely the two agree overall. Result tables from DESeq2, edgeR or limma all
-    work.
+    Paste or load the results of two differential expression comparisons from the same study, for
+    example a mutant against wild type at two timepoints, or two mutants against one control. Each
+    gene is one dot. Its log2 fold change (log2FC) in the first comparison is on one axis and in the
+    second comparison on the other. Genes along the diagonal change by the same amount in both.
+    Genes significant in both comparisons are coloured as up in both, down in both, or flipped (up
+    in one and down in the other). The number in each corner is the genes of that corner's category
+    over all genes in that corner. Pearson r (correlation coefficient) is a single number for how
+    closely the two log2FC values agree across all shared genes: 1 is perfect agreement, 0 is none.
+    Result tables from DESeq2, edgeR or limma all work.
   </PageHint>
 
   <div class="grid gap-3 sm:grid-cols-2">
@@ -481,13 +482,17 @@
   <div class="flex items-center gap-2">
     <Button onclick={parseBoth} disabled={!textA.trim() || !textB.trim()}>Parse</Button>
     <span class="text-xs text-muted-foreground">
-      Both contrasts are needed for the diff. Each pasted CSV/TSV is parsed independently.
+      Both contrasts are needed. Each pasted comma-separated or tab-separated table is read on its
+      own.
     </span>
     <label class="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
       Plot title
       <Input bind:value={plotTitle} placeholder="optional, e.g. L4 → D6" class="h-8 w-44" />
     </label>
-    <label class="flex items-center gap-1.5 text-xs text-muted-foreground">
+    <label
+      class="flex items-center gap-1.5 text-xs text-muted-foreground"
+      title="padj is the adjusted p-value (false discovery rate) from each contrast table"
+    >
       Significant at padj &lt;
       <Input type="number" min="0.001" max="0.5" step="0.01" bind:value={alpha} class="h-8 w-20" />
     </label>
@@ -770,7 +775,7 @@
       </CardHeader>
       <CardContent class="pt-0">
         {#if activeBucket.rows.length === 0}
-          <div class="py-2 text-xs italic text-muted-foreground">No genes in this bucket.</div>
+          <div class="py-2 text-xs italic text-muted-foreground">No genes in this group.</div>
         {:else}
           <div
             class="grid grid-cols-[auto_auto_auto_auto_1fr] items-center gap-x-3 gap-y-1 text-xs"
@@ -805,7 +810,7 @@
             {#if activeBucket.rows.length > LIST_CAP}
               <span class="italic">
                 Showing the first {LIST_CAP} of {activeBucket.rows.length.toLocaleString()} genes. Download
-                the group for the complete list.
+                this group for the complete list.
               </span>
             {/if}
             <Button variant="outline" size="sm" class="ml-auto" onclick={downloadGroup}>
@@ -817,7 +822,7 @@
     </Card>
   {:else if rowsA && rowsB}
     <div class="text-sm text-muted-foreground">
-      No shared genes between the two contrasts. Check that both use the same gene IDs.
+      No genes appear in both contrasts. Check that both tables use the same type of gene ID.
     </div>
   {/if}
 </div>

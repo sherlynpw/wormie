@@ -24,7 +24,7 @@
   }
 
   type SortKey = 'name' | 'baseMean' | 'log2FoldChange' | 'lfcSE' | 'stat' | 'pvalue' | 'padj';
-  type Col = { key: SortKey; label: string; align?: 'left' | 'right'; w: string };
+  type Col = { key: SortKey; label: string; align?: 'left' | 'right'; w: string; hint?: string };
 
   let {
     rows,
@@ -38,12 +38,48 @@
 
   const COLS: Col[] = [
     { key: 'name', label: 'Gene', align: 'left', w: '1.3fr' },
-    { key: 'baseMean', label: 'baseMean', align: 'right', w: '0.9fr' },
-    { key: 'log2FoldChange', label: 'log2FC', align: 'right', w: '0.9fr' },
-    { key: 'lfcSE', label: 'lfcSE', align: 'right', w: '0.8fr' },
-    { key: 'stat', label: 'stat', align: 'right', w: '0.9fr' },
-    { key: 'pvalue', label: 'pvalue', align: 'right', w: '0.9fr' },
-    { key: 'padj', label: 'padj', align: 'right', w: '0.9fr' },
+    {
+      key: 'baseMean',
+      label: 'baseMean',
+      align: 'right',
+      w: '0.9fr',
+      hint: 'Mean of the normalized counts across all samples',
+    },
+    {
+      key: 'log2FoldChange',
+      label: 'log2FC',
+      align: 'right',
+      w: '0.9fr',
+      hint: 'log2 fold change: 1 means doubled, -1 means halved',
+    },
+    {
+      key: 'lfcSE',
+      label: 'lfcSE',
+      align: 'right',
+      w: '0.8fr',
+      hint: 'Standard error of the log2 fold change (smaller means a more certain estimate)',
+    },
+    {
+      key: 'stat',
+      label: 'stat',
+      align: 'right',
+      w: '0.9fr',
+      hint: 'Wald test statistic; a larger absolute value means stronger evidence of a change',
+    },
+    {
+      key: 'pvalue',
+      label: 'pvalue',
+      align: 'right',
+      w: '0.9fr',
+      hint: 'p-value before correcting for testing many genes',
+    },
+    {
+      key: 'padj',
+      label: 'padj',
+      align: 'right',
+      w: '0.9fr',
+      hint: 'Adjusted p-value (Benjamini-Hochberg false discovery rate)',
+    },
   ];
   const GRID = `grid-template-columns: ${COLS.map((c) => c.w).join(' ')};`;
 
@@ -222,6 +258,7 @@
         <button
           type="button"
           onclick={() => toggleSort(c.key)}
+          title={c.hint}
           class={cn(
             'flex h-9 items-center gap-1 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/50',
             c.align === 'right' && 'justify-end',

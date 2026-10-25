@@ -421,11 +421,11 @@
   <div class="mt-2 flex flex-wrap items-center gap-3 text-[0.65rem] text-muted-foreground">
     <span class="inline-flex items-center gap-1">
       <span class="inline-block h-2 w-2 rounded-full" style="background: {UP_COLOR}"></span>
-      up (q ≤ {qThreshold}, log2FC ≥ {lfcThreshold})
+      up (padj ≤ {qThreshold}, log2 fold change (log2FC) ≥ {lfcThreshold})
     </span>
     <span class="inline-flex items-center gap-1">
       <span class="inline-block h-2 w-2 rounded-full" style="background: {DOWN_COLOR}"></span>
-      down (q ≤ {qThreshold}, log2FC ≤ −{lfcThreshold})
+      down (padj ≤ {qThreshold}, log2FC ≤ −{lfcThreshold})
     </span>
     <span class="inline-flex items-center gap-1">
       <span class="inline-block h-2 w-2 rounded-full bg-muted"></span>

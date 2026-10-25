@@ -100,10 +100,10 @@
   </Button>
 
   <PageHint id="disease-term" title="Disease term">
-    C. elegans genes implicated in this Disease Ontology term, via Alliance curation. Most
-    associations are inferred from a human ortholog; the With column shows the supporting ortholog
-    source. Use the cross-reference table below to check whether any of your saved gene lists is
-    enriched for this disease.
+    C. elegans genes linked to this Disease Ontology (DO) term by the Alliance of Genome Resources.
+    Most links are inferred from a human ortholog (the matching human gene). For those genes, the
+    text after the gene name shows the ortholog the link came from. The table below tests whether
+    any of your saved gene lists has more genes with this term than expected by chance.
   </PageHint>
 
   {#if loading}
@@ -113,8 +113,8 @@
       <CardContent class="pt-6">
         <div class="mb-1 font-medium">Disease term not found</div>
         <div class="text-sm text-muted-foreground">
-          No <span class="font-mono">{id}</span> in gene_disease. Either the term has no C. elegans gene
-          implications curated, or the DB needs rebuilding.
+          No <span class="font-mono">{id}</span> in the gene_disease table. Either no C. elegans genes
+          are linked to this term, or the database needs rebuilding.
         </div>
       </CardContent>
     </Card>
@@ -146,11 +146,11 @@
         <CardTitle class="inline-flex items-center gap-1.5 text-base">
           Implicated genes
           <ControlHint id="disease-genes" title="Implicated genes">
-            Sorted by direct (curator-assigned) first, then by supporting evidence count. The
-            <span class="font-mono">via ortholog</span> badge marks rows inferred from a human/mouse
-            ortholog (association_type ends in <code>_via_orthology</code> or
-            <code>with_ortholog</code>
-            is populated). <i>With</i> column shows the ortholog source for those rows.
+            Genes assigned directly by curators come first, then genes sorted by the number of
+            evidence records. The <span class="font-mono">via ortho</span> label marks a link
+            inferred from a human or mouse ortholog (the association type ends in
+            <code>_via_orthology</code>, or an ortholog is listed). The text after the gene shows
+            the association type and that ortholog.
           </ControlHint>
         </CardTitle>
         {@const orthoInferred = genes.filter(isOrthologyInferred).length}
@@ -176,8 +176,8 @@
               class={'text-right font-mono tabular-nums ' +
                 (ortho ? 'text-muted-foreground/70' : 'font-semibold')}
               title={ortho
-                ? `${g.evidence_count} evidence rows (orthology-inferred)`
-                : `${g.evidence_count} evidence rows (direct)`}
+                ? `${g.evidence_count} evidence records (inferred from an ortholog)`
+                : `${g.evidence_count} evidence records (assigned directly)`}
             >
               {g.evidence_count}
             </span>
