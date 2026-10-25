@@ -954,11 +954,14 @@ CREATE INDEX idx_gene_pheno_gene ON gene_phenotype(wormbase_gene);
 CREATE INDEX idx_gene_pheno_term ON gene_phenotype(term_id);
 """)
 
-def parse_obo(path, prefix, sink, synonym_sink=None, rel_sink=None):
+def parse_obo(path, prefix, sink, synonym_sink=None, rel_sink=None, rel_types=None):
     # Captures synonyms when synonym_sink is provided and is_a relations when
-    # rel_sink is provided. OBO lines look like:
+    # rel_sink is provided. With rel_types (e.g. ('part_of',)) rel_sink instead
+    # gets (child, parent, rel_type) rows for is_a plus those relationship types,
+    # and obsolete terms are skipped. OBO lines look like:
     #   synonym: "Daf-c" RELATED []
     #   is_a: WBPhenotype:0000900 ! parent term name
+    #   relationship: part_of WBbt:0004422 ! parent term name
     cur_t = None
     def flush_t(t):
         if not t or 'id' not in t or 'name' not in t: return
@@ -967,10 +970,17 @@ def parse_obo(path, prefix, sink, synonym_sink=None, rel_sink=None):
         if synonym_sink is not None:
             for syn in t.get('synonyms', ()):
                 synonym_sink.append((t['id'], syn))
-        if rel_sink is not None:
+        if rel_sink is not None and rel_types is None:
             for parent in t.get('is_a', ()):
                 if parent.startswith(prefix):
                     rel_sink.append((t['id'], parent))
+        elif rel_sink is not None and not t.get('obsolete'):
+            for parent in t.get('is_a', ()):
+                if parent.startswith(prefix):
+                    rel_sink.append((t['id'], parent, 'is_a'))
+            for rtype, parent in t.get('rels', ()):
+                if rtype in rel_types and parent.startswith(prefix):
+                    rel_sink.append((t['id'], parent, rtype))
     with open(path, encoding='utf-8') as f:
         in_t = False
         for raw in f:
@@ -992,6 +1002,10 @@ def parse_obo(path, prefix, sink, synonym_sink=None, rel_sink=None):
                 cur_t['obsolete'] = True
             elif k == 'is_a':
                 cur_t.setdefault('is_a', []).append(v.split(' !')[0].strip())
+            elif k == 'relationship' and rel_types is not None:
+                bits = v.split(' !')[0].split()
+                if len(bits) == 2:
+                    cur_t.setdefault('rels', []).append((bits[0], bits[1]))
             elif k == 'synonym':
                 if v.startswith('"'):
                     end = v.find('"', 1)
@@ -1143,17 +1157,26 @@ CREATE TABLE gene_anatomy (
   PRIMARY KEY (wormbase_gene, term_id, evidence_code)
 );
 CREATE INDEX idx_gene_anat_term ON gene_anatomy(term_id);
+CREATE TABLE anatomy_relations (
+  child_id TEXT NOT NULL, parent_id TEXT NOT NULL, rel_type TEXT NOT NULL,
+  PRIMARY KEY (child_id, parent_id, rel_type)
+);
+CREATE INDEX idx_anat_rel_parent ON anatomy_relations(parent_id);
 """)
 anat_terms = []
 anat_syns = []
-parse_obo(anatomy_obo, 'WBbt:', anat_terms, anat_syns)
+anat_rels = []  # (child_id, parent_id, rel_type): is_a and part_of
+parse_obo(anatomy_obo, 'WBbt:', anat_terms, anat_syns, anat_rels, ('part_of',))
 cur.executemany('INSERT OR IGNORE INTO anatomy_terms VALUES (?,?,?,?)', anat_terms)
+_anat_live = {t[0] for t in anat_terms if not t[3]}
+anat_rels = [r for r in anat_rels if r[1] in _anat_live]
+cur.executemany('INSERT OR IGNORE INTO anatomy_relations VALUES (?,?,?)', anat_rels)
 cur.executescript("""
 CREATE TABLE anatomy_synonyms (term_id TEXT NOT NULL, synonym TEXT NOT NULL);
 CREATE INDEX idx_anat_syn_term ON anatomy_synonyms(term_id);
 """)
 cur.executemany('INSERT INTO anatomy_synonyms VALUES (?,?)', anat_syns)
-print(f'anatomy_terms: {len(anat_terms)} | syns: {len(anat_syns)}', file=sys.stderr)
+print(f'anatomy_terms: {len(anat_terms)} | syns: {len(anat_syns)} | relations: {len(anat_rels)}', file=sys.stderr)
 
 ga_rows = []; seen_ga = set()
 opener = gzip.open if anatomy_assoc.endswith('.gz') else open
@@ -2332,7 +2355,7 @@ import json, sqlite3, sys
 tables = ["annotations", "go_terms", "gene_go", "wormcat", "neuronal", "synaptogenesis", "gene_location", "stage_expression", "gene_transcript", "gene_domain",
           "interactions", "gene_phenotype", "allele_phenotype", "allele_names", "cengen_expression",
           "cengen_coexpression", "gene_disease", "orthologs", "gene_paper", "paper_meta",
-          "kegg_pathway", "gene_kegg_pathway"]
+          "kegg_pathway", "gene_kegg_pathway", "anatomy_relations"]
 con = sqlite3.connect(sys.argv[1])
 out = {}
 for t in tables:
