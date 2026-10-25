@@ -128,7 +128,10 @@
     <div
       class="mb-1 flex flex-wrap items-center justify-end gap-2 text-[0.65rem] text-muted-foreground"
     >
-      <span>colour scale -log10(q)</span>
+      <span
+        title="Dot color shows -log10 of the q-value (false discovery rate, FDR). Larger means more significant."
+        >color scale -log10(q)</span
+      >
       <label class="inline-flex items-center gap-1">
         <input
           type="radio"
@@ -154,7 +157,7 @@
         value={scaleMin}
         onchange={(e) => qScale.set(Number(e.currentTarget.value), qScale.max ?? scaleMax)}
         class="w-14 rounded border bg-card px-1 py-0.5 font-mono"
-        title="Lowest -log10(q) on the colour scale"
+        title="Lowest -log10(q) on the color scale"
       />
       <span>to</span>
       <input
@@ -164,7 +167,7 @@
         value={scaleMax}
         onchange={(e) => qScale.set(qScale.min ?? scaleMin, Number(e.currentTarget.value))}
         class="w-14 rounded border bg-card px-1 py-0.5 font-mono"
-        title="Highest -log10(q) on the colour scale; stronger terms take the end colour"
+        title="Highest -log10(q) on the color scale. Terms at or above this value take the end color."
       />
     </div>
     <div class="overflow-x-auto">
@@ -256,9 +259,9 @@
                 <div class="font-semibold">{r.name}</div>
                 <div class="font-mono text-[0.65rem] text-muted-foreground">{r.term_id}</div>
                 <div class="grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5 text-[0.7rem]">
-                  <span class="text-muted-foreground">NES</span>
+                  <span class="text-muted-foreground" title="Normalized enrichment score">NES</span>
                   <span class="font-mono tabular-nums">{r.nes.toFixed(3)}</span>
-                  <span class="text-muted-foreground">ES</span>
+                  <span class="text-muted-foreground" title="Enrichment score">ES</span>
                   <span class="font-mono tabular-nums">{r.es.toFixed(3)}</span>
                   <span class="text-muted-foreground">size</span>
                   <span class="font-mono tabular-nums">{r.size}</span>
@@ -266,7 +269,7 @@
                   <span class="font-mono tabular-nums">
                     {r.p === 0 ? '< 1e-300' : r.p < 0.01 ? r.p.toExponential(2) : r.p.toFixed(3)}
                   </span>
-                  <span class="text-muted-foreground">q</span>
+                  <span class="text-muted-foreground" title="False discovery rate (FDR)">q</span>
                   <span class="font-mono tabular-nums">
                     {r.q === 0 ? '< 1e-300' : r.q < 0.01 ? r.q.toExponential(2) : r.q.toFixed(3)}
                   </span>

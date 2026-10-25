@@ -350,9 +350,9 @@
             The file your aligner writes after matching sequencing reads to the genome: one record
             per read, saying which chromosome and position it landed on. STAR, HISAT2 and bowtie2
             all produce them, and a sequencing core will usually return them alongside the FASTQ
-            files. Pick one BAM per sample; sorting is not required and the <code>.bai</code> index is
-            not needed. If you only have FASTQ files, they have to be aligned first, which is not something
-            this page can do.
+            files (the raw, unaligned reads). Pick one BAM per sample; sorting is not required and
+            the <code>.bai</code> index is not needed. If you only have FASTQ files, they have to be aligned
+            first, which is not something this page can do.
           </ControlHint>
           <span class="text-xs text-muted-foreground">
             {bamFiles.length
@@ -405,7 +405,7 @@
           <Button variant="outline" size="sm" onclick={() => gtfInput?.click()} disabled={running}>
             {bundled ? 'Or choose your own' : 'Choose annotation'}
           </Button>
-          <span class="text-xs text-muted-foreground">GTF or SAF</span>
+          <span class="text-xs text-muted-foreground">gene annotation file: GTF or SAF format</span>
           <ControlHint id="counts-gtf" title="What the annotation is and where to get one">
             The BAM says where each read landed; the annotation says where the genes are, so the two
             together give a count per gene. The <b>Use WormBase</b> button loads the canonical gene
@@ -589,8 +589,8 @@
           <div class="mb-4 space-y-2">
             <div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>
-                Optional: label each sample to colour the PCA by condition. The labels carry over to
-                the differential expression step.
+                Optional: label each sample to colour the principal component analysis (PCA) plot by
+                condition. The labels carry over to the differential expression step.
               </span>
               <Button variant="outline" size="sm" onclick={guessFromNames}>
                 Guess from sample names

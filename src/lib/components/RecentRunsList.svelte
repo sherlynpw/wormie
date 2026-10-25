@@ -50,8 +50,8 @@
     <CardHeader>
       <CardTitle class="text-base">Recent runs</CardTitle>
       <div class="text-xs text-muted-foreground">
-        Last {runs.length} GSEA analyses kept in browser storage. Click <b>Resume</b> to restore the ranked
-        list and result table without recomputing.
+        Last {runs.length} gene set enrichment analysis (GSEA) runs, kept in this browser. Click
+        <b>Resume</b> to restore the ranked list and result table without running the analysis again.
       </div>
     </CardHeader>
     <CardContent class="space-y-1 pt-0">
@@ -60,10 +60,10 @@
           <Badge variant="muted" class="py-0 text-[0.6rem]">{r.kind}</Badge>
           <span class="font-mono tabular-nums">{r.n_genes.toLocaleString()} genes</span>
           <span class="text-muted-foreground">
-            {r.n_significant} sig of {r.n_results}
+            {r.n_significant} significant of {r.n_results}
           </span>
           <span class="font-mono text-muted-foreground">
-            size {r.params.minSize}–{r.params.maxSize}, perms {r.params.nperm}
+            term size {r.params.minSize}-{r.params.maxSize}, {r.params.nperm} permutations
           </span>
           <span class="ml-auto text-muted-foreground">{fmtAgo(r.at)}</span>
           <Button variant="outline" size="sm" onclick={() => resume(r)}>Resume</Button>

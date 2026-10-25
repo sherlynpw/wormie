@@ -10,7 +10,11 @@ export interface GzipReader {
   isGzip: boolean; // true if decompression was applied
 }
 
-export async function openGzipReader(url: string): Promise<GzipReader> {
+// `onCompressed` fires per network chunk with cumulative raw (pre-gunzip) bytes.
+export async function openGzipReader(
+  url: string,
+  onCompressed?: (received: number) => void,
+): Promise<GzipReader> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Fetch ${url} failed: ${res.status}`);
   const totalCompressed = Number(res.headers.get('content-length')) || 0;
@@ -22,13 +26,19 @@ export async function openGzipReader(url: string): Promise<GzipReader> {
   const isGzip =
     firstChunk.value.length >= 2 && firstChunk.value[0] === 0x1f && firstChunk.value[1] === 0x8b;
 
+  let rawReceived = firstChunk.value.length;
+  onCompressed?.(rawReceived);
   const rebuilt = new ReadableStream<Uint8Array>({
     async start(controller) {
       controller.enqueue(firstChunk.value);
       while (true) {
         const { done, value } = await baseReader.read();
         if (done) break;
-        if (value) controller.enqueue(value);
+        if (value) {
+          rawReceived += value.length;
+          onCompressed?.(rawReceived);
+          controller.enqueue(value);
+        }
       }
       controller.close();
     },
@@ -43,15 +53,17 @@ export async function openGzipReader(url: string): Promise<GzipReader> {
 }
 
 // Consume a gzip stream into a single Uint8Array (in-memory fallback path only).
-// `onProgress` fires per chunk with cumulative decoded bytes.
+// `onProgress` fires per network chunk with cumulative compressed bytes.
 // Import worker uses openGzipReader directly to avoid materializing the full DB.
 export async function fetchAndDecompress(
   url: string,
   onProgress?: (received: number, total: number) => void,
 ): Promise<Uint8Array> {
-  const { reader, totalCompressed, isGzip } = await openGzipReader(url);
-  // Decompressed sqlite is ~4-6x gzip size; multiply to keep progress bars honest.
-  const total = isGzip ? totalCompressed * 4 : totalCompressed;
+  let totalCompressed = 0;
+  const { reader, totalCompressed: total } = await openGzipReader(url, (r) =>
+    onProgress?.(r, totalCompressed),
+  );
+  totalCompressed = total;
   const chunks: Uint8Array[] = [];
   let received = 0;
   while (true) {
@@ -59,7 +71,6 @@ export async function fetchAndDecompress(
     if (done) break;
     chunks.push(value);
     received += value.length;
-    onProgress?.(received, total);
   }
   const out = new Uint8Array(received);
   let off = 0;

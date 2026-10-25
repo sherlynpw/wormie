@@ -79,14 +79,18 @@
   </header>
 
   <PageHint id="nta.intro" title="What this step does">
-    BioGRID records pairs of genes seen to interact: physically, where the proteins bind, or
-    genetically, where mutating both produces an effect neither produces alone. Picture that as a
-    network, genes as dots and interactions as lines between them. This asks whether your genes are
-    joined to each other by more lines than a comparable random set would be, which is evidence they
-    work together rather than being an unrelated collection. Well-studied genes have more known
-    partners simply because more people looked, so the random sets are matched gene by gene on how
-    many partners each already has. Many genes have no recorded interaction at all; the result says
-    how many of yours could be tested.
+    Network topology analysis (NTA) asks whether the genes in your list interact with each other.
+    Input: a list of genes. The Biological General Repository for Interaction Datasets (BioGRID)
+    records pairs of genes that interact. Physical interactions are where the proteins bind. Genetic
+    interactions are where mutating both genes has an effect that neither mutation has alone.
+    Picture this as a network: genes are dots and interactions are lines between them. The tool
+    counts the lines among your genes. It compares that count with the counts for many random gene
+    sets of the same size (permutations). Output: the observed and expected number of lines, and a
+    z-score (how many standard deviations the observed count is above the expected count). A high
+    count suggests that your genes work together. Well-studied genes have more known partners
+    because more people looked at them. So by default each gene in a random set is swapped in for
+    one of your genes with a similar degree (number of partners). Many genes have no recorded
+    interaction. The result states how many of your genes could be tested.
   </PageHint>
 
   <Card>
@@ -182,7 +186,12 @@
             <dd class="font-mono">{result.nodes.length}</dd>
           </div>
           <div>
-            <dt class="text-muted-foreground">Connected (≥1 in-set edge)</dt>
+            <dt
+              class="text-muted-foreground"
+              title="Query genes with at least one interaction with another gene in your list"
+            >
+              Connected (≥1 in-set edge)
+            </dt>
             <dd class="font-mono">{result.connectedNodes.length}</dd>
           </div>
           <div>
@@ -196,11 +205,21 @@
             <dd class="font-mono">{result.expectedEdges.toFixed(2)}</dd>
           </div>
           <div>
-            <dt class="text-muted-foreground">Edge z-score</dt>
+            <dt
+              class="text-muted-foreground"
+              title="Observed edges minus expected edges, divided by the standard deviation of the random sets"
+            >
+              Edge z-score
+            </dt>
             <dd class="font-mono">{result.edgeZ.toFixed(2)}</dd>
           </div>
           <div>
-            <dt class="text-muted-foreground">Density</dt>
+            <dt
+              class="text-muted-foreground"
+              title="Edges found divided by the edges possible among all genes in your list"
+            >
+              Density
+            </dt>
             <dd class="font-mono">{result.density.toFixed(4)}</dd>
           </div>
           <div>

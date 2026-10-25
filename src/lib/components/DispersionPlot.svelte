@@ -208,15 +208,15 @@
   <div class="mt-2 flex flex-wrap items-center gap-3 text-[0.65rem] text-muted-foreground">
     <span class="inline-flex items-center gap-1">
       <span class="inline-block h-2 w-2 rounded-full" style="background: hsl(0 0% 35%)"></span>
-      gene-wise estimate
+      gene-wise estimate (each gene fitted on its own)
     </span>
     <span class="inline-flex items-center gap-1">
       <span class="inline-block h-2 w-2 rounded-full" style="background: {DOWN_COLOR}"></span>
-      final
+      final estimate (used in the test)
     </span>
     <span class="inline-flex items-center gap-1">
       <span class="inline-block h-[2px] w-4" style="background: {UP_COLOR}"></span>
-      fitted curve
+      fitted trend across genes
     </span>
     <span class="ml-auto font-mono">{valid.length.toLocaleString()} genes</span>
   </div>

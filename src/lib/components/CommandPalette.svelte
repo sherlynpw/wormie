@@ -343,7 +343,7 @@
               Leading-edge overlap
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
-              value="gsea intersect recurring terms saved runs bundles"
+              value="ranked-list consensus gsea intersect recurring terms saved runs bundles"
               onSelect={() => navigate('/gsea/intersect')}
               class={cn(
                 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
@@ -351,7 +351,7 @@
               )}
             >
               <BarChart class="h-4 w-4 text-muted-foreground" />
-              GSEA intersect
+              Ranked-list consensus
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="gsea preranked ranked-list enrichment"

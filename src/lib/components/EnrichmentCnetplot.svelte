@@ -170,8 +170,8 @@
 
 {#if topTerms.length === 0}
   <div class="text-xs italic text-muted-foreground">
-    No terms with overlap data to plot. (Imported clusterProfiler results without a
-    <code>geneID</code> column can't be Cnetted.)
+    No terms have genes from your list to plot. Imported clusterProfiler results need a
+    <code>geneID</code> column (the genes in each term) to draw this network.
   </div>
 {:else}
   <div class="space-y-2">
@@ -253,9 +253,9 @@
       </svg>
     </div>
     <div class="text-[0.65rem] text-muted-foreground">
-      Top {topTerms.length} terms around the ring; genes pulled toward the centre by connection count
-      (hub genes sit closer). Edge opacity rises with the gene's term count. Gene labels show for hub
-      genes (≥ 2 terms) only.
+      Network of terms and genes. The top {topTerms.length} terms are placed around the ring. A gene is
+      linked to each term it belongs to. Genes in more terms sit closer to the centre, and their links
+      are darker. Gene labels are shown only for genes in 2 or more terms.
     </div>
   </div>
 {/if}

@@ -183,8 +183,10 @@
   </Button>
 
   <PageHint id="phenotype-term" title="Phenotype navigator">
-    Click any parent/child chip to walk the WBPhenotype DAG. Genes shown are direct annotations only
-    (not propagated up the ontology). Hover any gene for a preview.
+    Phenotype terms come from the WormBase Phenotype Ontology (WBPhenotype), a tree where a broad
+    term has more specific child terms. Click a parent or child chip to move through the tree. The
+    genes shown are annotated directly to this term. Genes annotated to its child terms are not
+    included. Hover over a gene to preview it.
   </PageHint>
 
   {#if loading}
@@ -234,7 +236,7 @@
           bind:value={layoutKind}
           class="rounded border bg-card px-1.5 py-0.5 font-mono text-xs"
         >
-          <option value="radial">radial (focal in center)</option>
+          <option value="radial">radial (current term in center)</option>
           <option value="dagre-TB">tree, top to bottom</option>
           <option value="dagre-LR">tree, left to right</option>
         </select>
@@ -265,7 +267,7 @@
           <CardTitle class="inline-flex items-center gap-1.5 text-base">
             Parents
             <ControlHint id="pheno-parents" title="Parents">
-              Broader phenotypes that include this one. Walks <code>is_a</code> edges.
+              Broader phenotype terms that include this one (the <code>is_a</code> links in the ontology).
             </ControlHint>
           </CardTitle>
           <span class="text-xs text-muted-foreground">{focalParents.length}</span>
@@ -273,7 +275,7 @@
         <CardContent class="pt-0">
           {#if focalParents.length === 0}
             <div class="text-xs italic text-muted-foreground">
-              No parents — this is a top-level term.
+              No parents. This is a top-level term.
             </div>
           {:else}
             <div class="flex flex-wrap gap-1.5">
@@ -296,7 +298,7 @@
           <CardTitle class="inline-flex items-center gap-1.5 text-base">
             Children
             <ControlHint id="pheno-children" title="Children">
-              More-specific phenotypes that fall under this one.
+              More specific phenotype terms that fall under this one.
             </ControlHint>
           </CardTitle>
           <span class="text-xs text-muted-foreground">{focalChildren.length}</span>
@@ -304,7 +306,7 @@
         <CardContent class="pt-0">
           {#if focalChildren.length === 0}
             <div class="text-xs italic text-muted-foreground">
-              No children — this is a leaf term.
+              No children. This is a leaf term (it has no more specific terms).
             </div>
           {:else}
             <div class="flex flex-wrap gap-1.5">
@@ -330,10 +332,12 @@
         <CardTitle class="inline-flex items-center gap-1.5 text-base">
           Annotated genes
           <ControlHint id="pheno-genes" title="Annotated genes">
-            Genes directly annotated to <i>{term.name}</i> via RNAi or allele. Per-gene counts split
-            into <i>n_alleles</i> (WBVar-supported) and <i>n_evidence</i> (total evidence rows in the
-            WB GAF). Bold counts indicate allele support; the muted "RNAi" badge means the association
-            is RNAi/non-allele only.
+            Genes directly annotated to <i>{term.name}</i> from RNA interference (RNAi) or allele
+            (mutant) experiments. Each gene shows one count. A bold count is the number of alleles (<i
+              >n_alleles</i
+            >, WormBase variation IDs) that show this phenotype. A muted count with the "RNAi" label
+            is the number of evidence records (<i>n_evidence</i>) for a gene with RNAi or other
+            non-allele evidence only.
           </ControlHint>
         </CardTitle>
         {@const rnaiOnlyGeneCount = genes.filter((g) => g.n_alleles === 0).length}
@@ -352,8 +356,8 @@
                 class={'text-right font-mono tabular-nums ' +
                   (rnaiOnly ? 'text-muted-foreground/70' : 'font-semibold')}
                 title={rnaiOnly
-                  ? `${g.n_evidence} RNAi/non-allele evidence row${g.n_evidence === 1 ? '' : 's'}`
-                  : `${g.n_alleles} allele${g.n_alleles === 1 ? '' : 's'} · ${g.n_evidence} total evidence`}
+                  ? `${g.n_evidence} RNAi or non-allele evidence record${g.n_evidence === 1 ? '' : 's'}`
+                  : `${g.n_alleles} allele${g.n_alleles === 1 ? '' : 's'} · ${g.n_evidence} evidence records in total`}
               >
                 {g.n_alleles > 0 ? g.n_alleles : g.n_evidence}
               </span>

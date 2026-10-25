@@ -233,20 +233,21 @@
   </header>
 
   <PageHint id="compare" title="What this step does">
-    You have a handful of genes and want to know what they have in common: are they annotated to the
-    same GO terms, do they give the same phenotypes, are they expressed in the same tissues and
-    neuron types, do they share orthologs? Select the genes from the cards or table view and send
-    them here. Every gene is compared against every other one, annotation by annotation. With two
-    genes you get a three-column split, unique to the first / shared / unique to the second. With
-    three or more you get an UpSet plot per category showing which combinations of genes share
-    terms, a Jaccard heatmap of how similar each pair is overall, and the list of annotations common
-    to all of them. Note this compares genes to each other, not one list against another list: to
-    see which genes two lists share, use
-    <a href={resolve('/compare/lists')} class="underline underline-offset-2">Gene overlap</a>; to
-    ask whether two separate gene lists turn up the same biology, paste them into
+    Use this page to see what a few genes have in common. It compares their Gene Ontology (GO)
+    terms, phenotypes, tissues, neuron types (from CeNGEN, the C. elegans Neuronal Gene Expression
+    Network) and orthologs (the matching genes in other species). Select the genes in the cards or
+    table view and send them here. Every gene is compared with every other gene, one annotation type
+    at a time. With two genes you get three columns: unique to the first, shared, and unique to the
+    second. With three or more genes you get an UpSet plot for each annotation type (a bar chart
+    that shows which combinations of genes share which terms), a Jaccard heatmap (how similar each
+    pair of genes is, as shared terms divided by all terms of the two genes), and the list of
+    annotations common to all genes. This page compares genes with each other, not one list with
+    another list. To see which genes two lists share, use
+    <a href={resolve('/compare/lists')} class="underline underline-offset-2">Gene overlap</a>. To
+    test whether two gene lists have the same enriched terms, use
     <a href={resolve('/enrichment/overlap')} class="underline underline-offset-2"
       >Enrichment overlap</a
-    >, which runs over-representation on each and compares the enriched terms.
+    >, which runs over-representation on each list and compares the enriched terms.
   </PageHint>
 
   <div class="-mt-3 flex items-center justify-between gap-2">
@@ -269,7 +270,7 @@
           <a class="text-primary hover:underline" href={resolve('/?view=cards')}>cards</a>
           or
           <a class="text-primary hover:underline" href={resolve('/?view=table')}>table</a>
-          view (click the + on each), then click "Compare selection" in the bottom bar.
+          view (click the + on each gene), then click "Compare selection" in the bar at the bottom.
         </div>
       </CardContent>
     </Card>
@@ -284,7 +285,7 @@
             ? 'border-primary bg-primary text-primary-foreground'
             : 'border-input bg-background hover:bg-accent',
         )}
-        title="UpSet + Jaccard + intersection tables (set-level overlap)"
+        title="UpSet plots, Jaccard heatmaps and tables of shared terms for the whole set of genes"
       >
         Set overlaps
       </button>
@@ -297,7 +298,7 @@
             ? 'border-primary bg-primary text-primary-foreground'
             : 'border-input bg-background hover:bg-accent',
         )}
-        title="Per-gene cards side-by-side with shared annotations highlighted"
+        title="One card per gene, side by side, with shared annotations highlighted"
       >
         Side-by-side
       </button>
@@ -375,7 +376,7 @@
                           />
                         </div>
                       {:else}
-                        <span class="text-muted-foreground/40">—</span>
+                        <span class="text-muted-foreground/40">-</span>
                       {/if}
                     </td>
                   {/each}
@@ -420,7 +421,7 @@
           <CardHeader class="pb-3">
             <CardTitle class="text-base">Pairwise overlap</CardTitle>
             <div class="text-xs text-muted-foreground">
-              Set differences and intersection between
+              Terms unique to each gene and terms shared by both, for
               <span class="font-semibold text-foreground">{A.gene_name ?? A.wormbase_gene}</span>
               and
               <span class="font-semibold text-foreground">{B.gene_name ?? B.wormbase_gene}</span>.
@@ -505,15 +506,16 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               UpSet (intersection groups)
               <ControlHint id="compare-upset" title="UpSet plots">
-                Visualizes term-set intersections across all selected genes. Each row is a gene;
-                dots connected by a line mark genes that share that intersection. The bar is the
-                size of the intersection. Use this when a Venn diagram would become unreadable past
-                ~4 sets.
+                Shows which terms are shared by which combinations of the selected genes. Each row
+                is a gene. Dots joined by a line mark the genes in one combination. The bar is the
+                number of terms in that combination. Use an UpSet plot instead of a Venn diagram
+                when there are more than about 4 genes, because a Venn diagram becomes hard to read.
               </ControlHint>
             </CardTitle>
             <div class="text-xs text-muted-foreground">
-              Top intersection groups across {rows.length} genes for each category. Bars = group size;
-              connected dots = which genes share that group. Sorted by size, top 18 groups per category.
+              The largest groups of shared terms across {rows.length} genes, for each annotation type.
+              Bar length is the number of terms in the group. Connected dots show which genes share the
+              group. Groups are sorted by size, and the top 18 are shown for each annotation type.
             </div>
           </CardHeader>
           <CardContent class="grid gap-4 pt-0 md:grid-cols-2">
@@ -583,14 +585,16 @@
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
               Pairwise similarity (Jaccard)
               <ControlHint id="compare-jaccard" title="Jaccard heatmap">
-                N × N grid of <code>|A ∩ B| / |A ∪ B|</code> per term category. Robust to set-size differences
-                (unlike raw overlap counts). Compare cell intensity across categories to see which dimension
-                drives gene-to-gene similarity.
+                A grid with one cell for each pair of genes. The Jaccard index of a pair is the
+                number of terms both genes have, divided by the number of terms that either gene
+                has. It runs from 0 (nothing shared) to 1 (identical). Unlike a raw count of shared
+                terms, it does not favor genes with many annotations. Compare the colors across
+                annotation types to see which type drives the similarity between genes.
               </ControlHint>
             </CardTitle>
             <div class="text-xs text-muted-foreground">
-              N × N similarity per category. Darker cells = more overlap. Numbers under each gene
-              label are the set sizes.
+              Jaccard index for each pair of genes, per annotation type. Darker cells mean more
+              overlap. The number under each gene label is how many terms that gene has.
             </div>
           </CardHeader>
           <CardContent class="grid gap-4 pt-0 md:grid-cols-2">
@@ -677,7 +681,7 @@
           <CardHeader class="pb-3">
             <CardTitle class="text-base">Shared across all {rows.length} genes</CardTitle>
             <div class="text-xs text-muted-foreground">
-              Strict intersection (an item must appear in every selected gene to land here).
+              Only items that every selected gene has are listed here.
             </div>
           </CardHeader>
           <CardContent class="space-y-4 pt-0">

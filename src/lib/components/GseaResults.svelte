@@ -553,8 +553,10 @@
           class="w-14 rounded border bg-card px-1 py-0.5 font-mono text-xs"
         />
         <ControlHint id="gsea-size" title="Gene-set size filter">
-          Subramanian / fgsea convention is <b>15 – 500</b>. Smaller than 15 inflates false
-          positives from tiny sets; larger than 500 tests over-generic terms.
+          Only gene sets with this many genes found in your ranked list are tested. The usual range
+          (Subramanian et al. 2005; fgsea, an R package for fast preranked GSEA) is <b>15 to 500</b
+          >. Sets smaller than 15 give unreliable results; sets larger than 500 are too general to
+          be informative.
         </ControlHint>
       </label>
       <label class="inline-flex items-center gap-1">
@@ -566,18 +568,20 @@
           <option value={5000}>5000</option>
         </select>
         <ControlHint id="gsea-perms" title="Permutations">
-          Controls the precision of mid-range p-values. Tail p-values are handled separately by <i
-            >multilevel</i
-          > so you don't need to crank this above 2500 for most analyses.
+          A permutation draws a random gene set of the same size from the ranking and scores it.
+          Many such scores make the null distribution (the scores expected by chance). The number of
+          permutations sets the precision of mid-range p-values. Very small p-values are handled
+          separately by <i>multilevel</i> (below), so 2500 is enough for most analyses.
         </ControlHint>
       </label>
       <label class="inline-flex cursor-pointer items-center gap-1">
         <input type="checkbox" bind:checked={multilevel} class="rounded" />
         multilevel
         <ControlHint id="gsea-multilevel" title="Adaptive multilevel">
-          Refines tail p-values past the <code>1/(nperm+1)</code> floor via Korotkevich adaptive
-          multilevel splitting (fgsea). Adds ~<code>M·log₂(1/p)</code> work per floor-hitting term. Match
-          fgseaMultilevel's behavior.
+          Permutations cannot give a p-value below <code>1/(nperm+1)</code>. Multilevel estimation
+          (adaptive multilevel splitting, Korotkevich et al., as in fgsea) goes below that floor by
+          estimating the extreme tail in steps. It adds work for every term that reaches the floor.
+          The results follow fgsea's <code>fgseaMultilevel</code> function.
         </ControlHint>
       </label>
       <label class="inline-flex cursor-pointer items-center gap-1">
@@ -585,26 +589,28 @@
         collapse
         <ControlHint id="gsea-collapse" title="Collapse redundant terms">
           Removes redundant terms from the table and the figures; it does not change any p or q
-          value. GO uses REVIGO (Supek et al. 2011): SimRel semantic similarity on the GO hierarchy,
-          with term frequencies from the <i>C. elegans</i> annotations. Of each pair more similar
-          than the cutoff, the broader (over 5% of annotated genes) or less significant term is
-          folded under the other. Other term types have no hierarchy, so the same procedure runs on
-          the leading-edge genes: similarity is their Jaccard overlap, a term is broad when its set
-          covers over 5% of the ranked genes, and a set containing another's leading edge plays the
-          parent. Up- and down-regulated sets are never merged.
+          value. For Gene Ontology (GO) terms it uses REVIGO (Supek et al. 2011): SimRel semantic
+          similarity (how close two terms are in the GO hierarchy), with term frequencies from the
+          <i>C. elegans</i> annotations. Of each pair more similar than the cutoff, the broader
+          (over 5% of annotated genes) or less significant term is folded under the other. Other
+          term types have no hierarchy, so the same procedure runs on the leading-edge genes (the
+          genes that drive the score): similarity is their Jaccard index (shared genes divided by
+          all genes in both), a term is broad when its set covers over 5% of the ranked genes, and a
+          set containing another's leading edge plays the parent. Up- and down-regulated sets are
+          never merged.
           <br /><br />
           <b>Slider:</b> the highest similarity two kept terms may share. Lower is stricter (more terms
           folded, shorter list); higher is more lenient; 1 folds nothing. REVIGO's own default is 0.7
           ("medium"), with 0.9, 0.5 and 0.4 as its large, small and tiny presets. For term types other
-          than GO the slider is the gene-overlap (Jaccard) cutoff and starts at 0.5.
+          than GO the slider is the Jaccard index cutoff and starts at 0.5.
         </ControlHint>
       </label>
       {#if collapseRedundant}
         <label
           class="inline-flex items-center gap-1"
           title={useRevigo
-            ? 'Allowed SimRel similarity (REVIGO: 0.9 large, 0.7 medium, 0.5 small, 0.4 tiny). Lower = shorter list.'
-            : 'Jaccard cutoff for grouping. Lower = more aggressive collapse.'}
+            ? 'Highest allowed SimRel similarity between kept terms (REVIGO presets: 0.9 large, 0.7 medium, 0.5 small, 0.4 tiny). Lower gives a shorter list.'
+            : 'Highest allowed Jaccard index (shared leading-edge genes divided by all genes in both) between kept terms. Lower folds more terms.'}
         >
           similarity
           {#if useRevigo}
@@ -645,7 +651,10 @@
           <span class="font-semibold tabular-nums text-foreground">{significantCount}</span>
           significant (q ≤ 0.25) of {allResults.length} tested
         </span>
-        <label class="inline-flex items-center gap-1" title="Hide terms above this q-value">
+        <label
+          class="inline-flex items-center gap-1"
+          title="Hide terms with a q-value (false discovery rate, FDR) above this value"
+        >
           <span>show q ≤</span>
           <input
             type="number"
@@ -689,7 +698,7 @@
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50',
             )}
-            title="Table view"
+            title="Show results as a table"
           >
             <TableIcon class="h-3 w-3" />
             Table
@@ -703,7 +712,7 @@
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50',
             )}
-            title="Dot plot"
+            title="Show results as a dot plot"
           >
             <CircleDot class="h-3 w-3" />
             Plot
@@ -730,7 +739,7 @@
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50',
             )}
-            title="Term × leading-edge gene heatmap"
+            title="Show a heatmap of terms by leading-edge genes (the genes that drive each score)"
             disabled={activeResults.length === 0}
           >
             <LayoutGrid class="h-3 w-3" />
@@ -762,7 +771,7 @@
           size="sm"
           disabled={activeResults.length === 0}
           onclick={exportJsonBundle}
-          title="Download a JSON bundle to combine with other GSEA runs in /gsea/intersect"
+          title="Download a JSON bundle of these results. Load several bundles in Ranked-list consensus to find terms they share"
         >
           <Download class="h-3 w-3" />
           JSON
@@ -778,7 +787,7 @@
           size="sm"
           disabled={activeResults.length === 0}
           onclick={() => exportReport()}
-          title="Download a Markdown report (significant terms + leading edges + data-freshness footer)"
+          title="Download a Markdown report: significant terms, their leading edges and the data version"
         >
           <Download class="h-3 w-3" />
           Report
@@ -798,7 +807,7 @@
           <label class="inline-flex items-center gap-1 text-xs">
             sort
             <select bind:value={plotSort} class="rounded border bg-card px-1 py-0.5 text-xs">
-              <option value="nes">NES (up at top)</option>
+              <option value="nes">NES (positive at top)</option>
               <option value="q">q (significance)</option>
               <option value="size">set size</option>
             </select>
@@ -812,7 +821,8 @@
   {#if ranked.length < 10 && activeResults.length === 0}
     <Card>
       <CardContent class="pt-6 text-sm text-muted-foreground">
-        GSEA needs a ranked list of at least 10 genes with numeric scores.
+        Gene set enrichment analysis (GSEA) needs a ranked list of at least 10 genes with numeric
+        scores.
       </CardContent>
     </Card>
   {:else if loading[active] && !results[active]}
@@ -855,7 +865,7 @@
         overlap: r.leading_edge,
       }))}
       geneLabel={(g) => nameMap.get(g) ?? g}
-      title="Term × leading-edge gene (top 25 by q)"
+      title="Terms by leading-edge genes (the 25 terms with the lowest q-value)"
       exportName={`gsea-heatmap_${active}`}
     />
   {:else}
@@ -874,11 +884,12 @@
             >
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-              title="Enrichment score: the running sum at its furthest excursion from zero.">ES</th
+              title="Enrichment score (ES): the running sum along the ranking at its largest distance from zero."
+              >ES</th
             >
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-              title="Enrichment score normalized by the permutation mean, so sets of different sizes compare."
+              title="Normalized enrichment score (NES): the ES divided by its mean in the permutations, so sets of different sizes can be compared. Positive means shifted toward the top of your ranking, negative toward the bottom."
               >NES</th
             >
             <th
@@ -888,7 +899,8 @@
             >
             <th
               class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-              title="Benjamini-Hochberg false discovery rate across every set tested.">q (BH)</th
+              title="False discovery rate (FDR) by the Benjamini-Hochberg (BH) method, across every set tested."
+              >q (BH)</th
             >
           </tr>
         </thead>
@@ -1004,7 +1016,11 @@
                       <div
                         class="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
                       >
-                        Leading edge ({r.leading_edge.length} genes)
+                        <span
+                          title="The genes that drive the score: the members of the set between the end of the ranking where the score is strongest and the peak of the running sum"
+                          >Leading edge</span
+                        >
+                        ({r.leading_edge.length} genes)
                       </div>
                       <button
                         type="button"
@@ -1021,7 +1037,7 @@
                         href={resolve(`/?q=${encodeURIComponent(r.leading_edge.join(','))}`)}
                         class="text-[0.65rem] text-primary hover:underline"
                         onclick={(e) => e.stopPropagation()}
-                        title="Open these genes in the browser as a filtered gene list"
+                        title="Open these leading-edge genes in the gene browser as a list"
                       >
                         open in gene browser →
                       </a>
@@ -1032,7 +1048,7 @@
                           e.stopPropagation();
                           void sendGenes(r.leading_edge, 'enrichment');
                         }}
-                        title="Run over-representation on the leading-edge genes"
+                        title="Run over-representation analysis on the leading-edge genes"
                       >
                         test for enrichment →
                       </button>

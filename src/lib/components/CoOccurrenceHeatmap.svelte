@@ -106,7 +106,7 @@
 
 {#if layout.genes.length === 0 || layout.termIds.length === 0}
   <div class="rounded-md border bg-card px-3 py-6 text-center text-sm text-muted-foreground">
-    No co-occurring genes to display (try lowering the "min terms per gene" filter).
+    No genes to show. Try a lower value for Min terms per gene.
   </div>
 {:else}
   <div class="space-y-2">

@@ -533,31 +533,35 @@
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Over-representation</h1>
     <p class="text-sm text-muted-foreground">
-      Annotations that turn up more often than expected by chance
+      Finds annotations (for example GO terms or phenotypes) that are shared by more of your genes
+      than expected by chance
     </p>
   </header>
 
   <PageHint id="enrichment" title="What this step does">
-    You have a list of genes worth explaining: the ones that changed, or hits from a screen. Genes
-    carry annotations of {KEGG_ENABLED ? 'nine' : 'eight'} kinds: what they do (GO terms), what happens
-    when they break (phenotypes), where they are expressed (tissues and CeNGEN neuron types), which WormCat
-    category they fall under, which disease their orthologs are tied to and which neuronal or synaptogenesis
-    panel they belong to{KEGG_ENABLED ? ', plus the KEGG pathways they sit on' : ''}. This asks
-    whether any of those labels turns up in your list more often than drawing the same number of
-    genes at random would give. Each label gets a <b>fold enrichment</b> (how many times more often
-    than expected) and a <b>q-value</b>, the false discovery rate across all labels tested; q ≤ 0.05
-    is the usual cutoff. Paste gene names, or a differential expression table from DESeq2, edgeR or
-    limma and choose which genes to test. If nothing in your list passes a significance cutoff, try
-    <a href={resolve('/gsea')} class="text-primary hover:underline">ranked-list enrichment</a>,
-    which needs no cutoff.
+    Input: a list of genes, such as genes that changed in an experiment or hits from a screen. You
+    can paste gene names, or paste a differential expression (DE) table from DESeq2, edgeR or limma
+    and choose which genes to test. Each gene has annotations of {KEGG_ENABLED ? 'nine' : 'eight'} kinds:
+    Gene Ontology (GO) terms (what the gene does), phenotypes (what happens when it breaks), tissues and
+    C. elegans Neuronal Gene Expression Map and Network (CeNGEN) neuron types (where it is expressed),
+    WormCat categories, diseases tied to its human orthologs, neuronal or synaptogenesis panels{KEGG_ENABLED
+      ? ', and Kyoto Encyclopedia of Genes and Genomes (KEGG) pathways'
+      : ''}. This tool tests whether each annotation is shared by more genes in your list than
+    expected if the same number of genes were drawn at random. Output: for each annotation, a
+    <b>fold enrichment</b> (how many times more genes than expected) and a <b>q-value</b> (the
+    p-value corrected for testing many annotations, which is the false discovery rate, FDR). A
+    q-value of 0.05 or lower is the usual cutoff. If no gene passes a cutoff in your data, use
+    <a href={resolve('/gsea')} class="text-primary hover:underline"
+      >gene set enrichment analysis (GSEA) on a ranked list</a
+    >, which needs no cutoff.
   </PageHint>
 
   <Card>
     <CardHeader>
       <CardTitle class="text-xl">Enrichment analysis</CardTitle>
       <div class="text-sm text-muted-foreground">
-        Hypergeometric (Fisher's exact) test against the genome-wide background of annotated genes,
-        with Benjamini-Hochberg FDR.
+        Hypergeometric test (Fisher's exact test) against a background of all annotated genes in the
+        genome. P-values are corrected with the Benjamini-Hochberg (BH) false discovery rate (FDR).
       </div>
     </CardHeader>
     <CardContent class="space-y-3">
@@ -597,7 +601,7 @@
           class="rounded-md px-3 py-1.5 text-sm transition-colors {mode === 'deseq2'
             ? 'bg-accent font-medium text-accent-foreground'
             : 'text-muted-foreground hover:bg-accent/50'}"
-          title="Paste a DESeq2 / per-gene DE table to filter via volcano + run ORA on the DE subset"
+          title="Paste a per-gene differential expression (DE) table, pick genes on a volcano plot, then run over-representation analysis (ORA) on them"
         >
           DE table / volcano
         </button>
@@ -607,7 +611,7 @@
           class="rounded-md px-3 py-1.5 text-sm transition-colors {mode === 'results'
             ? 'bg-accent font-medium text-accent-foreground'
             : 'text-muted-foreground hover:bg-accent/50'}"
-          title="Render existing clusterProfiler / GSEApy / topGO output as a dot plot"
+          title="Paste term-level results from clusterProfiler, GSEApy or topGO and draw them as a dot plot"
         >
           Imported results
         </button>
@@ -617,7 +621,7 @@
           class="ml-auto"
           onclick={copyShareLink}
           disabled={ids.length < 2}
-          title="Copy a self-contained URL anyone can open"
+          title="Copy a link that contains your gene list, so anyone can open the same analysis"
         >
           <Link2 class="h-3 w-3" />
           Copy share link
@@ -666,7 +670,7 @@
                   rankedAll = [];
                 }}
                 class="rounded border border-dashed px-1.5 py-0.5 hover:bg-accent hover:text-foreground"
-                title="Drop the ranked-dataset filter; edit paste freely."
+                title="Stop using the ranked dataset, so you can edit the pasted genes freely"
               >
                 clear
               </button>
@@ -748,21 +752,23 @@
         <div class="space-y-2">
           {#if mode === 'deseq2'}
             <div class="text-xs text-muted-foreground">
-              Paste a per-gene DE table (CSV or TSV) from DESeq2, edgeR or limma. Needs a gene
-              column plus a fold change and an adjusted p-value under any of their usual names (<span
-                class="font-mono">log2FoldChange</span
+              Paste a per-gene differential expression (DE) table (CSV or TSV) from DESeq2, edgeR or
+              limma. It needs a gene column, a fold change column and an adjusted p-value column.
+              The usual column names are recognized (<span class="font-mono">log2FoldChange</span
               >/<span class="font-mono">logFC</span>,
               <span class="font-mono">padj</span>/<span class="font-mono">FDR</span>/<span
                 class="font-mono">adj.P.Val</span
-              >). Renders a volcano + DE filter so you pick a subset before ORA. Auto-falls-back to
-              the clusterProfiler renderer if the body actually contains term-level results.
+              >). The tool draws a volcano plot and a filter, so you choose a subset of genes before
+              over-representation analysis (ORA). If the pasted text holds term-level results
+              instead, it is drawn as a clusterProfiler dot plot.
             </div>
           {:else}
             <div class="text-xs text-muted-foreground">
-              Paste clusterProfiler / GSEApy / topGO term-level output (CSV or TSV). Auto-detects
+              Paste term-level results from clusterProfiler, GSEApy or topGO (CSV or TSV). These
+              columns are recognized:
               <span class="font-mono"
                 >ID, Description, GeneRatio, BgRatio, pvalue, p.adjust, geneID, Count, ontology</span
-              >. No recomputation, just renders the dot plot and lets you export.
+              >. Nothing is recalculated. The tool draws the dot plot and lets you export it.
               <button
                 type="button"
                 onclick={loadImportExample}
@@ -855,8 +861,9 @@
             <div class="mt-3 space-y-2 rounded-md border bg-muted/30 p-3">
               <div class="text-xs font-semibold">DE filter (DESeq2 detected)</div>
               <div class="text-[0.7rem] text-muted-foreground">
-                Pasting the whole DESeq2 table tests the universe against itself, which is why every
-                term came back at fold = 1.0×. Pick a DE subset:
+                If you test the whole DE table, the gene list is the same as the background (all
+                genes tested), so every term gets a fold enrichment of 1.0. Pick a subset of DE
+                genes:
               </div>
               <div class="flex flex-wrap items-end gap-3">
                 {#if deseqHasPadj}
@@ -917,18 +924,18 @@
                   {resolving ? 'Resolving...' : 'Run enrichment on DE subset'}
                 </Button>
                 <ControlHint id="enrich-de-subset" title="DE-subset ORA">
-                  Runs hypergeometric over-representation on the filtered subset against all
-                  {KEGG_ENABLED ? 'nine' : 'eight'} annotation domains. The universe is set to the genes
-                  in your differential expression table ({deseqRows
-                    ? deseqRows.length.toLocaleString()
-                    : 0} of them), not the whole genome, so terms whose members were never expressed in
-                  this experiment don't inflate the background. A directional run keeps that same universe,
-                  so up- and down-regulated genes are each tested against every tested row. The universe
-                  in force is shown on the results card and can be cleared there.
+                  Runs over-representation analysis (ORA) with the hypergeometric test on the
+                  filtered genes, for all {KEGG_ENABLED ? 'nine' : 'eight'} annotation domains. The background
+                  (the set of genes that counts as possible hits) is the genes in your differential expression
+                  table ({deseqRows ? deseqRows.length.toLocaleString() : 0} of them), not the whole genome.
+                  This avoids counting genes that were not measured in your experiment. If you choose
+                  up only or down only, the background stays the same: all genes in the table. The background
+                  in use is shown on the results card, where you can clear it.
                 </ControlHint>
               </div>
               <div class="text-[0.7rem] text-muted-foreground">
-                For ranked-list enrichment on the Wald stat (uses all rows, no threshold), go to <a
+                To use all rows without a cutoff, run gene set enrichment analysis (GSEA) on the
+                Wald statistic (the DESeq2 test score) at <a
                   href={resolve('/gsea')}
                   class="text-primary hover:underline">/gsea</a
                 >.

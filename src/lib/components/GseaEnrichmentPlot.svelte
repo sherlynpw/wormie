@@ -337,6 +337,6 @@
   </div>
 {:else}
   <div class="text-xs italic text-muted-foreground">
-    Not enough gene-set members in ranked list to draw plot.
+    Too few members of this gene set are in your ranked list to draw the plot.
   </div>
 {/if}

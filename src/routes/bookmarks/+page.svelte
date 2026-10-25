@@ -61,10 +61,11 @@
   </header>
 
   <PageHint id="bookmarks" title="Keeping track of genes">
-    The <b>Star</b> button on any gene page adds it here, along with a note you can write in your own
-    words — why it caught your eye, which experiment it came from. The two are independent: you can note
-    a gene without starring it, and unstarring a gene keeps its note. Click a row to reopen the gene,
-    or export the whole list as a spreadsheet.
+    The <b>Star</b> button on a gene page adds the gene here. You can also write a note on a gene, for
+    example why it caught your eye or which experiment it came from. A star and a note are separate: you
+    can add a note to a gene without starring it, and removing a star keeps the note. Click a gene to
+    open its page. The TSV button saves the whole list as a tab-separated values file, which opens in
+    a spreadsheet. Stars and notes are stored in this browser only.
   </PageHint>
 
   <Card>

@@ -216,7 +216,8 @@
       <CardHeader><CardTitle class="text-base">Pathway viewer unavailable</CardTitle></CardHeader>
       <CardContent>
         <p class="text-sm text-muted-foreground">
-          KEGG pathway data is not included in this build, so the pathway viewer is disabled.
+          Kyoto Encyclopedia of Genes and Genomes (KEGG) pathway data is not included in this build,
+          so the pathway viewer is disabled.
         </p>
       </CardContent>
     </Card>
@@ -285,10 +286,12 @@
           {/key}
           <p class="mt-2 text-xs text-muted-foreground">
             {#if imageUrl}
-              Rendered using KEGG's pathway image (lossless WebP, served from the local DB) with
-              clickable KGML hotspots on top. Identical to the kegg.jp layout, but fully offline.
+              Drawn on KEGG's pathway image (stored in the local database, so it works offline).
+              Clickable areas from the KEGG Markup Language (KGML) file sit on top of the image. The
+              layout is the same as on kegg.jp.
             {:else}
-              Rendered from KEGG KGML coordinates only (image not available for this pathway).
+              Drawn from the box positions in the KEGG Markup Language (KGML) file only. The KEGG
+              image is not available for this pathway.
             {/if}
           </p>
         </CardContent>

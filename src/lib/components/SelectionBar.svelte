@@ -236,7 +236,7 @@
           type="button"
           onclick={() => (summaryOpen = true)}
           class="rounded px-1.5 py-0.5 text-sm transition-colors hover:bg-muted/50"
-          title="What is in this selection? Top WormCat, GO, phenotypes, diseases, tissues"
+          title="Summary of this selection: the most common WormCat categories, Gene Ontology (GO) terms, phenotypes, diseases and tissues"
         >
           <span class="font-semibold tabular-nums">{selection.ids.length}</span>
           <span class="text-muted-foreground"> selected</span>
@@ -418,7 +418,7 @@
           variant="outline"
           size="sm"
           onclick={() => (summaryOpen = true)}
-          title="Quick aggregate stats: top WormCat, GO, phenotypes, diseases, tissues for this selection"
+          title="Summary of this selection: the most common WormCat categories, Gene Ontology (GO) terms, phenotypes, diseases and tissues"
         >
           <Sigma class="h-3 w-3" />
         </Button>
@@ -437,7 +437,7 @@
           variant="ghost"
           size="sm"
           onclick={clearSelection}
-          title="Unselect all genes"
+          title="Remove all genes from the selection"
           disabled={selection.ids.length === 0}
         >
           <X class="h-3 w-3" />

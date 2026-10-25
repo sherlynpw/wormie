@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Cross-comparison GSEA intersect: accepts .bundle.json files from the GseaResults "JSON" button,
+  // Ranked-list consensus across comparisons: accepts .bundle.json files from the GseaResults "JSON" button,
   // reports terms passing in K-of-N bundles, ranked by |median NES| x mean leading-edge Jaccard.
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Badge } from '$lib/components/ui/badge';
@@ -61,7 +61,7 @@
     ingestText(await f.text(), f.name.replace(/\.bundle\.json$/, ''));
   }
 
-  // The datasets page sends "Open in -> GSEA intersect" as ?load=bundle&id=.
+  // The datasets page sends "Open in -> Ranked-list consensus" as ?load=bundle&id=.
   onMount(async () => {
     const params = page.url.searchParams;
     const id = params.get('id');
@@ -182,31 +182,37 @@
 </script>
 
 <svelte:head>
-  <title>GSEA intersect · wormie.rs.ht</title>
+  <title>Ranked-list consensus · wormie.rs.ht</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
   <header class="space-y-1">
-    <h1 class="text-2xl font-semibold">GSEA intersect</h1>
-    <p class="text-sm text-muted-foreground">Terms that recur across saved GSEA runs</p>
+    <h1 class="text-2xl font-semibold">Ranked-list consensus</h1>
+    <p class="text-sm text-muted-foreground">
+      Gene sets that score in the same direction in several saved ranked-list runs
+    </p>
   </header>
 
-  <PageHint id="gsea-intersect" title="Find biology that holds across comparisons">
-    Combine 2+ GSEA runs: save a bundle from any run (the <b>Save</b> button on its results) and
-    load it here, or drop <code>.bundle.json</code> files exported with <b>JSON</b>. Output: terms
-    passing q ≤ cutoff in ≥ K bundles with leading-edge overlap above the Jaccard threshold. Ranked
-    by <code>|median NES| × mean Jaccard</code> so consistent and overlapping wins over single big hits.
+  <PageHint id="gsea-intersect" title="Gene sets that agree across ranked-list results">
+    Input: two or more results from ranked-list enrichment (gene set enrichment analysis, GSEA).
+    Save a bundle from any run with the <b>Save</b> button on its results, or export a
+    <code>.bundle.json</code> file with <b>JSON</b>, then load the files here. Output: the gene sets
+    whose q-value (false discovery rate, FDR) is at or below the cutoff in at least K bundles, with
+    the same sign of normalized enrichment score (NES) in each. Their leading edges (the genes that
+    drive the score) must also overlap: the mean Jaccard index (shared genes divided by all genes in
+    both sets) must reach the threshold. Rows are sorted by the absolute median NES times the mean
+    Jaccard index. Choose this page to see which gene sets agree across several comparisons.
   </PageHint>
 
   <Card>
     <CardHeader>
-      <CardTitle class="text-xl">GSEA leading-edge intersect</CardTitle>
+      <CardTitle class="text-xl">Consensus across ranked-list results</CardTitle>
     </CardHeader>
     <CardContent class="space-y-3">
       <p class="text-sm text-muted-foreground">
-        Drop two or more GSEA bundles (the JSON button on any GSEA result panel) and this surfaces
-        terms whose leading edges overlap across comparisons. Useful for finding "biology that holds
-        in every condition" rather than per-comparison artifacts.
+        Drop two or more bundles (the JSON button on a ranked-list enrichment result). The table
+        lists gene sets that pass the q-value cutoff in at least K bundles, with the same direction
+        and overlapping leading edges.
       </p>
 
       <div
@@ -268,8 +274,8 @@
 
       {#if kindsMixed}
         <div class="text-xs text-amber-700 dark:text-amber-400">
-          Bundles mix kinds (GO + WormCat etc). Intersect still runs but term IDs from different
-          namespaces won't merge. Usually you want one kind per intersect.
+          Bundles mix kinds (for example GO and WormCat). Term IDs from different kinds do not
+          match, so those terms are not combined. Load one kind at a time.
         </div>
       {/if}
 
@@ -285,8 +291,9 @@
             class="w-16 rounded border bg-card px-1 py-0.5 font-mono text-xs"
           />
           <ControlHint id="intersect-q" title="q-value threshold">
-            A term only counts in a bundle if its FDR-adjusted p-value is below this cutoff in that
-            bundle. Typical: 0.05 strict, 0.1 lenient, 0.25 exploratory.
+            A gene set only counts in a bundle if its q-value (p-value adjusted for testing many
+            gene sets, the false discovery rate) is at or below this cutoff in that bundle. Typical:
+            0.05 strict, 0.1 lenient, 0.25 exploratory.
           </ControlHint>
         </label>
         <label class="inline-flex items-center gap-1">
@@ -299,8 +306,8 @@
             class="w-14 rounded border bg-card px-1 py-0.5 font-mono text-xs"
           />
           <ControlHint id="intersect-k" title="Minimum hits">
-            A term must clear q in at least <code>K</code> of the loaded bundles to appear.
-            <code>K = bundles.length</code> means "must hit in every comparison".
+            A gene set must pass the q-value cutoff in at least <code>K</code> of the loaded bundles to
+            appear. Set K to the number of loaded bundles to require it in every bundle.
           </ControlHint>
         </label>
         <label class="inline-flex items-center gap-1">
@@ -313,10 +320,11 @@
             bind:value={jaccardThreshold}
             class="w-16 rounded border bg-card px-1 py-0.5 font-mono text-xs"
           />
-          <ControlHint id="intersect-j" title="Leading-edge Jaccard">
-            Mean pairwise Jaccard of leading-edge gene sets across qualifying bundles. Filters out
-            terms that hit in K bundles but for different reasons (different leading-edge genes). J
-            ≥ 0.3 is a reasonable consensus floor.
+          <ControlHint id="intersect-j" title="Leading-edge Jaccard index">
+            The leading edge is the set of genes that drive a gene set's score. The Jaccard index of
+            two leading edges is the genes they share divided by all genes in either. This is the
+            mean over all pairs of qualifying bundles. It removes gene sets that pass in K bundles
+            but for different genes. The default is 0.3.
           </ControlHint>
         </label>
         <span class="ml-auto">
@@ -329,14 +337,14 @@
   {#if bundles.length < 2}
     <Card>
       <CardContent class="pt-6 text-sm text-muted-foreground">
-        Add at least two bundles to compute an intersect.
+        Add at least two bundles to compare.
       </CardContent>
     </Card>
   {:else if intersected.length === 0}
     <Card>
       <CardContent class="pt-6 text-sm text-muted-foreground">
         No terms passed q ≤ {qCutoff}, min K = {minK}, J ≥ {jaccardThreshold} across these bundles. Relax
-        thresholds or check that the bundles are for compatible biology.
+        the thresholds, or check that the bundles come from the same kind of analysis.
       </CardContent>
     </Card>
   {:else}
@@ -351,7 +359,11 @@
                 title="How many of the loaded bundles call this term significant at the q cutoff."
                 >hits</th
               >
-              <th class="px-2 py-1.5 text-right">median NES</th>
+              <th
+                class="px-2 py-1.5 text-right"
+                title="Median normalized enrichment score (NES) across the bundles that call this term. Positive means shifted toward the top of the ranking."
+                >median NES</th
+              >
               <th
                 class="px-2 py-1.5 text-right"
                 title="Mean pairwise Jaccard of the leading-edge gene sets across the bundles that call this term. High means they agree on which genes drive it."
@@ -359,7 +371,7 @@
               >
               <th
                 class="px-2 py-1.5 text-right"
-                title="Whether the term clears both the minimum-hits and the Jaccard floor."
+                title="Number of genes found in the leading edge of at least half of the bundles that call this term."
                 >consensus</th
               >
             </tr>

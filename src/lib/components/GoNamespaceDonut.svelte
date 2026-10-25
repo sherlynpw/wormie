@@ -36,7 +36,11 @@
       label: 'Computational / phylogenetic',
       codes: ['IBA', 'IBD', 'IKR', 'IRD', 'ISS', 'ISM', 'ISO', 'ISA', 'RCA'],
     },
-    { key: 'electronic', label: 'Electronic (IEA family)', codes: ['IEA', 'IEA-PROP'] },
+    {
+      key: 'electronic',
+      label: 'Electronic (inferred from electronic annotation, IEA)',
+      codes: ['IEA', 'IEA-PROP'],
+    },
   ] as const;
   const TIER_FOR: Record<string, (typeof TIERS)[number]['key']> = (() => {
     const m: Record<string, (typeof TIERS)[number]['key']> = {};
@@ -161,7 +165,9 @@
 </script>
 
 {#if agg.total === 0}
-  <div class="text-xs italic text-muted-foreground">No GO annotations to chart.</div>
+  <div class="text-xs italic text-muted-foreground">
+    No Gene Ontology (GO) annotations to chart.
+  </div>
 {:else}
   <div class="relative flex flex-wrap items-center gap-4">
     {#if exportName}
@@ -175,7 +181,7 @@
       width={size + 2 * PAD}
       height={size + 2 * PAD}
       role="img"
-      aria-label="GO namespace × evidence-code donut"
+      aria-label="Donut chart of Gene Ontology namespace by evidence type"
     >
       <!-- Outer ring: namespace -->
       {#each slices.outer as s (s.ns)}
@@ -226,7 +232,9 @@
       </text>
     </svg>
     <div class="space-y-1 text-[0.7rem]">
-      <div class="font-semibold text-foreground">Outer: namespace</div>
+      <div class="font-semibold text-foreground">
+        Outer ring: GO namespace (biological process, molecular function, cellular component)
+      </div>
       <div class="flex flex-col gap-0.5">
         {#each NS_ORDER as ns (ns)}
           {#if (agg.nsCounts.get(ns) ?? 0) > 0}
@@ -241,7 +249,7 @@
           {/if}
         {/each}
       </div>
-      <div class="mt-2 font-semibold text-foreground">Inner: evidence tier</div>
+      <div class="mt-2 font-semibold text-foreground">Inner ring: evidence type</div>
       <div class="flex flex-col gap-0.5">
         {#each TIERS as t (t.key)}
           <div class="inline-flex items-center gap-1.5">

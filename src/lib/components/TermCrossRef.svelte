@@ -141,8 +141,8 @@
     <CardHeader class="pb-2">
       <CardTitle class="text-base">{title}</CardTitle>
       <div class="text-xs text-muted-foreground">
-        Hypergeometric on each saved gene list vs the {K.toLocaleString()} genes annotated to this term
-        in the loaded universe (N = {N.toLocaleString()}).
+        Hypergeometric test of each saved gene list against the {K.toLocaleString()} genes with this term,
+        out of {N.toLocaleString()} genes in the background (all annotated genes).
       </div>
     </CardHeader>
     <CardContent class="pt-0">
@@ -192,12 +192,13 @@
         </tbody>
       </table>
       <div class="mt-2 text-[0.65rem] text-muted-foreground">
-        k = genes in your list ∩ this term, n = your list size (resolved), K = term size, N =
-        universe. p is the upper-tail hypergeometric probability; no multiple-test correction
-        applied (you're testing one term across few lists, not many terms).
+        k = genes in your list that have this term. n = size of your list (genes that were matched).
+        K = genes with this term in the background. N = all genes in the background. p = chance of
+        seeing k or more genes by luck (hypergeometric test). No correction for testing many terms
+        is applied, because only one term is tested.
       </div>
     </CardContent>
   </Card>
 {:else if loading}
-  <div class="text-xs text-muted-foreground">Computing enrichment for your saved lists…</div>
+  <div class="text-xs text-muted-foreground">Testing your saved lists...</div>
 {/if}

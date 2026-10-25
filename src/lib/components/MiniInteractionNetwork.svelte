@@ -134,8 +134,8 @@
         >
           <option value="concentric">concentric</option>
           <option value="radial">radial arcs</option>
-          <option value="dagre-TB">tree (top→bottom)</option>
-          <option value="dagre-LR">tree (left→right)</option>
+          <option value="dagre-TB">tree, top to bottom</option>
+          <option value="dagre-LR">tree, left to right</option>
         </select>
       </label>
     </div>
@@ -156,17 +156,17 @@
     <div class="flex flex-wrap justify-center gap-4 text-[0.65rem] text-muted-foreground">
       <div class="flex items-center gap-1.5">
         <span class="inline-block h-0.5 w-3" style="background: {CATEGORICAL_PALETTE[0]};"></span>
-        physical
+        physical (proteins bind each other)
       </div>
       <div class="flex items-center gap-1.5">
         <span class="inline-block h-0.5 w-3" style="background: {CATEGORICAL_PALETTE[1]};"></span>
-        genetic
+        genetic (changing one gene alters the effect of the other)
       </div>
       <div class="flex items-center gap-1.5">
         <span class="inline-block h-0.5 w-3" style="background: hsl(240 4% 50% / 0.7);"></span>
-        mixed
+        mixed (both types recorded)
       </div>
-      <div>edge thickness ∝ √(count)</div>
+      <div>line thickness grows with the square root of the number of recorded interactions</div>
     </div>
   </div>
 {/if}

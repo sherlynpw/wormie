@@ -87,15 +87,21 @@
   {#if row}
     <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-3 lg:grid-cols-6">
       <div>
-        <span class="text-muted-foreground">baseMean</span>
+        <span class="text-muted-foreground" title="Mean of the normalized counts over all samples"
+          >baseMean</span
+        >
         <span class="font-mono">{fmt(row.baseMean, 1)}</span>
       </div>
       <div>
-        <span class="text-muted-foreground">log2FC</span>
+        <span class="text-muted-foreground" title="log2 fold change between the two conditions"
+          >log2FC</span
+        >
         <span class="font-mono">{fmt(row.log2FoldChange)}</span>
       </div>
       <div>
-        <span class="text-muted-foreground">lfcSE</span>
+        <span class="text-muted-foreground" title="Standard error of the log2 fold change"
+          >lfcSE</span
+        >
         <span class="font-mono">{fmt(row.lfcSE)}</span>
       </div>
       <div>
@@ -107,7 +113,11 @@
         <span class="font-mono">{fmtP(row.pvalue)}</span>
       </div>
       <div>
-        <span class="text-muted-foreground">padj</span>
+        <span
+          class="text-muted-foreground"
+          title="p-value adjusted for testing many genes (Benjamini-Hochberg false discovery rate)"
+          >padj</span
+        >
         <span class="font-mono">{fmtP(row.padj)}</span>
       </div>
     </div>

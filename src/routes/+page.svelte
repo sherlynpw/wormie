@@ -142,7 +142,7 @@
   const totalPages = $derived(facets ? Math.max(1, Math.ceil(facets.n_genes / PAGE_SIZE)) : 1);
   const VIEW_HEADERS: Record<string, { title: string; caption: string }> = {
     wormcat: { title: 'WormCat', caption: 'Genes grouped by WormCat category' },
-    go: { title: 'GO terms', caption: 'Genes grouped by Gene Ontology term' },
+    go: { title: 'GO terms', caption: 'Genes grouped by Gene Ontology (GO) term' },
     neuronal: { title: 'Neuronal class', caption: 'Genes grouped by neuronal classification' },
     synaptogenesis: {
       title: 'Synapse development and function',
@@ -356,21 +356,24 @@
 
   {#if needsGeneList}
     <PageHint id="home-search" title="What this step does">
-      Finds genes, and hands the result to any analysis on the left. Typing plain words searches
-      gene names and IDs; open <b>Search in</b> to include descriptions and annotations, so that
+      Finds genes, and sends the result to any analysis in the sidebar. Plain words search gene
+      names and IDs. Open <b>Search in</b> to also search descriptions and annotations, so that
       <code>insulin</code> also returns genes whose text mentions it.
       <br /><br />
-      To ask a sharper question, put a filter in front of the word. Looking for the genes annotated to
-      insulin signalling, rather than the ones that merely mention it? Search
-      <code>go:"insulin receptor signaling pathway"</code>. Genes that give a dauer phenotype when
-      disrupted: <code>pheno:dauer</code>. Genes expressed in the AVA interneuron:
-      <code>expressed:AVA</code>. Worm genes with a human counterpart:
-      <code>ortho:human</code>. The <b>filters</b> button lists every filter available.
+      To search one field, put a filter name and a colon in front of the word. To find genes annotated
+      to a Gene Ontology (GO) term, not just genes whose text mentions it, search
+      <code>go:"insulin receptor signaling pathway"</code>. For genes with a dauer phenotype when
+      disrupted, search <code>pheno:dauer</code>. For genes expressed in the AVA interneuron (data
+      from CeNGEN, the C. elegans Neuronal Gene Expression Network), search
+      <code>expressed:AVA</code>. For worm genes with a human ortholog (the matching gene in
+      humans), search <code>ortho:human</code>. The <b>filters</b> button lists every filter.
       <br /><br />
-      Filters combine. <code>go:apoptosis AND tissue:neuron</code> keeps only genes that are both;
-      <code>pheno:dauer OR pheno:lifespan</code> keeps either; <code>NOT type:pseudogene</code>
-      drops a group. A <code>*</code> stands for any ending, so <code>name:daf*</code> catches every
-      daf gene, and <code>desc~*kinase*</code> finds kinase anywhere in a description.
+      Filters combine. <code>go:apoptosis AND tissue:neuron</code> keeps genes that match both.
+      <code>pheno:dauer OR pheno:lifespan</code> keeps genes that match either.
+      <code>NOT type:pseudogene</code> removes pseudogenes. A <code>*</code> stands for any ending,
+      so <code>name:daf*</code> finds every gene whose name starts with daf.
+      <code>desc~*kinase*</code>
+      finds kinase anywhere in a description.
       <br /><br />
       You can also paste a gene list (<code>daf-16, daf-2, age-1</code>) or drop a
       <code>.txt</code> file of gene names onto the search bar to work with just those genes.
@@ -444,7 +447,7 @@
                 <span class="font-mono">kinase AND NOT phosphatase</span>.
               </div>
               <div>
-                Restrict to a field with <span class="font-mono">:</span> —
+                Search one field with <span class="font-mono">:</span>
                 <span class="font-mono">go:apoptosis</span>,
                 <span class="font-mono">cat:"cell cycle"</span>,
                 <span class="font-mono">neuronal:sensory</span>,
@@ -567,7 +570,7 @@
       <p class="text-sm text-muted-foreground">{viewHeader.caption}</p>
       <p class="text-[0.7rem] text-muted-foreground">
         {#if view === 'wormcat'}
-          WormCat 2.0 category tree (Higgins et al.) —
+          WormCat 2.0 category tree (Higgins et al.):
           <a
             href="https://doi.org/10.1093/genetics/iyac085"
             target="_blank"
@@ -575,8 +578,8 @@
             class="underline underline-offset-2 hover:text-foreground">the paper</a
           >
         {:else if view === 'go'}
-          Gene Ontology terms from the GO Consortium, with <em>C. elegans</em> annotations curated
-          by WormBase —
+          Gene Ontology (GO) terms from the GO Consortium, with <em>C. elegans</em> annotations
+          curated by WormBase:
           <a
             href="https://wormbase.org/tools/ontology_browser"
             target="_blank"
@@ -584,7 +587,7 @@
             class="underline underline-offset-2 hover:text-foreground">browse at WormBase</a
           >
         {:else if view === 'neuronal'}
-          Neuronal gene classes from Hobert's survey of the <em>C. elegans</em> neuronal genome —
+          Neuronal gene classes from Hobert's survey of the <em>C. elegans</em> neuronal genome:
           <a
             href="https://www.ncbi.nlm.nih.gov/books/NBK116086/"
             target="_blank"
@@ -592,8 +595,8 @@
             class="underline underline-offset-2 hover:text-foreground">WormBook</a
           >
         {:else if view === 'synaptogenesis'}
-          Synapse development and function panel curated from the primary literature; each gene
-          links the papers it was curated from
+          Synapse development and function panel, curated from the primary literature. Each gene
+          links to the papers it was curated from.
         {/if}
       </p>
     </header>
@@ -626,7 +629,7 @@
         <span>
           Showing
           <span class="font-semibold tabular-nums text-foreground">
-            {((currentPage - 1) * PAGE_SIZE + 1).toLocaleString()}–{(
+            {((currentPage - 1) * PAGE_SIZE + 1).toLocaleString()}-{(
               (currentPage - 1) * PAGE_SIZE +
               rows.length
             ).toLocaleString()}

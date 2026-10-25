@@ -153,26 +153,26 @@
 
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Gene overlap</h1>
-    <p class="text-sm text-muted-foreground">Two or more gene lists compared by membership</p>
+    <p class="text-sm text-muted-foreground">
+      Shows which genes two or more lists share and which are in only one list
+    </p>
   </header>
 
   <PageHint id="compare-lists" title="What this step does">
-    Paste two or more gene lists, one per slot, in whatever identifiers each arrived with: gene
-    names, sequence names, aliases, WormBase or Entrez IDs, mixed freely. Each entry is resolved to
-    its WormBase identifier the way the
+    Paste two or more gene lists, one per slot. Each list can use gene names, sequence names,
+    aliases, or WormBase or Entrez gene IDs, and you can mix them. Each entry is matched to its
+    WormBase gene ID the way the
     <a href={resolve('/lookup')} class="underline underline-offset-2">Gene name resolver</a> does
-    it, so the same gene spelled two ways in two lists still counts as shared. The overlap is then
-    pure set membership: which genes are in both lists, which in only one. No annotation or
-    expression data is involved in computing it, but any segment of the overlap, the shared genes
-    included, is itself a gene list that can be tested like any other: every combination row under
-    the plot carries a button that sends its genes straight to over-representation, so the terms
-    enriched among the hits two screens share are one click away. To ask what a set of genes has in
+    it, so the same gene written two ways in two lists still counts as shared. The tool then shows
+    which genes are in all lists and which are in only some. It uses no annotation or expression
+    data. Every row of the table under the plot has a button that sends that group of genes to
+    over-representation, which tests them for enriched terms. To see what a set of genes has in
     common biologically, send it to
-    <a href={resolve('/compare')} class="underline underline-offset-2">Annotation overlap</a>; to
-    ask whether two lists turn up the same biology at the level of enriched terms, paste them into
+    <a href={resolve('/compare')} class="underline underline-offset-2">Annotation overlap</a>. To
+    test whether two gene lists have the same enriched terms, paste them into
     <a href={resolve('/enrichment/overlap')} class="underline underline-offset-2"
       >Enrichment overlap</a
-    >, which runs over-representation on each and compares the results.
+    >, which runs over-representation on each list and compares the results.
   </PageHint>
 
   <Card>
@@ -403,7 +403,7 @@
           </div>
           {#if upsetData.combos.length > 30}
             <div class="text-[0.7rem] text-muted-foreground">
-              Showing 30 of {upsetData.combos.length} intersections (sorted by size).
+              Showing 30 of {upsetData.combos.length} groups of shared genes (sorted by size).
             </div>
           {/if}
         </div>
@@ -411,8 +411,8 @@
     </Card>
   {:else if nonEmptySlots >= 2 && !busy}
     <div class="rounded-md border bg-card px-3 py-4 text-sm text-muted-foreground">
-      Press <span class="font-semibold text-foreground">Compare</span> to resolve both lists and see the
-      overlap.
+      Press <span class="font-semibold text-foreground">Compare</span> to match the gene names and see
+      the overlap.
     </div>
   {:else}
     <div class="rounded-md border bg-card px-3 py-4 text-sm text-muted-foreground">

@@ -46,7 +46,7 @@
     ],
     gmt: [{ path: '/gmt', param: 'gmt', label: 'Custom gene sets' }],
     counts: [{ path: '/ssgsea', param: 'counts', label: 'Per-sample set scores' }],
-    'gsea-bundle': [{ path: '/gsea/intersect', param: 'bundle', label: 'GSEA intersect' }],
+    'gsea-bundle': [{ path: '/gsea/intersect', param: 'bundle', label: 'Ranked-list consensus' }],
     // Placeholder replaced by sessionTargets() at render time.
     session: [{ path: '', param: 'session', label: 'Open session' }],
   };
@@ -201,22 +201,23 @@
 
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Datasets</h1>
-    <p class="text-sm text-muted-foreground">Gene lists and tables saved for reuse</p>
+    <p class="text-sm text-muted-foreground">Gene lists and tables you saved in this browser</p>
   </header>
 
   <PageHint id="datasets" title="How saving works">
-    Anything you paste into a tool can be named and kept here: gene lists, ranked lists, counts
-    tables, differential expression results, GMT files. Every tool has a <b>Save</b> button that drops
-    its current input into this list, and a picker to load one back, so a list you assembled once can
-    be reused across analyses without pasting it again.
+    You can name and keep here anything you paste into a tool: gene lists, ranked lists, counts
+    tables, differential expression results, and Gene Matrix Transposed (GMT) files, a format for
+    gene set collections. Tools with a <b>Save</b> button add their current input to this list. They also
+    have a picker to load a saved item back. You can reuse a list in several analyses without pasting
+    it again. Everything is stored in this browser only.
   </PageHint>
 
   <Card>
     <CardHeader>
       <CardTitle class="text-xl">Saved inputs</CardTitle>
       <div class="text-sm text-muted-foreground">
-        Gene lists, ranked lists, differential expression results, GMT collections and counts
-        matrices.
+        Gene lists, ranked lists, differential expression results, Gene Matrix Transposed (GMT) gene
+        set collections and counts matrices.
       </div>
     </CardHeader>
     <CardContent>
@@ -300,7 +301,7 @@
                         variant="ghost"
                         size="sm"
                         onclick={() => useAsSelection(ds)}
-                        title="Make this list the current gene selection"
+                        title="Use this list as the current gene selection (the genes you picked on the search page)"
                       >
                         Use as selection
                       </Button>
@@ -357,11 +358,13 @@
       <CardHeader>
         <CardTitle class="text-base">Set algebra on gene lists</CardTitle>
         <div class="text-sm text-muted-foreground">
-          Combine two saved gene lists into a new one. <b>Union</b> (A ∪ B) keeps all unique genes,
-          <b>Intersect</b>
-          (A ∩ B) keeps genes in both, <b>Difference</b> (A \ B) keeps genes in A but not B. Operates
-          on token-level gene IDs (mixed names/WBGene OK; the output preserves whatever was in the source
-          lists).
+          Combine two saved gene lists into a new list. <b>Union</b> (A ∪ B) keeps every gene that
+          is in either list, with no repeats. <b>Intersect</b>
+          (A ∩ B) keeps genes that are in both lists. <b>Difference</b> (A \ B) keeps genes that are in
+          A but not in B. Genes are compared by the exact text in the lists, so the same gene written
+          as a name in one list and as a WormBase ID in the other is not matched. Use the Gene name resolver
+          first if your lists mix names and IDs. The new list keeps the text as it was written in the
+          source lists.
         </div>
       </CardHeader>
       <CardContent class="space-y-3">
@@ -388,7 +391,7 @@
               class="px-3 py-1.5 {setOpKind === 'union'
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50'}"
-              title="A ∪ B">∪</button
+              title="Union: genes in A or B">∪</button
             >
             <button
               type="button"
@@ -396,7 +399,7 @@
               class="border-l px-3 py-1.5 {setOpKind === 'intersect'
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50'}"
-              title="A ∩ B">∩</button
+              title="Intersect: genes in both A and B">∩</button
             >
             <button
               type="button"
@@ -404,7 +407,7 @@
               class="border-l px-3 py-1.5 {setOpKind === 'difference'
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50'}"
-              title="A \ B (in A, not in B)">\</button
+              title="Difference: genes in A but not in B">\</button
             >
           </div>
           <label class="space-y-1">
@@ -432,7 +435,7 @@
             </span>
             <input
               bind:value={setOpName}
-              placeholder="auto: A ∪ B"
+              placeholder="auto: names of A and B joined by the operator symbol"
               class="w-full rounded border bg-background px-2 py-1.5 text-sm"
             />
           </label>

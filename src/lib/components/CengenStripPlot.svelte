@@ -61,7 +61,8 @@
 
 {#if rows.length === 0}
   <div class="text-xs italic text-muted-foreground">
-    Not detected in any of the 128 CeNGEN neuron types.
+    Not detected in any of the 128 neuron types of CeNGEN (C. elegans Neuronal Gene Expression
+    Network).
   </div>
 {:else}
   <div class="space-y-2">
@@ -82,7 +83,7 @@
             class="px-1.5 py-0.5 transition-colors {minThreshold === opt.k
               ? 'bg-accent text-accent-foreground'
               : 'bg-card hover:bg-muted/50'}"
-            title="Show neuron types called expressed at this CeNGEN threshold or stricter"
+            title="Show neuron types where the gene is called expressed at this CeNGEN threshold or a stricter one"
           >
             {opt.label}
           </button>
@@ -112,7 +113,7 @@
           class="inline-flex items-center gap-0.5"
           title="Called expressed at: {lvl > 0
             ? THRESHOLD_LABEL[lvl]
-            : 'not called (TMM-only signal)'}"
+            : 'not called (bulk expression only)'}"
         >
           {#each [1, 2, 3, 4] as L (L)}
             <span
@@ -136,7 +137,7 @@
           <span class="font-mono tabular-nums text-muted-foreground">{fmtExpression(r.tmm)}</span>
         {:else}
           <span class="text-[0.6rem] italic text-muted-foreground">no bulk data</span>
-          <span class="font-mono tabular-nums text-muted-foreground">–</span>
+          <span class="font-mono tabular-nums text-muted-foreground">-</span>
         {/if}
       {/each}
     </div>
@@ -146,7 +147,7 @@
     >
       <span
         class="inline-flex flex-shrink-0 items-center gap-1"
-        title="log10(1 + TMM), low to high"
+        title="log10(1 + TMM), low to high. TMM is the trimmed mean of M-values, a normalized expression value."
       >
         <span class="font-mono">0</span>
         <span
@@ -158,8 +159,14 @@
         <span class="font-mono">{fmtExpression(maxTmm)} TMM</span>
       </span>
       <span class="flex flex-col gap-0.5">
-        <span>Dots: 1=liberal, 2=medium (CeNGEN app default), 3=conservative, 4=stringent.</span>
-        <span>Bars: log<sub>10</sub>(TMM+1) from the bulk + scRNA-seq integrated matrix.</span>
+        <span
+          >Dots: threshold level of the expressed call. 1=liberal, 2=medium (default in the CeNGEN
+          app), 3=conservative, 4=stringent.</span
+        >
+        <span
+          >Bars: log<sub>10</sub>(TMM+1), from a table that combines bulk and single-cell RNA
+          sequencing.</span
+        >
       </span>
       <!-- eslint-disable svelte/no-navigation-without-resolve -->
       <a

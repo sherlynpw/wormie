@@ -201,9 +201,9 @@
           class="ml-auto shrink-0 tabular-nums"
           title={`${t.n_direct_genes.toLocaleString()} genes annotated directly${
             transitiveCounts[t.go_id] !== undefined
-              ? `, ${transitiveCounts[t.go_id].toLocaleString()} including sub-terms`
+              ? `, ${transitiveCounts[t.go_id].toLocaleString()} including child terms`
               : ''
-          }${t.n_children > 0 ? ` · ${t.n_children} sub-terms` : ''}`}
+          }${t.n_children > 0 ? ` · ${t.n_children} child terms` : ''}`}
         >
           {(transitiveCounts[t.go_id] ?? t.n_direct_genes).toLocaleString()}
         </Badge>
@@ -262,7 +262,7 @@
 {:else if inSearchMode}
   <div class="space-y-2">
     <div class="text-xs text-muted-foreground">
-      {searchResults.length} GO terms matching "{freeText}"
+      {searchResults.length} Gene Ontology (GO) terms matching "{freeText}"
     </div>
     <div class="divide-y rounded-lg border bg-card">
       {#each searchResults as t (t.go_id)}
@@ -298,7 +298,8 @@
     <Card class="mt-2 border-dashed">
       <CardContent class="pt-4 text-xs text-muted-foreground">
         <Network class="mr-1 inline h-3 w-3" />
-        Clear the search to browse the GO hierarchy by namespace.
+        Clear the search to browse the Gene Ontology (GO) tree by namespace (biological process, molecular
+        function, cellular component).
       </CardContent>
     </Card>
   </div>

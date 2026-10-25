@@ -127,11 +127,11 @@
   {#if N < 3}
     <div class="text-xs italic text-muted-foreground">
       {#if setNoun === 'gene'}
-        UpSet shines at N ≥ 3. With only {N} gene{N === 1 ? '' : 's'}, use the pairwise overlap
-        card.
+        An UpSet plot (a bar chart of which sets share which items) needs 3 or more genes. With only
+        {N} gene{N === 1 ? '' : 's'}, use the pairwise overlap card.
       {:else}
-        UpSet needs 3 or more {setNoun}s. With {N}, the Intersections table below shows the same
-        groups.
+        UpSet needs 3 or more {setNoun}s (an UpSet plot is a bar chart of which sets share which
+        items). With {N}, the table of shared items below shows the same groups.
       {/if}
     </div>
   {:else if groups.length === 0}
@@ -278,9 +278,9 @@
       </svg>
     </div>
     <div class="mt-1 text-[0.6rem] text-muted-foreground">
-      {groups.length} intersection group{groups.length === 1 ? '' : 's'} shown, covering {totalItems}
-      unique items. Bars = group size; connected dots = which genes share that group. Hover or click a
-      column to list its items.
+      {groups.length} group{groups.length === 1 ? '' : 's'} of shared items shown, covering {totalItems}
+      unique items. Bar length is the number of items in the group. Connected dots show which genes share
+      the group. Hover over or click a column to list its items.
     </div>
     {#if activeGroup}
       <OverlapItemsPanel

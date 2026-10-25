@@ -15,9 +15,9 @@
       date: '2026-06-20',
       title: 'Gene-page references rework',
       changes: [
-        'Gene references now show real paper titles linked to their DOI instead of bare WBPaper/PMID identifiers, resolved from the Alliance of Genome Resources bibliography.',
-        'Added an "All literature" section listing the comprehensive set of publications linked to each gene via NCBI gene2pubmed (e.g. ~108 for hlh-30, up from a handful).',
-        'Papers missing from the bulk bibliography (mostly recent ones) are resolved at build time from WormBase REST and NCBI esummary, so titles and DOIs stay current.',
+        'Gene references now show paper titles linked to their digital object identifier (DOI), instead of only WormBase paper (WBPaper) or PubMed (PMID) IDs. The titles come from the Alliance of Genome Resources bibliography.',
+        'Added an "All literature" section that lists all publications linked to each gene by the National Center for Biotechnology Information (NCBI) gene2pubmed file (for example about 108 for hlh-30, up from a handful).',
+        'Papers missing from the bulk bibliography (mostly recent ones) are looked up when the database is built, using the WormBase REST service and the NCBI esummary service, so titles and DOIs stay current.',
       ],
     },
   ];

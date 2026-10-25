@@ -78,7 +78,7 @@
         type="button"
         class="w-full px-3 py-1.5 text-left text-sm hover:bg-accent"
         onclick={() => pick('pdf')}
-        title="Opens print dialog. Choose 'Save as PDF' for vector output."
+        title="Opens the print dialog. Choose 'Save as PDF' to get a vector file, which stays sharp at any size."
       >
         PDF
       </button>

@@ -21,12 +21,12 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to wormie.rs.ht',
-    body: 'A local-first C. elegans gene explorer. The database loads once into your browser and runs offline. No accounts, no telemetry. This tour takes ~60 seconds.',
+    body: 'A C. elegans gene browser and analysis tool. The database downloads once into your browser, and after that everything runs on your computer, even offline. There are no accounts and no usage tracking. This tour takes about 60 seconds.',
   },
   {
     id: 'search',
     title: 'Search by gene, term, or field',
-    body: 'Free text searches gene names, descriptions, and synonyms. For scoped search use prefixes: pheno:daf-c, tissue:motoneuron, ortho:HSF1, name:daf-2, desc:kinase, expressed:AVA>10 (CeNGEN neuron expression). Use ~ for glob: seq~Y110A7A.*',
+    body: 'Plain words search gene names, descriptions, and synonyms. To search one field, put a prefix before the word: pheno:daf-c (phenotype), tissue:motoneuron, ortho:HSF1 (ortholog, the matching gene in another species), name:daf-2, desc:kinase (description), expressed:AVA>10 (expression in the AVA neuron above 10, in the bulk RNA-seq values from CeNGEN, the C. elegans Neuronal Gene Expression Network). Use ~ for a wildcard: seq~Y110A7A.*',
     selector: '[placeholder^="Search by gene name"]',
     route: '/',
     placement: 'bottom',
@@ -34,7 +34,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'drag-drop',
     title: 'Drop files anywhere relevant',
-    body: 'Drag a gene-list .txt onto the search bar to filter to those genes. Drag a DESeq2 .csv onto /enrichment or /gsea to load it instantly. Nothing is uploaded; parsing happens in-browser.',
+    body: 'Drag a gene-list .txt file onto the search bar to show only those genes. Drag a DESeq2 (differential expression) .csv file onto /enrichment or /gsea to load it. Files are read in your browser and are not uploaded.',
     selector: '[placeholder^="Search by gene name"]',
     route: '/',
     placement: 'bottom',
@@ -42,37 +42,37 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'sidebar',
     title: 'Tools live in the sidebar',
-    body: 'Over-representation, Ranked-list enrichment, Custom gene sets, Gene overlap and Annotation overlap (Venn / UpSet of multiple lists), and GSEA intersect for cross-comparison consensus.',
+    body: 'Over-representation tests whether a gene list has more genes of a term than expected by chance. Ranked-list enrichment (gene set enrichment analysis, GSEA) does the same for a list ranked by a score. Custom gene sets lets you upload your own sets. Gene overlap and Annotation overlap compare several lists (Venn diagram, or UpSet plot, a bar chart of which lists share which items). Ranked-list consensus lists the terms found in more than one comparison.',
     selector: 'aside, nav[aria-label="Sidebar"]',
     route: '/',
     placement: 'right',
   },
   {
     id: 'gsea-paste',
-    title: 'GSEA in one paste',
-    body: 'Paste a DESeq2 CSV (or drop the file). Auto-detects the stat column. Click "Resolve & run" — your ranked list maps gene names to WBGene IDs.',
+    title: 'Ranked-list enrichment from one paste',
+    body: 'Paste a DESeq2 CSV (comma-separated values) table, or drop the file. The tool finds the stat column on its own. Click "Resolve & run" to match your gene names to WormBase gene IDs (WBGene IDs) and run the analysis.',
     selector: 'textarea',
     route: '/gsea',
     placement: 'top',
   },
   {
     id: 'gsea-defaults',
-    title: 'Sensible defaults, matching fgsea',
-    body: 'minSize=15, maxSize=500, multilevel ON, collapse ON. Multilevel refines tail p-values past the permutation floor (Korotkevich et al.). Collapse groups redundant terms by leading-edge Jaccard.',
+    title: 'Default settings match fgsea',
+    body: 'The defaults follow fgsea, the R package for fast GSEA. Terms with fewer than 15 or more than 500 genes are skipped (minSize, maxSize). Multilevel is on: it gives more exact very small p-values than permutation alone (Korotkevich et al.). Collapse is off by default. Turn it on to merge terms whose leading-edge genes overlap strongly, measured by the Jaccard index (shared genes divided by all genes in either set).',
     route: '/gsea',
     placement: 'bottom',
   },
   {
     id: 'gsea-share',
     title: 'Share or save your analysis',
-    body: 'Share link copies a self-contained URL that restores the ranked list when opened (data lives in the URL fragment, never sent to a server). JSON exports a bundle for /gsea/intersect to combine multiple comparisons.',
+    body: 'Share link copies a web address that restores the ranked list when opened. The data sits after the # in the address, so it is never sent to a server. JSON saves the results as a file that /gsea/intersect can load to combine several comparisons.',
     route: '/gsea',
     placement: 'bottom',
   },
   {
     id: 'data-freshness',
     title: 'Know what version you are reading',
-    body: 'Header shows the WormBase release and build date. Hover for full source breakdown (GO date, BioGRID, Phenotype, Alliance expression).',
+    body: 'The header shows the WormBase release and the date the database was built. Hover over it to see the version of each source: Gene Ontology (GO), the Biological General Repository for Interaction Datasets (BioGRID), phenotype annotations, and Alliance of Genome Resources expression data.',
     selector: 'header span[class*="cursor-help"]',
     route: '/',
     placement: 'bottom',
@@ -80,7 +80,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'shortcuts',
     title: 'Keyboard shortcuts',
-    body: 'Press / to focus search, ? to see all shortcuts, ⌘K for the command palette. Press "g" then a letter to switch views (c=cards, t=table, o=GO, w=WormCat, n=neuronal).',
+    body: 'Press / to focus search, ? to see all shortcuts, and Cmd+K (Ctrl+K on Windows) to open the command palette, a box for jumping to any page. Press "g" then a letter to switch views (c=cards, t=table, o=Gene Ontology terms, w=WormCat, n=neuronal class).',
   },
 ];
 

@@ -246,7 +246,7 @@
     <span
       class="inline-block h-2.5 w-2.5 rounded-sm border border-[hsl(var(--plot-up)/0.5)] bg-[hsl(var(--plot-up)/0.12)]"
     ></span>
-    shared by ≥ 2
+    shared by 2 or more
   </span>
   <span class="inline-flex items-center gap-1">
     <span class="inline-block h-2.5 w-2.5 rounded-sm border border-border bg-card"></span>

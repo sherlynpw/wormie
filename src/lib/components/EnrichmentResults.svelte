@@ -484,12 +484,14 @@
             {/each}
           </select>
           <ControlHint id="enrich-bg" title="Custom background">
-            By default the universe is every gene carrying an annotation of the kind being tested,
-            and for Gene Ontology that means every gene annotated in the same aspect as the term,
-            since the three aspects are corrected separately. If your experiment can only detect a
-            biased subset (e.g. a neuronal screen), pick a gene-list dataset as the background so
-            both N and per-term K reflect the actual testable space. Statistically correct;
-            eliminates spurious "ribosome enrichment" artifacts from biased assays.
+            The background (also called the universe) is the set of genes that count as possible
+            hits. By default it is every gene with an annotation of the kind being tested. For Gene
+            Ontology (GO), it is every gene annotated in the same aspect as the term, because the
+            three GO aspects are corrected separately. If your experiment can only detect a biased
+            subset of genes (for example, a screen of neurons only), pick a saved gene list as the
+            background. Then N (genes in the background) and K (genes in the background with the
+            term) count only genes that could have been detected. This prevents false enrichment of
+            terms such as ribosome that are common in the detectable genes.
           </ControlHint>
         </label>
         {#if backgroundLabel}
@@ -519,8 +521,11 @@
           significant (q ≤ 0.05) of {allResults.length} tested
         </span>
 
-        <label class="inline-flex items-center gap-1" title="Hide terms above this q-value">
-          <span>show q ≤</span>
+        <label
+          class="inline-flex items-center gap-1"
+          title="Hide terms with a q-value (p-value corrected for testing many terms) above this number"
+        >
+          <span title="q-value: the p-value corrected for testing many terms">show q ≤</span>
           <input
             type="number"
             min="0"
@@ -562,7 +567,7 @@
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50',
             )}
-            title="Table view"
+            title="Show results as a table"
           >
             <TableIcon class="h-3 w-3" />
             Table
@@ -576,7 +581,7 @@
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50',
             )}
-            title="Dot plot"
+            title="Show results as a dot plot. Dot size and colour show gene count and q-value."
           >
             <CircleDot class="h-3 w-3" />
             Plot
@@ -590,7 +595,7 @@
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50',
             )}
-            title="Term-gene network (Cnetplot)"
+            title="Show a network that links each term to its genes (gene-concept network, Cnetplot)"
             disabled={!activeResults.some((r) => r.overlap && r.overlap.length > 0)}
           >
             <Share2 class="h-3 w-3" />
@@ -605,7 +610,7 @@
                 ? 'bg-accent text-accent-foreground'
                 : 'bg-card hover:bg-muted/50',
             )}
-            title="Term × gene heatmap"
+            title="Show a grid of terms and genes. A filled cell means the gene has the term."
             disabled={!activeResults.some((r) => r.overlap && r.overlap.length > 0)}
           >
             <LayoutGrid class="h-3 w-3" />
@@ -626,7 +631,7 @@
             variant="outline"
             size="sm"
             onclick={() => exportTsv(true)}
-            title="Download only the representative terms, with the terms folded under each"
+            title="Download only the kept terms. Each row lists the terms folded under it."
           >
             <Download class="h-3 w-3" />
             TSV (collapsed)
@@ -648,27 +653,31 @@
             <input type="checkbox" bind:checked={collapseRedundant} class="rounded" />
             collapse
             <ControlHint id="enrich-collapse" title="Collapse redundant terms">
-              Removes redundant terms from the table and the figures; it does not change any p or q
-              value. GO uses REVIGO (Supek et al. 2011): SimRel semantic similarity on the GO
-              hierarchy, with term frequencies from the <i>C. elegans</i> annotations. Of each pair
-              more similar than the cutoff, the broader (over 5% of annotated genes) or less
-              significant term is folded under the other. Other term types have no hierarchy, so the
-              same procedure runs on the genes behind each term: similarity is the Jaccard overlap
-              of the hit genes, a term is broad when it annotates over 5% of the universe, and a
-              term whose hit genes contain another's plays the parent.
+              Hides terms that repeat another term, in the table and in the figures. It does not
+              change any p-value or q-value. For Gene Ontology (GO) terms, it uses REVIGO (Supek et
+              al. 2011). REVIGO scores how similar two terms are from their positions in the GO
+              hierarchy (SimRel semantic similarity), using how often each term is used in the
+              <i>C. elegans</i> annotations. For each pair that is more similar than the cutoff, the
+              broader term (one that covers over 5% of annotated genes) or the less significant term
+              is folded under the other. Other term types have no hierarchy, so the same steps use
+              the genes that hit each term. Similarity is the Jaccard index of the hit genes (genes
+              in both terms divided by genes in either term). A term is broad when it covers over 5%
+              of the background genes. A term whose hit genes contain those of another term is the
+              parent.
               <br /><br />
-              <b>Slider:</b> the highest similarity two kept terms may share. Lower is stricter (more
-              terms folded, shorter list); higher is more lenient; 1 folds nothing. REVIGO's own default
-              is 0.7 ("medium"), with 0.9, 0.5 and 0.4 as its large, small and tiny presets. For term
-              types other than GO the slider is the gene-overlap (Jaccard) cutoff and starts at 0.5.
+              <b>Slider:</b> the highest similarity two kept terms may have. A lower value folds more
+              terms and gives a shorter list. A higher value folds fewer terms. At 1, nothing is folded.
+              The REVIGO default is 0.7 (medium). Its other presets are 0.9 (large), 0.5 (small) and 0.4
+              (tiny). For term types other than GO, the slider is the Jaccard index cutoff and starts
+              at 0.5.
             </ControlHint>
           </label>
           {#if collapseRedundant}
             <label
               class="inline-flex items-center gap-1 text-xs text-muted-foreground"
               title={useRevigo
-                ? 'Allowed SimRel similarity (REVIGO: 0.9 large, 0.7 medium, 0.5 small, 0.4 tiny). Lower = shorter list.'
-                : 'Jaccard cutoff for grouping. Lower = more aggressive collapse.'}
+                ? 'Highest allowed similarity (SimRel) between two kept terms. REVIGO presets: 0.9 large, 0.7 medium, 0.5 small, 0.4 tiny. A lower value gives a shorter list.'
+                : 'Highest allowed Jaccard index (shared genes divided by all genes in either term) between two kept terms. A lower value folds more terms.'}
             >
               similarity
               {#if useRevigo}
@@ -696,7 +705,7 @@
           {/if}
           {#if collapseRedundant && revigoTooMany}
             <span class="text-[0.7rem] text-muted-foreground"
-              >(over {REVIGO_MAX_TERMS.toLocaleString()} terms; tighten q to collapse)</span
+              >(over {REVIGO_MAX_TERMS.toLocaleString()} terms; lower the q-value cutoff to collapse)</span
             >
           {/if}
           {#if collapseRedundant && collapsedCount > 0}
@@ -710,12 +719,11 @@
     {#if universeN > 0}
       <p class="mt-1 text-xs text-muted-foreground">
         {#if backgroundLabel}
-          Tested against the genes in your differential expression table ({universeN.toLocaleString()}
-          of them carry a
-          {activeLabel} annotation), not the full annotated set, so fold enrichment is not comparable
-          with a run on a pasted gene list.
+          Tested against a custom background ({universeN.toLocaleString()} genes with a
+          {activeLabel} annotation), not all annotated genes. Fold enrichment is not comparable with a
+          run that uses all annotated genes.
         {:else}
-          Tested against every gene in the database carrying a {activeLabel} annotation ({universeN.toLocaleString()}
+          Tested against every gene in the database with a {activeLabel} annotation ({universeN.toLocaleString()}
           of them).
         {/if}
       </p>
@@ -725,8 +733,8 @@
   {#if !isImported && ids.length < 2}
     <Card>
       <CardContent class="pt-6 text-sm text-muted-foreground">
-        Enrichment needs at least 2 genes. Select genes from the cards/table views and the bar at
-        the bottom will offer this analysis.
+        Over-representation analysis needs at least 2 genes. Select genes in the card or table view,
+        then use the bar at the bottom to run this analysis.
       </CardContent>
     </Card>
   {:else if loading[active] && !results[active]}
@@ -754,14 +762,14 @@
       <div
         class="rounded-md border border-amber-400/40 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-200"
       >
-        <span class="font-semibold">Input ≈ universe.</span>
-        Tested {universeWarning.n.toLocaleString()} genes against a universe of
+        <span class="font-semibold">Your list is more than half of the background.</span>
+        You tested {universeWarning.n.toLocaleString()} genes against a background of
         {universeWarning.N.toLocaleString()} annotated genes ({(
           universeWarning.ratio * 100
-        ).toFixed(0)}%). Fold enrichment will collapse to ~1× and q-values become uninformative.
-        Filter the input to a DE subset first (use the
-        <span class="font-mono">DE table / volcano</span> mode, or a top-N |score| cut on a ranked list),
-        then re-run.
+        ).toFixed(0)}%). Fold enrichment will be close to 1 and q-values will not be informative.
+        Reduce the list to the differentially expressed (DE) genes first. Use the
+        <span class="font-mono">DE table / volcano</span> mode, or keep only the top genes by |score|
+        in a ranked list. Then run again.
       </div>
     {/if}
     {#if viewMode === 'plot'}
@@ -804,12 +812,12 @@
               </th>
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                title="k: genes from your list in this term. n: your genes carrying any annotation in this domain."
+                title="k: genes from your list in this term. n: genes from your list with any annotation in this domain."
                 >k / n</th
               >
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                title="K: genes in this term across the background. N: the background universe."
+                title="K: genes in this term in the background. N: all genes in the background."
                 >K / N</th
               >
               <th
@@ -819,11 +827,13 @@
               >
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                title="Raw hypergeometric p-value, before correction for testing many terms.">p</th
+                title="p-value from the hypergeometric test, before correction for testing many terms."
+                >p</th
               >
               <th
                 class="px-3 py-2 text-right text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                title="Benjamini-Hochberg false discovery rate across every term tested.">q (BH)</th
+                title="q-value: p-value corrected with the Benjamini-Hochberg (BH) false discovery rate (FDR) method, across every term tested."
+                >q (BH)</th
               >
             </tr>
           </thead>

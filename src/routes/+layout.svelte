@@ -187,7 +187,12 @@
               <div class="mb-2 font-medium">{db.status}</div>
               {#if db.progress > 0}
                 <div class="font-mono text-xs text-muted-foreground">
-                  {fmtMB(db.progress)} decompressed
+                  <!-- In dev the browser may gunzip the body, so the count can pass the compressed total. -->
+                  {#if (db.gzSize || db.progressTotal) >= db.progress}
+                    {fmtMB(db.progress)} / {fmtMB(db.gzSize || db.progressTotal)} downloaded
+                  {:else}
+                    {fmtMB(db.progress)} downloaded
+                  {/if}
                 </div>
               {:else}
                 <div class="text-xs text-muted-foreground">

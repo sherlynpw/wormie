@@ -253,7 +253,7 @@
                   onclick={copyCell}
                   onkeydown={onCellKey}
                   title={g.chromosome && g.start_pos != null
-                    ? `${g.chromosome}:${g.start_pos}-${g.end_pos}${g.strand ? ` (${g.strand})` : ''}`
+                    ? `Genome position ${g.chromosome}:${g.start_pos}-${g.end_pos}${g.strand ? ` (${g.strand} strand)` : ''}`
                     : ''}
                 >
                   {g.chromosome ?? ''}{g.cm != null ? `:${g.cm.toFixed(2)}` : ''}

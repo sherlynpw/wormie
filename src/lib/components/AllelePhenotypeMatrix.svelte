@@ -61,7 +61,9 @@
 </script>
 
 {#if topAlleles.length === 0 || topPhenotypes.length === 0}
-  <div class="py-4 text-sm text-muted-foreground">No allele-phenotype data for this gene.</div>
+  <div class="py-4 text-sm text-muted-foreground">
+    No phenotype data for individual alleles (mutant versions) of this gene.
+  </div>
 {:else}
   <div class="overflow-x-auto">
     <div
@@ -101,7 +103,7 @@
             style="width: {cell}px; height: {cell}px; background: {on
               ? 'hsl(var(--accent))'
               : 'transparent'};"
-            title={on ? `${a.name} → ${p.name}` : ''}
+            title={on ? `${a.name}: ${p.name}` : ''}
           ></div>
         {/each}
       {/each}
@@ -110,11 +112,11 @@
     {#if alleles.length > maxAlleles || phenotypes.length > maxPhenotypes}
       <div class="mt-2 flex flex-wrap items-center gap-2 text-[0.65rem] text-muted-foreground">
         {#if expanded}
-          Showing all {alleles.length} alleles × {phenotypes.length} phenotypes.
+          Showing all {alleles.length} alleles by {phenotypes.length} phenotypes.
         {:else}
-          Showing top {Math.min(maxAlleles, alleles.length)} alleles ×
-          {Math.min(maxPhenotypes, phenotypes.length)} phenotypes by support count. Total:
-          {alleles.length} alleles, {phenotypes.length} phenotypes.
+          Showing the top {Math.min(maxAlleles, alleles.length)} alleles by
+          {Math.min(maxPhenotypes, phenotypes.length)} phenotypes, ranked by the number of supporting
+          records. Total: {alleles.length} alleles, {phenotypes.length} phenotypes.
         {/if}
         <button
           type="button"

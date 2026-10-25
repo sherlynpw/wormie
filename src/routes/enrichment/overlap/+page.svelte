@@ -281,19 +281,21 @@
   <header class="space-y-1">
     <h1 class="text-2xl font-semibold">Enrichment overlap</h1>
     <p class="text-sm text-muted-foreground">
-      Two or more gene lists compared on the terms enriched in each
+      Compares the enriched terms of two or more gene lists
     </p>
   </header>
 
   <PageHint id="overlap" title="Enrichment overlap (UpSet)">
-    Paste a gene list into each slot, or load a saved list. Over-representation runs on every list
-    separately, against the whole annotated genome, the same test the Over-representation page runs,
-    and the significant terms are then compared across lists: two lists can share little membership
-    and still point at the same biology. Pick which annotation to compare on and a q-value cutoff.
-    The UpSet plot shows intersection sizes; click any bar to list the terms in that exact
-    combination. A slot also accepts a finished enrichment result table (clusterProfiler / topGO /
-    GSEApy CSV), and a result from the Over-representation page can be sent here with its
-    &ldquo;Send results to overlap&rdquo; button.
+    Input: a gene list in each slot, pasted or loaded from a saved list. The tool runs
+    over-representation analysis (ORA) on each list separately. It uses the same test as the
+    Over-representation page, with the whole annotated genome as the background (the set of genes
+    that counts as possible hits). It then compares the significant terms across lists. Two lists
+    can share few genes and still share many terms. Choose the annotation type to compare and a
+    q-value cutoff (the p-value corrected for testing many terms). The UpSet plot shows how many
+    terms each combination of lists shares. Click a bar to list the terms in that combination. A
+    slot also accepts a finished enrichment result table (CSV from clusterProfiler, topGO or
+    GSEApy). You can also send a result from the Over-representation page with its &ldquo;Send
+    results to overlap&rdquo; button.
   </PageHint>
 
   <Card>
@@ -328,7 +330,7 @@
                 <Button
                   variant="ghost"
                   size="sm"
-                  title="Fill this slot with your current selection"
+                  title="Fill this slot with the genes you selected on another page"
                   onclick={() => fillSlot(slot, slot.name, selection.ids.join('\n'))}
                 >
                   From selection ({selection.ids.length})
@@ -348,7 +350,7 @@
                     (e.currentTarget as HTMLSelectElement).value = '';
                   }}
                   class="h-8 rounded border bg-background px-2 text-xs"
-                  title="Load from a saved enrichment session with results"
+                  title="Load the gene list and results from a saved enrichment session"
                 >
                   <option value="">Load saved session…</option>
                   {#each enrichmentSessions as s (s.id)}
@@ -412,7 +414,10 @@
       <CardHeader>
         <CardTitle class="text-lg">Overlap</CardTitle>
         <div class="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          <label class="flex items-center gap-2">
+          <label
+            class="flex items-center gap-2"
+            title="A term counts as significant when its q-value (corrected p-value) is at or below this cutoff"
+          >
             <span>q ≤</span>
             <Input
               type="number"
@@ -436,7 +441,7 @@
         {#if significantPerSlot.length >= 2}
           <JaccardHeatmap
             sets={significantPerSlot.map((s) => ({ name: s.name, ids: s.ids }))}
-            title="Significant-term Jaccard between slots"
+            title="Overlap of significant terms between lists (Jaccard index: shared terms divided by all terms in either list)"
             labels={termName}
           />
         {/if}
@@ -464,7 +469,9 @@
           </div>
           {#if viewMode === 'heatmap'}
             <label class="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Min terms per gene</span>
+              <span title="Show only genes that belong to at least this many significant terms"
+                >Min terms per gene</span
+              >
               <Input type="number" min="1" max="20" bind:value={minTermsPerGene} class="h-7 w-16" />
             </label>
           {/if}
@@ -477,7 +484,7 @@
               if (n === 0) toast.message('No plots to export');
               else toast.success(`Exported ${n} plot${n === 1 ? '' : 's'} as SVG`);
             }}
-            title="Snapshot every visible plot on this page and zip them"
+            title="Save every plot on this page as an SVG image, in one zip file"
           >
             <ImageIcon class="h-4 w-4" /> Snapshot plots (zip)
           </Button>
@@ -585,11 +592,11 @@
     </Card>
   {:else if anyRunning}
     <div class="rounded-md border bg-card px-3 py-4 text-sm text-muted-foreground">
-      Running over-representation...
+      Running over-representation analysis...
     </div>
   {:else if nonEmptySlots < 2}
     <div class="rounded-md border bg-card px-3 py-4 text-sm text-muted-foreground">
-      Add gene lists or result tables to at least two slots to see the overlap.
+      Add a gene list or a result table to at least two slots to see the overlap.
     </div>
   {/if}
 </div>

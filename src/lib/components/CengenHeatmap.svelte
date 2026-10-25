@@ -151,7 +151,8 @@
   <div class="text-sm text-muted-foreground">Loading CeNGEN expression…</div>
 {:else if rows.length === 0}
   <div class="text-sm italic text-muted-foreground">
-    None of the {ids.length} input genes have CeNGEN bulk TMM data.
+    None of the {ids.length} input genes have bulk expression data in CeNGEN (C. elegans Neuronal Gene
+    Expression Network).
   </div>
 {:else}
   <div class="space-y-2">
@@ -161,9 +162,12 @@
       {/if}
       <span>
         <span class="font-semibold tabular-nums text-foreground">{rows.length}</span> of
-        {ids.length} genes × {neuronOrder.length} neuron types
+        {ids.length} genes, {neuronOrder.length} neuron types
       </span>
-      <span class="inline-flex items-center gap-1" title="log(1 + TMM), low to high">
+      <span
+        class="inline-flex items-center gap-1"
+        title="log(1 + TMM), low to high. TMM is the trimmed mean of M-values, a normalized expression value."
+      >
         <span class="font-mono">0</span>
         <span
           class="inline-block h-2 w-16 rounded-sm"
@@ -258,8 +262,9 @@
       <div class="text-[0.65rem] text-amber-900 dark:text-amber-200">* {CENGEN_TRANSGENE_NOTE}</div>
     {/if}
     <div class="text-[0.65rem] text-muted-foreground">
-      Cell color: log<sub>10</sub>(TMM + 1) on the same scale as the per-gene strip plot. Cluster
-      sort = ranked by each gene's dominant neuron type, then by peak intensity.
+      Cell color is log<sub>10</sub>(TMM + 1), where TMM is the trimmed mean of M-values (a
+      normalized expression value). It uses the same scale as the strip plot on each gene page.
+      Genes are sorted by the neuron type where each gene is highest, then by peak expression.
     </div>
   </div>
 {/if}

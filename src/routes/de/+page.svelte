@@ -682,13 +682,13 @@
   <PageHint id="de.intro" title="What this step does">
     Give it a counts table and say which samples are which condition. It then asks, gene by gene,
     whether the difference between conditions is larger than the variation between replicates of the
-    same condition. Two numbers come back per gene. The <b>log2 fold change</b> is the size and
-    direction of the change: 1 means doubled, -1 means halved, 0 means no change. The
-    <b>adjusted p-value</b> (padj) is the false discovery rate: because thousands of genes are tested
-    at once, some will look convincing by chance, and this correction accounts for that. padj &lt; 0.05
-    is the usual cutoff, meaning roughly 5% of the genes you call changed are expected to be false. The
-    engine is DESeq2, the most widely used method for this. The first run spends 15-20 s starting R; later
-    runs take seconds.
+    same condition. Two numbers come back per gene. The <b>log2 fold change</b> (log2FC) is the size
+    and direction of the change: 1 means doubled, -1 means halved, 0 means no change. The
+    <b>adjusted p-value</b> (padj) corrects for testing thousands of genes at once, where some will look
+    significant by chance. It is a false discovery rate (FDR), the expected share of false calls among
+    the genes you call changed. padj &lt; 0.05 is the usual cutoff, meaning roughly 5% of the genes you
+    call changed are expected to be false. The method is DESeq2, which runs in your browser through R
+    (WebR). The first run spends 15-20 s starting R. Later runs take seconds.
   </PageHint>
 
   <Card
@@ -705,13 +705,13 @@
           Counts
           <ControlHint id="de-counts" title="Which table this needs">
             A table of raw read counts: genes down the rows, samples across the columns, whole
-            numbers in the cells. The output of the read counting page, of featureCounts or HTSeq at
-            the command line, or of a pipeline such as nf-core/rnaseq.
+            numbers in the cells. It can come from the read counting page, from featureCounts or
+            HTSeq at the command line, or from a pipeline such as nf-core/rnaseq.
             <br /><br />
-            It must be raw counts, not TPM, FPKM or anything already normalised. Those are already adjusted
-            for library size and gene length, and DESeq2 does its own normalisation while modelling the
-            counting noise, which needs the untouched numbers. Feeding it normalised values does not error,
-            it just quietly gives you the wrong answer.
+            It must be raw counts, not transcripts per million (TPM), fragments per kilobase per million
+            (FPKM) or anything else already normalised. Those are already adjusted for library size and
+            gene length. DESeq2 does its own normalisation while modelling the counting noise, so it needs
+            the untouched numbers. Normalised values may not cause an error, but the results will be wrong.
           </ControlHint>
         </span>
         <span class="text-xs font-normal text-muted-foreground">
@@ -736,14 +736,15 @@
           Upload dds.rds (skip fit)
         </Button>
         <ControlHint id="de-dds" title="What a dds.rds file is">
-          Fitting takes the longest part of a run. Once it finishes, the <b>dds.rds</b> download on
-          this page saves the fitted model — the counts, the design, the dispersions DESeq2
-          estimated — as a single file. Upload it here later and the page skips straight to pulling
-          contrasts out, in seconds rather than minutes.
+          Fitting is the slowest part of a run. After it finishes, the <b>dds.rds</b> download on
+          this page saves the fitted model as one file. It holds the counts, the design and the
+          dispersions DESeq2 estimated (dispersion is how much a gene's counts vary between
+          replicates). Upload it here later to skip the fit and go straight to the contrasts, which
+          takes seconds.
           <br /><br />
-          It is also an ordinary R object: <code class="break-all">readRDS("dds.rds")</code> in R gives
-          you the same DESeqDataSet, which is the way to run tests this page does not offer, such as a
-          likelihood ratio test across more than two levels.
+          It is also a standard R object. <code class="break-all">readRDS("dds.rds")</code> in R gives
+          you the same DESeqDataSet. Use it to run tests this page does not offer, such as a likelihood
+          ratio test across more than two levels.
         </ControlHint>
         <span class="text-xs text-muted-foreground">
           {countsName || 'or paste a featureCounts-style table below'}
@@ -878,7 +879,9 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
               disabled={running}
               class="h-9 max-w-24"
             />
-            <span class="text-xs text-muted-foreground">drop low-count genes; 0 = off</span>
+            <span class="text-xs text-muted-foreground">
+              drop genes whose counts summed over all samples are below this number; 0 = off
+            </span>
           </div>
           <div class="grid gap-1.5">
             <label for="alpha" class="text-sm font-medium">FDR (alpha)</label>
@@ -893,7 +896,8 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
               class="h-9 max-w-24"
             />
             <span class="text-xs text-muted-foreground">
-              tunes independent filtering and the significance cutoff
+              false discovery rate (FDR) cutoff for padj; also sets DESeq2's independent filtering
+              (it sets aside genes with too few counts to reach significance)
             </span>
           </div>
           <div class="grid gap-1.5">
@@ -908,6 +912,9 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
               <option value="ashr">ashr</option>
               <option value="none">none</option>
             </select>
+            <span class="text-xs text-muted-foreground">
+              shrinkage pulls noisy log2 fold changes of low-count genes toward 0
+            </span>
           </div>
           <label class="flex cursor-pointer select-none items-center gap-2 self-end text-sm">
             <input
@@ -931,7 +938,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             }}
             disabled={running}
             class="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
-            title={`Free OPFS storage. The next fit re-downloads the DESeq2 WASM bundle${bundleSizeLabel ? ` (${bundleSizeLabel})` : ''}, not the gene database.`}
+            title={`Frees browser storage (the origin private file system, OPFS). The next fit downloads the DESeq2 WebAssembly bundle again${bundleSizeLabel ? ` (${bundleSizeLabel})` : ''}. The gene database is not affected.`}
           >
             Clear bundle cache
           </button>
@@ -942,7 +949,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
               bind:value={workerSetting}
               disabled={running}
               class="h-8 rounded-md border border-input bg-background px-2 text-xs disabled:opacity-50"
-              title="Worker count for parallel contrast extraction (apeglm shrinkage). 'auto' = min(cores/2, 4). Higher = more memory (~150 MB / worker)."
+              title="Number of parallel R workers used to compute contrasts with apeglm shrinkage. 'auto' uses the smaller of half your CPU cores and 4. Each worker uses about 150 MB of memory."
             >
               <option value="auto">auto ({defaultAutoSize()})</option>
               <option value="1">1 (serial)</option>
@@ -1089,7 +1096,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             <option value="none">none</option>
           </select>
           <span class="text-xs text-muted-foreground">
-            applies to single-chip clicks; "Compute all" uses the global setting
+            used when you click one contrast; "Compute all" uses the shrinkage chosen above
           </span>
         </div>
 
@@ -1262,7 +1269,8 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
           <div class="text-sm text-muted-foreground">Computing contrast...</div>
         {:else}
           <div class="text-sm text-muted-foreground">
-            Click a contrast chip above to compute it, or "Compute all" for parallel batch.
+            Click a contrast above to compute it, or click "Compute all" to compute every contrast
+            at once.
           </div>
         {/if}
 
@@ -1330,7 +1338,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
               if (n === 0) toast.message('No plots to export');
               else toast.success(`Exported ${n} plot${n === 1 ? '' : 's'} as SVG`);
             }}
-            title="Snapshot every visible plot on this page and zip them"
+            title="Save every visible plot on this page as SVG files in one zip"
           >
             <ImageIcon class="h-4 w-4" /> Snapshot plots (zip)
           </Button>
@@ -1345,7 +1353,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             variant="outline"
             onclick={continueToSsgsea}
             disabled={!fit?.normalizedCountsTsv}
-            title="Hand off the normalized count matrix (all samples) to /ssgsea"
+            title="Send the normalized count matrix (all samples) to the single-sample gene set enrichment analysis (ssGSEA) page"
           >
             Continue to per-sample set scores <ArrowRight class="h-4 w-4" />
           </Button>
@@ -1353,7 +1361,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             variant="outline"
             onclick={continueToGsea}
             disabled={!activeContrastObj}
-            title="Hand off this contrast's ranked list (gene → Wald stat) to /gsea"
+            title="Send this contrast's ranked gene list (gene and Wald statistic) to the gene set enrichment analysis (GSEA) page"
           >
             Continue to GSEA <ArrowRight class="h-4 w-4" />
           </Button>

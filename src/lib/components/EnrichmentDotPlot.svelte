@@ -131,7 +131,10 @@
     <div
       class="mb-1 flex flex-wrap items-center justify-end gap-2 text-[0.65rem] text-muted-foreground"
     >
-      <span>colour scale -log10(q)</span>
+      <span
+        title="q-value: the p-value corrected for testing many terms. -log10(q) is larger for smaller q-values."
+        >colour scale -log10(q)</span
+      >
       <label class="inline-flex items-center gap-1">
         <input
           type="radio"
@@ -157,7 +160,7 @@
         value={scaleMin}
         onchange={(e) => qScale.set(Number(e.currentTarget.value), qScale.max ?? scaleMax)}
         class="w-14 rounded border bg-card px-1 py-0.5 font-mono"
-        title="Lowest -log10(q) on the colour scale"
+        title="Lowest -log10(q) value on the colour scale"
       />
       <span>to</span>
       <input
@@ -167,7 +170,7 @@
         value={scaleMax}
         onchange={(e) => qScale.set(qScale.min ?? scaleMin, Number(e.currentTarget.value))}
         class="w-14 rounded border bg-card px-1 py-0.5 font-mono"
-        title="Highest -log10(q) on the colour scale; stronger terms take the end colour"
+        title="Highest -log10(q) value on the colour scale. Terms with smaller q-values take the end colour."
       />
     </div>
     <div class="overflow-x-auto">
@@ -264,13 +267,25 @@
                 <div class="font-semibold">{r.name}</div>
                 <div class="font-mono text-[0.65rem] text-muted-foreground">{r.term_id}</div>
                 <div class="grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5 text-[0.7rem]">
-                  <span class="text-muted-foreground">fold</span>
+                  <span
+                    class="text-muted-foreground"
+                    title="Fold enrichment: how many times more genes than expected">fold</span
+                  >
                   <span class="font-mono tabular-nums">{r.fold.toFixed(2)}×</span>
-                  <span class="text-muted-foreground">k / n</span>
+                  <span
+                    class="text-muted-foreground"
+                    title="Genes in your list with this term / genes in your list">k / n</span
+                  >
                   <span class="font-mono tabular-nums">{r.k} / {r.n}</span>
-                  <span class="text-muted-foreground">K / N</span>
+                  <span
+                    class="text-muted-foreground"
+                    title="Genes in the background with this term / genes in the background"
+                    >K / N</span
+                  >
                   <span class="font-mono tabular-nums">{r.K} / {r.N}</span>
-                  <span class="text-muted-foreground">p</span>
+                  <span class="text-muted-foreground" title="p-value from the hypergeometric test"
+                    >p</span
+                  >
                   <span class="font-mono tabular-nums"
                     >{r.p === 0
                       ? '< 1e-300'
@@ -278,7 +293,10 @@
                         ? r.p.toExponential(2)
                         : r.p.toFixed(3)}</span
                   >
-                  <span class="text-muted-foreground">q</span>
+                  <span
+                    class="text-muted-foreground"
+                    title="q-value: p-value corrected for testing many terms">q</span
+                  >
                   <span class="font-mono tabular-nums"
                     >{r.q === 0
                       ? '< 1e-300'

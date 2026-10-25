@@ -33,9 +33,11 @@
   </Button>
 
   <PageHint id="cell-type" title="CeNGEN neuron types">
-    Single-cell RNA-Seq of the L4 nervous system (Taylor et al. 2021). Each row is one neuron class
-    with the count of genes called expressed at the medium FACS-calibrated threshold (≥ 2). Click a
-    row to see the gene list.
+    CeNGEN (C. elegans Neuronal Gene Expression Network) measured gene expression in single cells of
+    the L4 larval nervous system by RNA sequencing (Taylor et al. 2021). Each row is one neuron
+    class. The count is the number of genes called expressed at the medium threshold (level 2 of 4).
+    The thresholds were calibrated using cells sorted by fluorescence-activated cell sorting (FACS).
+    Click a row to see its genes.
   </PageHint>
 
   <Card>
