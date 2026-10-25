@@ -128,13 +128,13 @@ export default defineConfig({
             // The client appends `?v=<version>` for cache busting, so the
             // regex has to match either end-of-string or the start of the
             // query. Without the `(\?|$)` alternation, versioned requests
-            // miss the CacheFirst rule and re-download the whole DB gzip on
+            // miss the CacheFirst rule and re-download the whole DB on
             // every visit.
-            urlPattern: /\/data\/wormie\.sqlite\.gz(\?|$)/,
+            urlPattern: /\/data\/wormie\.sqlite\.(gz|zst)(\?|$)/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'wormie-sqlite',
-              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              expiration: { maxEntries: 3, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] },
               rangeRequests: true,
             },

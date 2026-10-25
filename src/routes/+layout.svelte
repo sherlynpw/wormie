@@ -188,16 +188,16 @@
               {#if db.progress > 0}
                 <div class="font-mono text-xs text-muted-foreground">
                   <!-- In dev the browser may gunzip the body, so the count can pass the compressed total. -->
-                  {#if (db.gzSize || db.progressTotal) >= db.progress}
-                    {fmtMB(db.progress)} / {fmtMB(db.gzSize || db.progressTotal)} downloaded
+                  {#if (db.downloadSize || db.progressTotal) >= db.progress}
+                    {fmtMB(db.progress)} / {fmtMB(db.downloadSize || db.progressTotal)} downloaded
                   {:else}
                     {fmtMB(db.progress)} downloaded
                   {/if}
                 </div>
               {:else}
                 <div class="text-xs text-muted-foreground">
-                  First-time load caches the database{db.gzSize
-                    ? ` (${fmtMB(db.gzSize)} compressed)`
+                  First-time load caches the database{db.downloadSize
+                    ? ` (${fmtMB(db.downloadSize)} compressed)`
                     : ''} for offline use.
                 </div>
               {/if}
