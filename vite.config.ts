@@ -122,6 +122,9 @@ export default defineConfig({
         globPatterns: ['client/**/*.{js,css,wasm,ico,svg,png,woff,woff2}', 'prerendered/**/*.html'],
         // HEAD requests for the R runtime, answered from the cache offline (static/sw-head.js).
         importScripts: ['sw-head.js'],
+        // Claim the first-visit page so its runtime fetches (WebR, featureCounts) get cached.
+        // No skipWaiting: updates must wait for the user's click.
+        clientsClaim: true,
         // SQLite is large; cache it on first hit, serve from cache thereafter.
         runtimeCaching: [
           {
@@ -147,14 +150,31 @@ export default defineConfig({
             // pages never pays the ~20 MB. deseq2-bundle.* is deliberately
             // excluded: webr-instance.ts already persists it in OPFS, and
             // caching it here too would double a 100+ MB download on disk.
-            urlPattern:
-              /\/wasm-cran\/(webr-pthread\/|featurecounts\/|deseq2-bundle\.manifest\.json)/,
+            // The manifest is a mutable pointer, so it has its own rule below.
+            urlPattern: /\/wasm-cran\/(webr-pthread\/|featurecounts\/)/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'wormie-wasm-runtime',
               expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] },
               rangeRequests: true,
+            },
+          },
+          {
+            urlPattern: /\/wasm-cran\/deseq2-bundle\.manifest\.json(\?|$)/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'wormie-wasm-manifest',
+              networkTimeoutSeconds: 3,
+            },
+          },
+          {
+            // The file name does not change per release, so revalidate in the background.
+            urlPattern: /\/data\/annotation\.[^/?]+(\?|$)/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'wormie-annotation',
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
           {

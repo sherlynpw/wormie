@@ -3272,3 +3272,228 @@ export async function getTermSets(
   }
   return out.sort((a, b) => b.genes.length - a.genes.length);
 }
+
+// ---- Browsable ontologies: phenotype tree, anatomy (tissue) tree, disease list ----
+
+// One node of a lazily loaded ontology tree.
+export interface OntologyNode {
+  id: string;
+  name: string;
+  n_children: number;
+  // Genes annotated directly to this term, not to its descendants.
+  n_genes: number;
+  // Set for anatomy children: 'part_of' when the only edge from the parent is part_of.
+  rel_type?: string;
+}
+
+const PHENO_NODE_SELECT = `t.term_id AS id, t.name,
+	        (SELECT COUNT(*) FROM phenotype_relations cr
+	           JOIN phenotype_terms ct ON ct.term_id = cr.child_id
+	           WHERE cr.parent_id = t.term_id AND COALESCE(ct.is_obsolete, 0) = 0) AS n_children,
+	        (SELECT COUNT(DISTINCT gp.wormbase_gene) FROM gene_phenotype gp
+	           WHERE gp.term_id = t.term_id) AS n_genes`;
+
+export async function getPhenotypeRoots(): Promise<OntologyNode[]> {
+  return query<OntologyNode>(
+    `SELECT ${PHENO_NODE_SELECT}
+		 FROM phenotype_terms t
+		 WHERE COALESCE(t.is_obsolete, 0) = 0
+		   AND NOT EXISTS (SELECT 1 FROM phenotype_relations r WHERE r.child_id = t.term_id)
+		 ORDER BY t.name`,
+  );
+}
+
+export async function getPhenotypeChildren(parent_id: string): Promise<OntologyNode[]> {
+  return query<OntologyNode>(
+    `SELECT ${PHENO_NODE_SELECT}
+		 FROM phenotype_terms t
+		 JOIN phenotype_relations r ON r.child_id = t.term_id
+		 WHERE r.parent_id = ? AND COALESCE(t.is_obsolete, 0) = 0
+		 ORDER BY t.name`,
+    [parent_id],
+  );
+}
+
+function likePattern(term: string): string {
+  return `%${term.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+}
+
+export async function searchPhenotypeTerms(term: string, limit = 100): Promise<OntologyNode[]> {
+  if (!term.trim()) return [];
+  const pat = likePattern(term);
+  return query<OntologyNode>(
+    `SELECT ${PHENO_NODE_SELECT}
+		 FROM phenotype_terms t
+		 WHERE COALESCE(t.is_obsolete, 0) = 0
+		   AND (t.name LIKE ? ESCAPE '\\'
+		        OR EXISTS (SELECT 1 FROM phenotype_synonyms s
+		                   WHERE s.term_id = t.term_id AND s.synonym LIKE ? ESCAPE '\\'))
+		 ORDER BY t.name
+		 LIMIT ?`,
+    [pat, pat, limit],
+  );
+}
+
+const ANAT_NODE_SELECT = `t.term_id AS id, t.name,
+	        (SELECT COUNT(DISTINCT cr.child_id) FROM anatomy_relations cr
+	           WHERE cr.parent_id = t.term_id) AS n_children,
+	        (SELECT COUNT(DISTINCT ga.wormbase_gene) FROM gene_anatomy ga
+	           WHERE ga.term_id = t.term_id) AS n_genes`;
+
+// True when the loaded DB has the anatomy hierarchy; older builds only have the flat tissue list.
+export function hasAnatomyTree(): Promise<boolean> {
+  return hasTable('anatomy_relations');
+}
+
+export async function getAnatomyRoots(): Promise<OntologyNode[]> {
+  if (!(await hasTable('anatomy_relations'))) return [];
+  return query<OntologyNode>(
+    `SELECT ${ANAT_NODE_SELECT}
+		 FROM anatomy_terms t
+		 WHERE COALESCE(t.is_obsolete, 0) = 0
+		   AND NOT EXISTS (SELECT 1 FROM anatomy_relations r WHERE r.child_id = t.term_id)
+		   AND EXISTS (SELECT 1 FROM anatomy_relations r WHERE r.parent_id = t.term_id)
+		 ORDER BY t.name`,
+  );
+}
+
+// Children over both is_a and part_of. A child with both edge types to the same parent is listed once as is_a.
+export async function getAnatomyChildren(parent_id: string): Promise<OntologyNode[]> {
+  if (!(await hasTable('anatomy_relations'))) return [];
+  return query<OntologyNode>(
+    `SELECT ${ANAT_NODE_SELECT}, MIN(r.rel_type) AS rel_type
+		 FROM anatomy_terms t
+		 JOIN anatomy_relations r ON r.child_id = t.term_id
+		 WHERE r.parent_id = ? AND COALESCE(t.is_obsolete, 0) = 0
+		 GROUP BY t.term_id
+		 ORDER BY t.name`,
+    [parent_id],
+  );
+}
+
+export async function searchAnatomyTerms(term: string, limit = 100): Promise<OntologyNode[]> {
+  if (!term.trim()) return [];
+  const pat = likePattern(term);
+  const tree = await hasTable('anatomy_relations');
+  const nChildren = tree
+    ? `(SELECT COUNT(DISTINCT cr.child_id) FROM anatomy_relations cr WHERE cr.parent_id = t.term_id)`
+    : '0';
+  return query<OntologyNode>(
+    `SELECT t.term_id AS id, t.name, ${nChildren} AS n_children,
+		        (SELECT COUNT(DISTINCT ga.wormbase_gene) FROM gene_anatomy ga
+		           WHERE ga.term_id = t.term_id) AS n_genes
+		 FROM anatomy_terms t
+		 WHERE COALESCE(t.is_obsolete, 0) = 0
+		   AND (t.name LIKE ? ESCAPE '\\'
+		        OR EXISTS (SELECT 1 FROM anatomy_synonyms s
+		                   WHERE s.term_id = t.term_id AND s.synonym LIKE ? ESCAPE '\\'))
+		 ORDER BY t.name
+		 LIMIT ?`,
+    [pat, pat, limit],
+  );
+}
+
+// Flat fallback for a DB without anatomy_relations: every tissue that has genes.
+export async function getAnatomyTermsWithGenes(): Promise<OntologyNode[]> {
+  try {
+    return await query<OntologyNode>(
+      `SELECT t.term_id AS id, t.name, 0 AS n_children,
+			        COUNT(DISTINCT ga.wormbase_gene) AS n_genes
+			 FROM gene_anatomy ga
+			 JOIN anatomy_terms t ON t.term_id = ga.term_id
+			 WHERE COALESCE(t.is_obsolete, 0) = 0
+			 GROUP BY t.term_id
+			 ORDER BY n_genes DESC, t.name`,
+    );
+  } catch {
+    return [];
+  }
+}
+
+export interface AnatomyTermDetail {
+  term_id: string;
+  name: string;
+  definition: string | null;
+  synonyms: string[];
+  n_genes: number;
+}
+
+export async function getAnatomyTermDetail(term_id: string): Promise<AnatomyTermDetail | null> {
+  try {
+    const rows = await query<Omit<AnatomyTermDetail, 'synonyms'>>(
+      `SELECT t.term_id, t.name, t.definition,
+			        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_anatomy WHERE term_id = t.term_id) AS n_genes
+			 FROM anatomy_terms t
+			 WHERE t.term_id = ? AND COALESCE(t.is_obsolete, 0) = 0`,
+      [term_id],
+    );
+    if (!rows[0]) return null;
+    const syn = await query<{ synonym: string }>(
+      `SELECT DISTINCT synonym FROM anatomy_synonyms WHERE term_id = ? ORDER BY synonym`,
+      [term_id],
+    ).catch(() => []);
+    return { ...rows[0], synonyms: syn.map((s) => s.synonym) };
+  } catch {
+    return null;
+  }
+}
+
+export interface AnatomyNeighbor {
+  term_id: string;
+  name: string;
+  rel_type: string;
+  n_genes: number;
+}
+
+export async function getAnatomyNeighbors(
+  term_id: string,
+  direction: 'parents' | 'children',
+): Promise<AnatomyNeighbor[]> {
+  if (!(await hasTable('anatomy_relations'))) return [];
+  const selfCol = direction === 'parents' ? 'child_id' : 'parent_id';
+  const otherCol = direction === 'parents' ? 'parent_id' : 'child_id';
+  return query<AnatomyNeighbor>(
+    `SELECT t.term_id, t.name, MIN(r.rel_type) AS rel_type,
+		        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_anatomy WHERE term_id = t.term_id) AS n_genes
+		 FROM anatomy_relations r
+		 JOIN anatomy_terms t ON t.term_id = r.${otherCol}
+		 WHERE r.${selfCol} = ? AND COALESCE(t.is_obsolete, 0) = 0
+		 GROUP BY t.term_id
+		 ORDER BY t.name`,
+    [term_id],
+  );
+}
+
+export interface AnatomyGeneRow {
+  wormbase_gene: string;
+  gene_name: string | null;
+  sequence_name: string | null;
+  concise_description: string | null;
+}
+
+// Genes annotated directly to the term; the total is n_genes from getAnatomyTermDetail.
+export async function getGenesForAnatomy(term_id: string, limit = 200): Promise<AnatomyGeneRow[]> {
+  return query<AnatomyGeneRow>(
+    `SELECT a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description
+		 FROM (SELECT DISTINCT wormbase_gene FROM gene_anatomy WHERE term_id = ?) ga
+		 JOIN annotations a ON a.wormbase_gene = ga.wormbase_gene
+		 ORDER BY a.gene_name IS NULL, a.gene_name, a.wormbase_gene
+		 LIMIT ?`,
+    [term_id, limit],
+  );
+}
+
+export interface DiseaseSummary {
+  do_id: string;
+  do_name: string;
+  n_genes: number;
+}
+
+export async function getDiseaseList(): Promise<DiseaseSummary[]> {
+  return query<DiseaseSummary>(
+    `SELECT do_id, do_name, COUNT(DISTINCT wormbase_gene) AS n_genes
+		 FROM gene_disease
+		 GROUP BY do_id, do_name
+		 ORDER BY n_genes DESC, do_name`,
+  );
+}

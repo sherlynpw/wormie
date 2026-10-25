@@ -54,7 +54,11 @@ export function getBundleManifest(): Promise<BundleManifest | null> {
           return null;
         }
       }
-    })();
+    })().then((m) => {
+      // A null must not stick, or the bundle would be stored under the fallback key.
+      if (!m) manifestCache = null;
+      return m;
+    });
   }
   return manifestCache;
 }
@@ -142,6 +146,22 @@ async function opfsWriteAll(
   }
 }
 
+// Each rebake writes a new ~100 MB entry; drop the ones no longer current.
+async function removeStaleBundles(dir: FileSystemDirectoryHandle, keep: Set<string>) {
+  try {
+    for await (const name of (dir as unknown as { keys(): AsyncIterableIterator<string> }).keys()) {
+      if (!name.startsWith('deseq2-bundle.') || keep.has(name)) continue;
+      try {
+        await dir.removeEntry(name);
+      } catch {
+        /* ignore */
+      }
+    }
+  } catch {
+    /* cleanup is best effort */
+  }
+}
+
 let bundleCache: Promise<{ data: ArrayBuffer; metadata: object }> | null = null;
 function loadBundle(onLine?: (s: string) => void) {
   if (!bundleCache) {
@@ -224,11 +244,18 @@ function loadBundle(onLine?: (s: string) => void) {
       if (dir) {
         const persisted = await opfsWriteAll(dir, dataKey, dataBuf);
         const persistedMeta = await opfsWriteAll(dir, metaKey, metaText);
-        if (persisted && persistedMeta) log('written to OPFS for next visit');
+        if (persisted && persistedMeta) {
+          log('written to OPFS for next visit');
+          await removeStaleBundles(dir, new Set([dataKey, metaKey, MANIFEST_KEY]));
+        }
       }
 
       return { data: dataBuf, metadata };
-    })();
+    })().catch((e) => {
+      // A failed load must not be memoized, or every retry rethrows until reload.
+      bundleCache = null;
+      throw e;
+    });
   }
   return bundleCache;
 }

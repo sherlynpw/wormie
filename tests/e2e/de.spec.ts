@@ -138,7 +138,10 @@ test('synthetic fit produces a Results card with contrast chips', async ({ page 
   await expect(page.locator('text=/^1 \\/ /')).toBeVisible({ timeout: 5_000 });
 
   // Click the row → per-gene drilldown opens with a StripPlot.
-  const row = page.locator('button[style*="height: 32px"]').filter({ hasText: 'g0' }).first();
+  const row = page
+    .locator('div[role="button"][style*="height: 32px"]')
+    .filter({ hasText: 'g0' })
+    .first();
   await row.click();
   await expect(page.locator('svg[aria-label="Strip plot"]')).toHaveCount(1);
   // Drilldown shows the contrast stats line.

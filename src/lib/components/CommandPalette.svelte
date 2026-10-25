@@ -40,6 +40,10 @@
   import Dna from 'lucide-svelte/icons/dna';
   import Keyboard from 'lucide-svelte/icons/keyboard';
   import Folder from 'lucide-svelte/icons/folder';
+  import Waypoints from 'lucide-svelte/icons/waypoints';
+  import Eye from 'lucide-svelte/icons/eye';
+  import HeartPulse from 'lucide-svelte/icons/heart-pulse';
+  import Layers from 'lucide-svelte/icons/layers';
   import FileSearch from 'lucide-svelte/icons/file-search';
   import Info from 'lucide-svelte/icons/info';
   import BarChart from 'lucide-svelte/icons/bar-chart-3';
@@ -210,6 +214,50 @@
             >
               Tools
             </div>
+            <CommandPrimitive.Item
+              value="neuron classes cell-type cengen"
+              onSelect={() => navigate('/cell-type')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <Waypoints class="h-4 w-4 text-muted-foreground" />
+              Neuron classes
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="phenotypes browse wbphenotype"
+              onSelect={() => navigate('/phenotype')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <Eye class="h-4 w-4 text-muted-foreground" />
+              Phenotypes
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="human diseases browse disease ontology"
+              onSelect={() => navigate('/disease')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <HeartPulse class="h-4 w-4 text-muted-foreground" />
+              Human diseases
+            </CommandPrimitive.Item>
+            <CommandPrimitive.Item
+              value="tissues browse anatomy wbbt"
+              onSelect={() => navigate('/tissue')}
+              class={cn(
+                'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
+                'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+              )}
+            >
+              <Layers class="h-4 w-4 text-muted-foreground" />
+              Tissues
+            </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="bulk-lookup gene name resolver ids"
               onSelect={() => navigate('/lookup')}

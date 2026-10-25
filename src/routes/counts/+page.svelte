@@ -111,7 +111,11 @@
       const v = (await r.json()) as {
         annotation?: { file: string; release: string; gz_size: number; format?: string };
       };
-      if (v.annotation?.file) bundled = v.annotation;
+      if (v.annotation?.file) {
+        bundled = v.annotation;
+        // Warm the service worker cache so the button also works offline.
+        void fetch(`/data/${v.annotation.file}`).catch(() => {});
+      }
     } catch {
       // no bundled annotation; the file picker still works
     }

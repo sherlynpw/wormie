@@ -2,6 +2,7 @@
   // CeNGEN L4 expression per neuron type (128 types).
   // Column 1: 4-dot call (FACS-calibrated thresholds 1=liberal..4=stringent; default view = threshold 2, the CeNGEN app default).
   // Column 2: bulk expression bar (log10(value+1), available for 52 of 128 types).
+  import { resolve } from '$app/paths';
   import type { CengenExpressionRow } from '$lib/queries';
   import ExternalLink from 'lucide-svelte/icons/external-link';
   import { rangeColor, fmtExpression } from '$lib/plot-colors';
@@ -108,7 +109,15 @@
     <div class="grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-2 gap-y-0.5 text-[0.7rem]">
       {#each display as r (r.neuron_type)}
         {@const lvl = r.max_threshold ?? 0}
-        <span class="text-right font-mono text-muted-foreground">{r.neuron_type}</span>
+        {#if r.has_binary}
+          <a
+            href={resolve(`/cell-type/${encodeURIComponent(r.neuron_type)}`)}
+            class="text-right font-mono text-muted-foreground hover:text-primary hover:underline"
+            >{r.neuron_type}</a
+          >
+        {:else}
+          <span class="text-right font-mono text-muted-foreground">{r.neuron_type}</span>
+        {/if}
         <span
           class="inline-flex items-center gap-0.5"
           title="Called expressed at: {lvl > 0

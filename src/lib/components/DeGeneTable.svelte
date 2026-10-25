@@ -3,6 +3,7 @@
   import ChevronUp from 'lucide-svelte/icons/chevron-up';
   import ChevronDown from 'lucide-svelte/icons/chevron-down';
   import ChevronsUpDown from 'lucide-svelte/icons/chevrons-up-down';
+  import { resolve } from '$app/paths';
   import { cn } from '$lib/utils';
   import { untrack } from 'svelte';
   import type { DESeq2Row } from '$lib/deseq2/types';
@@ -123,6 +124,9 @@
   }
 
   const display = $derived((id: string) => displayName(id, geneMeta));
+  const geneHref = $derived((id: string) =>
+    resolve(`/gene/${geneMeta?.get(id)?.wormbase_gene ?? id}`),
+  );
   const filtered = $derived.by(() => {
     const q = filterDebounced.trim().toLowerCase();
     const minBase = Number.isFinite(baseMeanMinDebounced) ? baseMeanMinDebounced : 0;
@@ -286,23 +290,39 @@
           {#each $virtualizer.getVirtualItems() as item (item.key)}
             {@const r = sorted[item.index]}
             {#if r}
-              <button
-                type="button"
+              <div
+                role="button"
+                tabindex="0"
                 onclick={() => (selected = r.gene)}
+                onkeydown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selected = r.gene;
+                  }
+                }}
                 class={cn(
                   'absolute left-0 right-0 grid items-center border-b text-left text-xs transition-colors hover:bg-muted/40',
                   selected === r.gene && 'bg-accent',
                 )}
                 style="top: {item.start}px; height: {ROW_HEIGHT}px; {GRID}"
               >
-                <span class="px-3 font-mono">{display(r.gene)}</span>
+                <span class="px-3 font-mono"
+                  ><a
+                    href={geneHref(r.gene)}
+                    target="_blank"
+                    rel="noopener"
+                    onclick={(e) => e.stopPropagation()}
+                    class="underline-offset-2 hover:underline">{display(r.gene)}</a
+                  ></span
+                >
                 <span class="px-3 text-right font-mono">{fmt(r.baseMean, 1)}</span>
                 <span class="px-3 text-right font-mono">{fmt(r.log2FoldChange)}</span>
                 <span class="px-3 text-right font-mono">{fmt(r.lfcSE)}</span>
                 <span class="px-3 text-right font-mono">{fmt(r.stat)}</span>
                 <span class="px-3 text-right font-mono">{fmtP(r.pvalue)}</span>
                 <span class="px-3 text-right font-mono">{fmtP(r.padj)}</span>
-              </button>
+              </div>
             {/if}
           {/each}
         </div>

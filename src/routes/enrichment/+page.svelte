@@ -28,6 +28,25 @@
   } from '$lib/import-enrichment';
   import type { EnrichmentKind, EnrichmentResult } from '$lib/db/client';
   import { KEGG_ENABLED } from '$lib/config';
+  import { ENRICHMENT_KINDS } from '$lib/enrichment';
+
+  // Counted from the kind list so the help text cannot drift when a kind is added.
+  const COUNT_WORDS = [
+    'zero',
+    'one',
+    'two',
+    'three',
+    'four',
+    'five',
+    'six',
+    'seven',
+    'eight',
+    'nine',
+    'ten',
+    'eleven',
+    'twelve',
+  ];
+  const kindCount = COUNT_WORDS[ENRICHMENT_KINDS.length] ?? String(ENRICHMENT_KINDS.length);
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
@@ -541,10 +560,10 @@
   <PageHint id="enrichment" title="What this step does">
     Input: a list of genes, such as genes that changed in an experiment or hits from a screen. You
     can paste gene names, or paste a differential expression (DE) table from DESeq2, edgeR or limma
-    and choose which genes to test. Each gene has annotations of {KEGG_ENABLED ? 'nine' : 'eight'} kinds:
-    Gene Ontology (GO) terms (what the gene does), phenotypes (what happens when it breaks), tissues and
-    C. elegans Neuronal Gene Expression Map and Network (CeNGEN) neuron types (where it is expressed),
-    WormCat categories, diseases tied to its human orthologs, neuronal or synaptogenesis panels{KEGG_ENABLED
+    and choose which genes to test. Each gene has annotations of {kindCount} kinds: Gene Ontology (GO)
+    terms (what the gene does), phenotypes (what happens when it breaks), tissues and C. elegans Neuronal
+    Gene Expression Map and Network (CeNGEN) neuron types (where it is expressed), WormCat categories,
+    diseases tied to its human orthologs, InterPro protein domains, neuronal or synaptogenesis panels{KEGG_ENABLED
       ? ', and Kyoto Encyclopedia of Genes and Genomes (KEGG) pathways'
       : ''}. This tool tests whether each annotation is shared by more genes in your list than
     expected if the same number of genes were drawn at random. Output: for each annotation, a
@@ -925,12 +944,13 @@
                 </Button>
                 <ControlHint id="enrich-de-subset" title="DE-subset ORA">
                   Runs over-representation analysis (ORA) with the hypergeometric test on the
-                  filtered genes, for all {KEGG_ENABLED ? 'nine' : 'eight'} annotation domains. The background
-                  (the set of genes that counts as possible hits) is the genes in your differential expression
-                  table ({deseqRows ? deseqRows.length.toLocaleString() : 0} of them), not the whole genome.
-                  This avoids counting genes that were not measured in your experiment. If you choose
-                  up only or down only, the background stays the same: all genes in the table. The background
-                  in use is shown on the results card, where you can clear it.
+                  filtered genes, for all {kindCount} annotation domains. The background (the set of genes
+                  that counts as possible hits) is the genes in your differential expression table ({deseqRows
+                    ? deseqRows.length.toLocaleString()
+                    : 0} of them), not the whole genome. This avoids counting genes that were not measured
+                  in your experiment. If you choose up only or down only, the background stays the same:
+                  all genes in the table. The background in use is shown on the results card, where you
+                  can clear it.
                 </ControlHint>
               </div>
               <div class="text-[0.7rem] text-muted-foreground">

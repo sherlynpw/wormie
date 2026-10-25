@@ -21,6 +21,8 @@
   let input = $state('');
   let hits = $state<BulkLookupHit[]>([]);
   let misses = $state<string[]>([]);
+  // Ambiguous candidates the user has unchecked, as "entry|WBGene ID".
+  let unchecked = $state<string[]>([]);
   let elapsedMs = $state(0);
   let busy = $state(false);
 
@@ -34,6 +36,7 @@
 
   async function run() {
     const tokens = parseGeneList(input);
+    unchecked = [];
     if (tokens.length === 0) {
       hits = [];
       misses = [];
@@ -49,7 +52,7 @@
   }
 
   function addAllToSelection() {
-    const ids = [...new Set(hits.map((h) => h.wormbase_gene))];
+    const ids = selectedIds;
     for (const id of ids) selection.add(id);
     toast.success('Added to selection', {
       description: `${ids.length} unique gene${ids.length === 1 ? '' : 's'}`,
@@ -57,7 +60,7 @@
   }
 
   async function gotoEnrich() {
-    const ids = [...new Set(hits.map((h) => h.wormbase_gene))];
+    const ids = selectedIds;
     if (ids.length < 2) return;
     const q = await buildIdsQuery(ids);
     goto(resolve(`/enrichment?${q}`));
@@ -71,11 +74,65 @@
     });
   }
 
-  const uniqueHits = $derived(
-    Array.from(new Map(hits.map((h) => [h.wormbase_gene + ':' + h.input, h])).values()),
+  // An entry that resolves to two or more distinct genes is ambiguous; its candidates are not
+  // matched until the user keeps them checked.
+  const byEntry = $derived.by(() => {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    const m = new Map<string, Map<string, BulkLookupHit>>();
+    for (const h of hits) {
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity
+      const genes = m.get(h.input) ?? new Map<string, BulkLookupHit>();
+      genes.set(h.wormbase_gene, h);
+      m.set(h.input, genes);
+    }
+    return m;
+  });
+  const ambiguous = $derived(
+    [...byEntry]
+      .filter(([, g]) => g.size > 1)
+      .map(([entry, g]) => ({ entry, candidates: [...g.values()] })),
   );
+  // One row per gene, with every entry that reached it.
+  const matches = $derived.by(() => {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity
+    const m = new Map<string, { hit: BulkLookupHit; entries: string[] }>();
+    for (const [entry, genes] of byEntry) {
+      if (genes.size > 1) continue;
+      const [hit] = genes.values();
+      const row = m.get(hit.wormbase_gene) ?? { hit, entries: [] };
+      row.entries.push(entry);
+      m.set(hit.wormbase_gene, row);
+    }
+    return [...m.values()];
+  });
+  const matchedEntryCount = $derived(matches.reduce((n, m) => n + m.entries.length, 0));
+  const selectedIds = $derived([
+    ...new Set([
+      ...matches.map((m) => m.hit.wormbase_gene),
+      ...ambiguous.flatMap((a) =>
+        a.candidates
+          .filter((c) => !unchecked.includes(candidateKey(a.entry, c)))
+          .map((c) => c.wormbase_gene),
+      ),
+    ]),
+  ]);
   // Retired identifiers still resolve; the resolver flags them rather than dropping them.
-  const retiredHits = $derived(uniqueHits.filter((h) => h.status && h.status !== 'Live'));
+  const retiredCount = $derived(
+    matches.filter((m) => m.hit.status && m.hit.status !== 'Live').length,
+  );
+
+  const geneCountLabel = $derived(
+    `${matches.length} gene${matches.length === 1 ? '' : 's'}` +
+      (matchedEntryCount !== matches.length ? ` from ${matchedEntryCount} entries` : ''),
+  );
+
+  function candidateKey(entry: string, c: BulkLookupHit) {
+    return `${entry}|${c.wormbase_gene}`;
+  }
+
+  function toggleCandidate(key: string) {
+    unchecked = unchecked.includes(key) ? unchecked.filter((k) => k !== key) : [...unchecked, key];
+  }
 </script>
 
 <svelte:head><title>Gene name resolver · wormie.rs.ht</title></svelte:head>
@@ -99,10 +156,12 @@
     >), aliases from older papers, an Entrez Gene number (from the National Center for Biotechnology
     Information, NCBI), and its permanent WormBase ID (<code>WBGene00000912</code>). Only the
     WormBase ID never changes, so every tool here uses it. Paste any mix of these, one per line or
-    separated by commas, and each is matched to its WormBase ID. Entries that match several genes,
-    or none, are listed separately and are not dropped. A name from an older paper may belong to a
-    gene that WormBase has since merged into another gene or withdrawn. These genes are still
-    matched and are marked <b>Dead</b> or <b>Suppressed</b>, so you can decide whether to keep them.
+    separated by commas, and each is matched to its WormBase ID. Entries that match several genes
+    are listed under Ambiguous, with every candidate gene selected; uncheck any you do not want.
+    Entries that match no gene are listed under Not found. Neither kind is dropped. A name from an
+    older paper may belong to a gene that WormBase has since merged into another gene or withdrawn.
+    These genes are still matched and are marked <b>Dead</b> or <b>Suppressed</b>, so you can decide
+    whether to keep them.
   </PageHint>
 
   <Card>
@@ -140,19 +199,24 @@
     <Card>
       <CardHeader class="flex flex-row items-baseline justify-between pb-3">
         <CardTitle class="text-base">
-          {uniqueHits.length} match{uniqueHits.length === 1 ? '' : 'es'}
+          {geneCountLabel}
+          {#if ambiguous.length > 0}
+            <span class="text-sm font-normal text-muted-foreground">
+              · {ambiguous.length} ambiguous
+            </span>
+          {/if}
           {#if misses.length > 0}
             <span class="text-sm font-normal text-muted-foreground">
               · {misses.length} miss{misses.length === 1 ? '' : 'es'}
             </span>
           {/if}
-          {#if retiredHits.length > 0}
+          {#if retiredCount > 0}
             <span class="text-sm font-normal text-amber-700 dark:text-amber-500">
-              · {retiredHits.length} retired
+              · {retiredCount} retired
             </span>
           {/if}
         </CardTitle>
-        {#if hits.length > 0}
+        {#if selectedIds.length > 0}
           <div class="flex gap-2">
             <Button variant="outline" size="sm" onclick={addAllToSelection}>
               <Plus class="h-3 w-3" />
@@ -162,7 +226,7 @@
               variant="outline"
               size="sm"
               onclick={gotoEnrich}
-              disabled={uniqueHits.length < 2}
+              disabled={selectedIds.length < 2}
             >
               <BarChart class="h-3 w-3" />
               Run enrichment
@@ -171,16 +235,16 @@
         {/if}
       </CardHeader>
       <CardContent class="space-y-3 pt-0">
-        {#if uniqueHits.length > 0}
+        {#if matches.length > 0}
           <div class="flex flex-wrap gap-1.5">
-            {#each uniqueHits as h, i (i)}
+            {#each matches as { hit: h, entries } (h.wormbase_gene)}
               <GenePill id={h.wormbase_gene} name={h.gene_name}>
                 {#snippet extra()}
-                  {#if h.input.toLowerCase() !== (h.gene_name ?? h.wormbase_gene).toLowerCase()}
+                  {#each entries.filter((e) => e.toLowerCase() !== (h.gene_name ?? h.wormbase_gene).toLowerCase()) as e (e)}
                     <Badge variant="outline" class="px-1 py-0 text-[0.55rem]">
-                      {h.input}
+                      {e}
                     </Badge>
-                  {/if}
+                  {/each}
                   {#if h.chromosome}
                     <Badge
                       variant="outline"
@@ -204,6 +268,45 @@
                 {/snippet}
               </GenePill>
             {/each}
+          </div>
+        {/if}
+        {#if ambiguous.length > 0}
+          <div data-testid="ambiguous-group">
+            <div
+              class="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+            >
+              Ambiguous
+            </div>
+            <div class="space-y-1.5">
+              {#each ambiguous as a (a.entry)}
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                  <span
+                    class="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                  >
+                    {a.entry}
+                  </span>
+                  <span class="text-muted-foreground">matches {a.candidates.length} genes:</span>
+                  {#each a.candidates as c (c.wormbase_gene)}
+                    <label
+                      class="inline-flex items-center gap-1 rounded border bg-card px-1.5 py-0.5"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!unchecked.includes(candidateKey(a.entry, c))}
+                        onchange={() => toggleCandidate(candidateKey(a.entry, c))}
+                        aria-label="Keep {c.gene_name ?? c.wormbase_gene} for {a.entry}"
+                      />
+                      <a href={resolve(`/gene/${c.wormbase_gene}`)} class="hover:text-primary">
+                        <span class="font-medium">{c.gene_name ?? c.wormbase_gene}</span>
+                        <span class="font-mono text-[0.65rem] text-muted-foreground">
+                          {c.wormbase_gene}
+                        </span>
+                      </a>
+                    </label>
+                  {/each}
+                </div>
+              {/each}
+            </div>
           </div>
         {/if}
         {#if misses.length > 0}
