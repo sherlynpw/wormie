@@ -1667,9 +1667,7 @@
               {#each anatomyExpanded ? anatomy : anatomy.slice(0, CHIP_LIMIT) as t (t.term_id)}
                 <TermHover kind="tissue" id={t.term_id}>
                   <a
-                    href="https://wormbase.org/species/all/anatomy_term/{t.term_id}"
-                    target="_blank"
-                    rel="noopener"
+                    href={resolve(`/tissue/${t.term_id}`)}
                     class="inline-flex items-baseline gap-1 rounded border bg-card px-1.5 py-0.5 text-xs transition-colors hover:bg-accent"
                     title={`${t.term_id} · ${t.n_evidence} evidence row${t.n_evidence === 1 ? '' : 's'}`}
                   >

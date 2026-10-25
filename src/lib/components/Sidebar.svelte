@@ -16,6 +16,10 @@
   import Clock from 'lucide-svelte/icons/clock';
   import Star from 'lucide-svelte/icons/star';
   import GitCompare from 'lucide-svelte/icons/git-compare';
+  import Waypoints from 'lucide-svelte/icons/waypoints';
+  import Eye from 'lucide-svelte/icons/eye';
+  import HeartPulse from 'lucide-svelte/icons/heart-pulse';
+  import Layers from 'lucide-svelte/icons/layers';
   import { bookmarks } from '$lib/stores/bookmarks.svelte';
   import { onMount } from 'svelte';
   onMount(() => bookmarks.init());
@@ -38,6 +42,14 @@
   ];
 
   type ToolLink = { href: string; match: string; label: string; icon: IconComponent };
+
+  // Direct-route annotation browsers; active on the route and on its detail pages.
+  const ANNOTATION_PAGES: ToolLink[] = [
+    { href: resolve('/cell-type'), match: '/cell-type', label: 'Neuron classes', icon: Waypoints },
+    { href: resolve('/phenotype'), match: '/phenotype', label: 'Phenotypes', icon: Eye },
+    { href: resolve('/disease'), match: '/disease', label: 'Human diseases', icon: HeartPulse },
+    { href: resolve('/tissue'), match: '/tissue', label: 'Tissues', icon: Layers },
+  ];
 
   // Rendered above the separator: exploration, with the annotation views.
   // The analysis groups below the line are TOOL_GROUPS.
@@ -195,6 +207,22 @@
         >
           <Icon class="h-4 w-4" />
           {v.label}
+        </a>
+      {/each}
+      {#each ANNOTATION_PAGES as t (t.match)}
+        {@const Icon = t.icon}
+        {@const path = page.url.pathname}
+        <a
+          href={t.href}
+          class={cn(
+            'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+            path === t.match || path.startsWith(`${t.match}/`)
+              ? 'bg-accent font-medium text-accent-foreground'
+              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+          )}
+        >
+          <Icon class="h-4 w-4" />
+          {t.label}
         </a>
       {/each}
     </nav>
