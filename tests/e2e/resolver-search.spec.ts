@@ -23,8 +23,8 @@ test('resolver takes Entrez IDs and aliases of genes with several aliases', asyn
   // daf-16: Entrez 172981, aliases "R13H8.1 | daf-17". syd-2: Entrez 181255, alias sad-2.
   await page.locator('textarea').fill('172981\ndaf-17\nsad-2\n181255');
   await page.getByRole('button', { name: /^Look up$/ }).click();
-  // One hit per input, so four inputs resolving to two genes read as four matches.
-  await expect(page.getByRole('heading', { name: /^4 matches$/ })).toBeVisible({
+  // Four inputs resolving to two genes read as two genes.
+  await expect(page.getByRole('heading', { name: /^2 genes from 4 entries$/ })).toBeVisible({
     timeout: 60_000,
   });
   await expect(page.getByText('daf-16').first()).toBeVisible();

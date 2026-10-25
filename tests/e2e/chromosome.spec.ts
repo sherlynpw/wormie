@@ -62,7 +62,7 @@ test('resolver pills carry the chromosome', async ({ page }) => {
   await page.goto('/lookup');
   await page.locator('textarea').fill('daf-16\ndaf-2');
   await page.getByRole('button', { name: /^Look up$/ }).click();
-  await expect(page.getByRole('heading', { name: /^2 matches$/ })).toBeVisible({
+  await expect(page.getByRole('heading', { name: /^2 genes$/ })).toBeVisible({
     timeout: 60_000,
   });
   await expect(page.getByTitle('Genetic map position').filter({ hasText: /^I:/ })).toHaveCount(1);
