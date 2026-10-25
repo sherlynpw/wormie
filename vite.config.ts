@@ -95,7 +95,7 @@ export default defineConfig({
     sveltekit(),
     SvelteKitPWA({
       strategies: 'generateSW',
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       scope: '/',
       base: '/',
       manifest: {
