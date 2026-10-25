@@ -16,9 +16,13 @@ type Pending = {
 type InitOptions = {
   dbUrl: string;
   version: string;
+  /** Build the user already has; kept when still on disk and new enough. */
+  pinnedVersion?: string;
   onProgress?: (received: number, total: number) => void;
   onStatus?: (message: string) => void;
 };
+
+type InitResult = { version: string; pinStatus?: 'kept' | 'missing' | 'schema' };
 
 type WorkerLike = {
   postMessage: (msg: unknown) => void;
@@ -47,7 +51,7 @@ if (typeof window !== 'undefined') {
 }
 const pending = new Map<number, Pending>();
 let nextId = 1;
-let initPromise: Promise<{ version: string }> | null = null;
+let initPromise: Promise<InitResult> | null = null;
 let progressCb: InitOptions['onProgress'];
 let statusCb: InitOptions['onStatus'];
 
@@ -93,14 +97,15 @@ async function call<T>(payload: object, onProgress?: (p: TaskProgress) => void):
 }
 
 /** Resolves with the build the worker actually opened, which is not always the one requested. */
-export function initDb(opts: InitOptions): Promise<{ version: string }> {
+export function initDb(opts: InitOptions): Promise<InitResult> {
   if (initPromise) return initPromise;
   progressCb = opts.onProgress;
   statusCb = opts.onStatus;
-  initPromise = call<{ version: string }>({
+  initPromise = call<InitResult>({
     type: 'init',
     dbUrl: opts.dbUrl,
     version: opts.version,
+    pinnedVersion: opts.pinnedVersion,
   }).catch((err) => {
     initPromise = null;
     throw err;

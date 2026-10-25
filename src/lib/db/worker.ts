@@ -10,6 +10,7 @@ import {
 } from './enrichment-worker';
 import { runGseaSync, type GseaKind, type GseaInput, type CustomGseaSet } from './gsea-worker';
 import { execAll } from './sql';
+import { MIN_SCHEMA } from './schema';
 import { fetchAndDecompress } from './fetch-stream';
 import {
   ANY_HOST,
@@ -31,6 +32,7 @@ type InitReq = {
   type: 'init';
   dbUrl: string;
   version: string;
+  pinnedVersion?: string;
 };
 type QueryReq = { id: number; type: 'query'; sql: string; params?: unknown[] };
 type EnrichReq = {
@@ -103,6 +105,7 @@ const dbFileFor = (version: string) => `/wormie-${version}.sqlite`;
 const MY_ID = genId();
 let mode: 'unknown' | 'host' | 'guest' = 'unknown';
 let hostId: string | null = null;
+let hostVersion: string | null = null;
 let channel: BroadcastChannel | null = null;
 let lastHeartbeatAt = 0; // guest: ms timestamp of most recent host heartbeat
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
@@ -127,17 +130,19 @@ function onChannelMessage(e: MessageEvent<ChannelMsg>) {
   switch (m.kind) {
     case 'hello':
       // Host announces itself to newcomers.
-      if (mode === 'host') postChannel({ kind: 'hello-ack', from: MY_ID });
+      if (mode === 'host') postChannel({ kind: 'hello-ack', from: MY_ID, version: openedVersion });
       return;
     case 'hello-ack':
       // Consumed by the election waiter (see runElection).
       hostId = m.from;
+      if (m.version) hostVersion = m.version;
       lastHeartbeatAt = Date.now();
       return;
     case 'heartbeat':
       if (mode === 'guest') {
         // Adopt new host if it changed.
         if (hostId !== m.from) hostId = m.from;
+        if (m.version) hostVersion = m.version;
         lastHeartbeatAt = Date.now();
       }
       return;
@@ -166,7 +171,7 @@ function onChannelMessage(e: MessageEvent<ChannelMsg>) {
 function startHostHeartbeat() {
   if (heartbeatTimer) return;
   heartbeatTimer = setInterval(() => {
-    postChannel({ kind: 'heartbeat', from: MY_ID });
+    postChannel({ kind: 'heartbeat', from: MY_ID, version: openedVersion });
   }, HEARTBEAT_INTERVAL_MS);
 }
 
@@ -217,6 +222,7 @@ function stopGuestWatchdog() {
 // Sends `hello`, waits HELLO_TIMEOUT_MS for `hello-ack`. Returns true if a host replied (become guest), false if we should become host.
 async function runElection(): Promise<boolean> {
   hostId = null;
+  hostVersion = null;
   postChannel({ kind: 'hello', from: MY_ID });
   await delay(HELLO_TIMEOUT_MS);
   return hostId !== null;
@@ -374,7 +380,7 @@ function ensureChannelOpen() {
   channel.addEventListener('message', onChannelMessage);
 }
 
-async function ensureDb(dbUrl: string, version: string) {
+async function ensureDb(dbUrl: string, version: string, pinnedVersion?: string) {
   ensureChannelOpen();
 
   // If a host replies, become a guest (no local DB load needed).
@@ -402,10 +408,10 @@ async function ensureDb(dbUrl: string, version: string) {
   });
 
   try {
-    await ensureDbOpfs(sqlite3, dbUrl, version);
+    await ensureDbOpfs(sqlite3, dbUrl, version, pinnedVersion);
     mode = 'host';
     startHostHeartbeat();
-    postChannel({ kind: 'hello-ack', from: MY_ID });
+    postChannel({ kind: 'hello-ack', from: MY_ID, version: openedVersion });
   } catch (err) {
     // Lost the OPFS lock to another tab: either its hello-ack had not arrived
     // yet, or it is busy with a query and cannot answer. The lock itself says
@@ -429,7 +435,7 @@ async function ensureDb(dbUrl: string, version: string) {
     db = await loadIntoMemory(sqlite3, dbUrl);
     mode = 'host'; // sole tab; still serves channel for completeness
     startHostHeartbeat();
-    postChannel({ kind: 'hello-ack', from: MY_ID });
+    postChannel({ kind: 'hello-ack', from: MY_ID, version: openedVersion });
   }
 }
 
@@ -538,9 +544,66 @@ async function openAnyCachedOpfs(sqlite3: any): Promise<{ db: any; version: stri
   return null;
 }
 
-async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string) {
+// Keeps the build the user already has when it is still on disk and new enough.
+// Returns true when it is open; otherwise the pool is released for the import worker.
+async function tryOpenPinned(sqlite3: any, pinnedVersion: string): Promise<boolean> {
+  const pinnedFile = dbFileFor(pinnedVersion);
+  pinStatus = 'missing';
+  try {
+    pool = await installPool(sqlite3, POOL_NAME, 'main');
+    if ((pool.getFileNames() as string[]).includes(pinnedFile)) {
+      let candidate: any = null;
+      try {
+        candidate = new pool.OpfsSAHPoolDb(pinnedFile);
+        candidate.exec('SELECT 1');
+        const tableCheck = execAll(
+          candidate,
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='annotations' LIMIT 1",
+        );
+        if (tableCheck.length === 0) throw new Error('pinned build has no annotations table');
+        const userVersion = Number(
+          execAll<Record<string, unknown>>(candidate, 'PRAGMA user_version')[0]?.user_version ?? 0,
+        );
+        if (userVersion >= MIN_SCHEMA) {
+          db = candidate;
+          openedVersion = pinnedVersion;
+          applyRuntimePragmas(db);
+          pinStatus = 'kept';
+          return true;
+        }
+        pinStatus = 'schema';
+      } catch (err) {
+        console.warn('[sqlite] Pinned build unreadable:', err);
+      }
+      try {
+        candidate?.close();
+      } catch {
+        // ignore
+      }
+    }
+  } catch (err) {
+    console.warn('[sqlite] Pinned build check failed:', err);
+  }
+  if (pool) {
+    // pauseVfs() releases the handles so the import worker can take the lock.
+    try {
+      pool.pauseVfs();
+    } catch {
+      // ignore
+    }
+    pool = null;
+  }
+  return false;
+}
+
+async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string, pinnedVersion?: string) {
   const dbFile = dbFileFor(version);
   openedVersion = version;
+  pinStatus = undefined;
+
+  if (pinnedVersion && pinnedVersion !== version) {
+    if (await tryOpenPinned(sqlite3, pinnedVersion)) return;
+  }
 
   // Step 1: one-shot import worker streams gzip to OPFS (if missing), then releases the VFS.
   // Bounding peak WASM heap to the import window instead of the tab lifetime.
@@ -646,11 +709,23 @@ function runQuery(sql: string, params: unknown[] = []) {
 // Build actually opened, which differs from the requested one when the offline
 // fallback picks up a cached DB under another version.
 let openedVersion = '';
-let lastInit: { dbUrl: string; version: string } | null = null;
+// Outcome of the pinned-build check; undefined when no pin was requested or on guests.
+let pinStatus: 'kept' | 'missing' | 'schema' | undefined;
+
+// A guest queries the host's build, which can be a pinned older one than it asked for.
+// The client pins whatever this reports, so a guest that joined without a hello-ack
+// waits for the first heartbeat rather than echo the requested version.
+async function loadedBuild(requested: string): Promise<string> {
+  if (mode !== 'guest') return openedVersion || requested;
+  const deadline = Date.now() + HEARTBEAT_TIMEOUT_MS;
+  while (!hostVersion && Date.now() < deadline) await delay(50);
+  return hostVersion ?? requested;
+}
+let lastInit: { dbUrl: string; version: string; pinnedVersion?: string } | null = null;
 
 // Shared in-flight init promise; subsequent calls coalesce onto it (or resolve immediately if already loaded).
 let dbInitPromise: Promise<void> | null = null;
-function ensureDbOnce(dbUrl: string, version: string): Promise<void> {
+function ensureDbOnce(dbUrl: string, version: string, pinnedVersion?: string): Promise<void> {
   if (db && loadedVersion === version) return Promise.resolve();
   if (db && loadedVersion !== version) {
     try {
@@ -662,7 +737,7 @@ function ensureDbOnce(dbUrl: string, version: string): Promise<void> {
     dbInitPromise = null;
   }
   if (!dbInitPromise) {
-    dbInitPromise = ensureDb(dbUrl, version)
+    dbInitPromise = ensureDb(dbUrl, version, pinnedVersion)
       .then(() => {
         loadedVersion = version;
       })
@@ -678,8 +753,11 @@ function ensureDbOnce(dbUrl: string, version: string): Promise<void> {
 type ReportFn = (phase: string, current?: number, total?: number) => void;
 async function executeRequest(msg: Req, report: ReportFn): Promise<unknown> {
   if (msg.type === 'init') {
-    await ensureDbOnce(msg.dbUrl, msg.version);
-    return { version: openedVersion || msg.version };
+    await ensureDbOnce(msg.dbUrl, msg.version, msg.pinnedVersion);
+    return {
+      version: await loadedBuild(msg.version),
+      pinStatus: mode === 'guest' ? undefined : pinStatus,
+    };
   }
   if (msg.type === 'query') {
     if (!db) throw new Error('Database not initialized');
@@ -760,13 +838,18 @@ function handleMessage(msg: Req) {
       if (msg.type === 'init') {
         // Drives election + local-or-guest setup; sets `mode` for subsequent routing.
         // Deliberately bypasses executeRequest so a guest does not proxy its own init.
-        lastInit = { dbUrl: msg.dbUrl, version: msg.version };
-        await ensureDbOnce(msg.dbUrl, msg.version);
-        send({ ok: true, version: openedVersion || msg.version });
+        lastInit = { dbUrl: msg.dbUrl, version: msg.version, pinnedVersion: msg.pinnedVersion };
+        await ensureDbOnce(msg.dbUrl, msg.version, msg.pinnedVersion);
+        send({
+          ok: true,
+          version: await loadedBuild(msg.version),
+          pinStatus: mode === 'guest' ? undefined : pinStatus,
+        });
         return;
       }
       // After a promotion the worker has no db and no host; redo the election first.
-      if (mode === 'unknown' && lastInit) await ensureDbOnce(lastInit.dbUrl, lastInit.version);
+      if (mode === 'unknown' && lastInit)
+        await ensureDbOnce(lastInit.dbUrl, lastInit.version, lastInit.pinnedVersion);
       if (mode === 'guest') {
         const data = await proxyToHost(msg, report);
         send({ ok: true, ...(data as object) });

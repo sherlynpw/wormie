@@ -17,6 +17,12 @@ WORMCAT_CSV="${WORMCAT_CSV:-$ROOT/data/wormcat_whole_genome_v2.csv}"
 NEURONAL_CSV="${NEURONAL_CSV:-$ROOT/data/neuronal_genes.csv}"
 SYNAPTO_TSV="${SYNAPTO_TSV:-$ROOT/data/synaptogenesis_genes.tsv}"
 
+# Database structure version, stored as PRAGMA user_version and in version.json.
+# Raise it when the app comes to depend on a structure older builds lack, together
+# with MIN_SCHEMA in src/lib/db/schema.ts.
+SCHEMA_VERSION=1
+export SCHEMA_VERSION
+
 mkdir -p "$CACHE" "$DEST_DIR"
 
 # WS298 is WormBase's final major release, so pin rather than auto-detect.
@@ -2272,7 +2278,7 @@ if failures:
 print(f'output assertions: {len(MIN_ROWS)} tables above their row floors', file=sys.stderr)
 
 conn.commit()
-conn.executescript('VACUUM; ANALYZE;')
+conn.executescript(f"PRAGMA user_version = {int(os.environ['SCHEMA_VERSION'])}; VACUUM; ANALYZE;")
 conn.close()
 PY
 
@@ -2371,6 +2377,7 @@ fi
 cat >"$DEST_DIR/version.json" <<EOF
 {
   "version": "$VERSION",
+  "schema": $SCHEMA_VERSION,
   "db_file": "wormie.sqlite.gz",
   "raw_size": $RAW_SIZE,
   "gz_size": $GZ_SIZE,

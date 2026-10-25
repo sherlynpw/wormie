@@ -19,8 +19,9 @@ export const HEARTBEAT_TIMEOUT_MS = 3500; // 3 missed beats → assume host gone
 
 export type ChannelMsg =
   | { kind: 'hello'; from: string }
-  | { kind: 'hello-ack'; from: string }
-  | { kind: 'heartbeat'; from: string }
+  // `version` is the build the host has open, so guests label (and pin) what they really query.
+  | { kind: 'hello-ack'; from: string; version?: string }
+  | { kind: 'heartbeat'; from: string; version?: string }
   // Guest-to-host request; `payload` mirrors the worker Req shape, `reqId` supplied by proxy.
   // `to` is the host id, or ANY_HOST from a guest that has not heard the host yet.
   | { kind: 'req'; from: string; to: string; reqId: string; payload: unknown }
