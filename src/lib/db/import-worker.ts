@@ -48,27 +48,28 @@ async function run(req: Req) {
   post({ type: 'status', message: 'Downloading gene database...' });
 
   try {
-    const { reader, totalCompressed } = await openGzipReader(req.dbUrl);
+    let totalCompressed = 0;
+    let lastPosted = 0;
+    let latest = 0;
+    const opened = await openGzipReader(req.dbUrl, (received) => {
+      latest = received;
+      // Throttle: the network can deliver many small chunks per frame.
+      if (received - lastPosted < 1 << 20) return;
+      lastPosted = received;
+      post({ type: 'progress', received, total: totalCompressed });
+    });
+    const { reader } = opened;
+    totalCompressed = opened.totalCompressed;
 
-    let received = 0;
     // importDb uses importDbChunked when passed a callback (returns Uint8Array or
     // undefined when done). Forwarding chunks one at a time keeps peak WASM growth
     // at ~64 KB per chunk rather than 512 MB.
-    let chunkSeen = 0;
     await pool.importDb(req.dbFile, async () => {
       const { done, value } = await reader.read();
       if (done) return undefined;
-      received += value.length;
-      chunkSeen++;
-      if (chunkSeen % 16 === 0) {
-        post({
-          type: 'progress',
-          received,
-          total: totalCompressed > 0 ? totalCompressed * 6 : 0,
-        });
-      }
       return value;
     });
+    post({ type: 'progress', received: latest, total: totalCompressed });
   } catch (err) {
     // A half-written slot would be indistinguishable from a good one on the
     // next boot, so drop it and leave the previous version in place.

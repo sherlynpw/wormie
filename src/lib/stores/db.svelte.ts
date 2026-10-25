@@ -50,7 +50,9 @@ async function fetchLatestVersion(): Promise<{ version: string; gzSize: number }
 class DbStore {
   phase = $state<Phase>('idle');
   status = $state<string>('Starting up...');
-  progress = $state<number>(0); // bytes decompressed
+  progress = $state<number>(0); // compressed bytes downloaded
+  /** Content-Length of the download in bytes, 0 when the server sent none. */
+  progressTotal = $state<number>(0);
   error = $state<string>('');
   totalGenes = $state<number>(0);
   totalGO = $state<number>(0);
@@ -126,7 +128,10 @@ class DbStore {
         dbUrl: versionedUrl,
         version,
         onStatus: (m) => (this.status = m),
-        onProgress: (r) => (this.progress = r),
+        onProgress: (r, t) => {
+          this.progress = r;
+          this.progressTotal = t;
+        },
       });
       // The worker falls back to any cached build when the requested one is
       // missing, so label what actually loaded rather than what was asked for.
