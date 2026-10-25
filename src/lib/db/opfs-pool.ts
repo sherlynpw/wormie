@@ -76,7 +76,11 @@ export async function installPool(
   await poolFreeWithin(poolName, waitMs);
   for (let i = 1; ; i++) {
     try {
-      return await sqlite3.installOpfsSAHPoolVfs({ name: poolName });
+      const util = await sqlite3.installOpfsSAHPoolVfs({ name: poolName });
+      // sqlite-wasm hands back the same util for a name already installed, still
+      // paused if a caller paused it to let the import worker take the lock.
+      if (util.isPaused?.()) await util.unpauseVfs();
+      return util;
     } catch (err) {
       if (i >= attempts || !isLockError(err)) throw err;
       console.warn(`[opfs-pool] ${who}: pool still locked after ${Date.now() - t0}ms, retry ${i}`);
