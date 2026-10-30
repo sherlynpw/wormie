@@ -78,9 +78,9 @@
     { key: 'disease', label: 'Diseases' },
     { key: 'domain', label: 'Protein domains' },
     { key: 'wormcat', label: 'WormCat' },
-    { key: 'neuronal', label: 'Neuronal class' },
+    { key: 'neuronal', label: 'Neuronal genes' },
     { key: 'tissue', label: 'Tissues' },
-    { key: 'cell-type', label: 'Neurons (CeNGEN)' },
+    { key: 'cell-type', label: 'Neuron types (CeNGEN)' },
     { key: 'synaptogenesis', label: 'Synapse development and function' },
     { key: 'pathway', label: 'KEGG' },
   ];

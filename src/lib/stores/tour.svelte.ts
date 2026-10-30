@@ -80,7 +80,7 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'shortcuts',
     title: 'Keyboard shortcuts',
-    body: 'Press / to focus search, ? to see all shortcuts, and Cmd+K (Ctrl+K on Windows) to open the command palette, a box for jumping to any page. Press "g" then a letter to switch views (c=cards, t=table, o=Gene Ontology terms, w=WormCat, n=neuronal class).',
+    body: 'Press / to focus search, ? to see all shortcuts, and Cmd+K (Ctrl+K on Windows) to open the command palette, a box for jumping to any page. Press "g" then a letter to switch views (c=cards, t=table, o=Gene Ontology terms, w=WormCat, n=neuronal genes).',
   },
 ];
 

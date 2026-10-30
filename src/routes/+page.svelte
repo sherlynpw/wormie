@@ -143,7 +143,7 @@
   const VIEW_HEADERS: Record<string, { title: string; caption: string }> = {
     wormcat: { title: 'WormCat', caption: 'Genes grouped by WormCat category' },
     go: { title: 'GO terms', caption: 'Genes grouped by Gene Ontology (GO) term' },
-    neuronal: { title: 'Neuronal class', caption: 'Genes grouped by neuronal classification' },
+    neuronal: { title: 'Neuronal genes', caption: 'Genes grouped by neuronal gene category' },
     synaptogenesis: {
       title: 'Synapse development and function',
       caption: 'Genes grouped by synapse panel class',
@@ -587,7 +587,7 @@
             class="underline underline-offset-2 hover:text-foreground">browse at WormBase</a
           >
         {:else if view === 'neuronal'}
-          Neuronal gene classes from Hobert's survey of the <em>C. elegans</em> neuronal genome:
+          Neuronal gene categories from Hobert's survey of the <em>C. elegans</em> neuronal genome:
           <a
             href="https://www.ncbi.nlm.nih.gov/books/NBK116086/"
             target="_blank"

@@ -187,7 +187,7 @@ export async function buildGeneReport(input: GeneReportInput): Promise<string> {
   }
 
   if (input.neuronal.length > 0) {
-    out.push('## Neuronal classification');
+    out.push('## Neuronal genes');
     out.push(input.neuronal.map((n) => `${n.category} (${n.supercategory})`).join(', '));
     out.push('');
   }

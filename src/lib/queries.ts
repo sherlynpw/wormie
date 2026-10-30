@@ -44,7 +44,7 @@ const MATCH_COLS: { idx: number; field: MatchField; label: string }[] = [
   { idx: 11, field: 'tissues', label: 'Tissues' },
   { idx: 12, field: 'go_terms', label: 'GO' },
   { idx: 13, field: 'wormcat', label: 'WormCat' },
-  { idx: 14, field: 'neuronal', label: 'Neuronal' },
+  { idx: 14, field: 'neuronal', label: 'Neuronal genes' },
   { idx: 15, field: 'orthologs', label: 'Orthologs' },
   { idx: 16, field: 'synaptogenesis', label: 'Synapse panel' },
 ];

@@ -83,7 +83,7 @@
     { key: 'table', label: 'Table', icon: Table },
     { key: 'wormcat', label: 'WormCat', icon: FolderTree },
     { key: 'go', label: 'GO terms', icon: Network },
-    { key: 'neuronal', label: 'Neuronal class', icon: Brain },
+    { key: 'neuronal', label: 'Neuronal genes', icon: Brain },
     { key: 'synaptogenesis', label: 'Synapse panel', icon: Cable },
   ] as const;
 
@@ -215,7 +215,7 @@
               Tools
             </div>
             <CommandPrimitive.Item
-              value="neuron classes cell-type cengen"
+              value="neuron types classes cell-type cengen"
               onSelect={() => navigate('/cell-type')}
               class={cn(
                 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
@@ -223,7 +223,7 @@
               )}
             >
               <Waypoints class="h-4 w-4 text-muted-foreground" />
-              Neuron classes
+              Neuron types
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="phenotypes browse wbphenotype"
@@ -443,7 +443,7 @@
               )}
             >
               <Brain class="h-4 w-4 text-muted-foreground" />
-              Neurons (CeNGEN)
+              Neuron types (CeNGEN)
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="about"

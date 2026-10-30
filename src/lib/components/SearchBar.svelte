@@ -374,7 +374,7 @@
         {
           key: 'neuronal',
           example: 'neuronal:GABA',
-          help: 'Neuronal gene classification from the Hobert lab catalogue',
+          help: 'Category in the Hobert lab catalogue of neuronal genes',
         },
         {
           key: 'syn',
@@ -389,7 +389,7 @@
         {
           key: 'expressed',
           example: 'expressed:AVA',
-          help: 'Expressed in a neuron class of CeNGEN (C. elegans Neuronal Gene Expression Network)',
+          help: 'Expressed in a neuron type of CeNGEN (C. elegans Neuronal Gene Expression Network)',
         },
         {
           key: 'tissue',

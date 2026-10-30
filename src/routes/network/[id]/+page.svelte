@@ -747,7 +747,7 @@
           class="rounded border bg-background px-1.5 py-0.5 font-mono text-xs"
         >
           <option value="none">None (show all within hops)</option>
-          <option value="neuronal">Neuronal classifications</option>
+          <option value="neuronal">Neuronal genes</option>
           {#if wormcatCategories.length > 0}
             <optgroup label="WormCat category">
               {#each wormcatCategories as c (c.category_1)}

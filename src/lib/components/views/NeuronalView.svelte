@@ -99,7 +99,7 @@
 </script>
 
 {#if loading}
-  <div class="py-6 text-sm text-muted-foreground">Loading neuronal classification...</div>
+  <div class="py-6 text-sm text-muted-foreground">Loading neuronal genes...</div>
 {:else if grouped.length === 0}
   <div class="py-10 text-center text-sm text-muted-foreground">No matching categories.</div>
 {:else}

@@ -128,7 +128,7 @@ test('tissue: operator filters by anatomy', async ({ page }) => {
   await expectAnyResults(page);
 });
 
-test('neuronal: operator filters by neuronal classification', async ({ page }) => {
+test('neuronal: operator filters by neuronal gene category', async ({ page }) => {
   // neuronal_genes.csv categories use phrases like "Potassium channels",
   // "Chloride channels", grouped under supercategory "Ion channels".
   await search(page, 'neuronal:channel');
@@ -157,9 +157,9 @@ test('type: operator filters by biotype', async ({ page }) => {
   await expectAnyResults(page);
 });
 
-test('expressed: operator filters by CeNGEN neuron class', async ({ page }) => {
+test('expressed: operator filters by CeNGEN neuron type', async ({ page }) => {
   await search(page, 'expressed:ADL');
-  // ADL is a canonical CeNGEN-mapped neuron class.
+  // ADL is a canonical CeNGEN-mapped neuron type.
   await expectAnyResults(page);
 });
 

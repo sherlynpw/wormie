@@ -83,7 +83,7 @@
         'Stringent ortholog calls (matching genes in other species) across 9 species: human, mouse, rat, zebrafish, two frog species, fly, yeast and worm. Most Alliance of Genome Resources data is CC0 and some datasets are CC BY 4.0. See their terms page.',
     },
     {
-      name: 'Neuronal gene classification',
+      name: 'Neuronal genes',
       version: 'local curation',
       url: 'https://wormbase.org/',
       license: 'project-internal',
@@ -153,7 +153,7 @@
       license: 'CC BY 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
       description:
-        'The C. elegans Neuronal Gene Expression Network (CeNGEN) atlas of the L4 larval nervous system, made by single-cell RNA sequencing (Taylor et al. 2021, Cell). It has four tables of expressed or not expressed calls, with thresholds calibrated on cells sorted by fluorescence-activated cell sorting (FACS): 1 = liberal, 2 = medium, 3 = conservative, 4 = stringent. They cover 128 neuron classes. It also has a table that combines bulk and single-cell expression for 52 neuron classes, with contamination removed (Barrett et al. 2025). The Cell-type options in the enrichment tools, the /cell-type pages and the heatmap on each gene page use it. Cite Taylor et al. 2021.',
+        'The C. elegans Neuronal Gene Expression Network (CeNGEN) atlas of the L4 larval nervous system, made by single-cell RNA sequencing (Taylor et al. 2021, Cell). It has four tables of expressed or not expressed calls, with thresholds calibrated on cells sorted by fluorescence-activated cell sorting (FACS): 1 = liberal, 2 = medium, 3 = conservative, 4 = stringent. They cover 128 neuron types. It also has a table that combines bulk and single-cell expression for 52 neuron types, with contamination removed (Barrett et al. 2025). The Neuron types (CeNGEN) options in the enrichment tools, the /cell-type pages and the heatmap on each gene page use it. Cite Taylor et al. 2021.',
     },
     {
       name: 'WormBase RNAi phenotypes',
