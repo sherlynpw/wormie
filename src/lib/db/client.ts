@@ -279,7 +279,7 @@ export async function runCustomSsgsea(
     genes: Array.from(s.genes),
   }));
   const jobId = nextJobId('ssgsea-gmt');
-  jobs.start(jobId, 'Per-sample set scores · GMT');
+  jobs.start(jobId, 'Per-sample gene set scoring · GMT');
   try {
     const res = await call<{ results: SsgseaScores[]; sampleNames: string[]; elapsedMs: number }>(
       { type: 'customSsgsea', expr, sets: plainSets, opts: { ...opts } },

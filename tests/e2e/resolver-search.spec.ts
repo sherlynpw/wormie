@@ -60,7 +60,7 @@ test('wb: prefix resolves a WormBase identifier', async ({ page }) => {
 
 test('annotation overlap compares CeNGEN neuron types', async ({ page }) => {
   await page.goto('/compare?ids=WBGene00000912,WBGene00006364,WBGene00006752');
-  await expect(page.getByText('Neuron types (CeNGEN)').first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText('Neuron types').first()).toBeVisible({ timeout: 60_000 });
   await page.goto('/compare?ids=WBGene00000912,WBGene00006364');
   await expect(page.getByText(/^Neuron types\b/).first()).toBeVisible({ timeout: 60_000 });
 });

@@ -1,5 +1,5 @@
 // Maps a term to its in-app detail URL. Returns null for kinds without
-// per-term routes (wormcat, neuronal). A synapse panel class opens the
+// per-term routes (wormcat, neuronal). A synaptic gene class opens the
 // panel view filtered to that class.
 
 export type TermKind =

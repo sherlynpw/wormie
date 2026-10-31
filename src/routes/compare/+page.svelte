@@ -549,7 +549,7 @@
               exportName="compare-upset-tissues"
             />
             <UpSetPlot
-              title="Neuron types (CeNGEN)"
+              title="Neuron types"
               sets={rows.map((r) => ({
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.neurons,
@@ -625,7 +625,7 @@
               labels={termLabels.tissues}
             />
             <JaccardHeatmap
-              title="Neuron types (CeNGEN)"
+              title="Neuron types"
               sets={rows.map((r) => ({
                 name: r.gene_name ?? r.wormbase_gene,
                 ids: r.neurons,

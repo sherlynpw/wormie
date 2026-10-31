@@ -24,8 +24,11 @@
     return enoughVertical && enoughHorizontal;
   }
 
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
   function measure() {
     if (typeof window === 'undefined') return;
+    clearTimeout(retryTimer);
     viewport = { w: window.innerWidth, h: window.innerHeight };
     const sel = tour.step?.selector;
     if (!sel) {
@@ -34,17 +37,13 @@
     }
     const el = document.querySelector(sel) as HTMLElement | null;
     if (!el) {
-      // Route just changed; retry after target mounts.
+      // The target can mount late: after a route change, or once the first-visit database
+      // download ends and the search bar replaces the progress card. Keep retrying.
       rect = null;
-      setTimeout(() => {
-        if (!tour.active) return;
-        const e = document.querySelector(sel) as HTMLElement | null;
-        if (!e) return;
-        const r = e.getBoundingClientRect();
-        if (!isInViewport(r))
-          e.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-        rect = e.getBoundingClientRect();
-      }, 200);
+      const step = tour.stepIndex;
+      retryTimer = setTimeout(() => {
+        if (tour.active && tour.stepIndex === step) measure();
+      }, 300);
       return;
     }
     const r0 = el.getBoundingClientRect();
@@ -77,12 +76,14 @@
     window.addEventListener('scroll', onScrollOrResize, { capture: true, passive: true });
     window.addEventListener('resize', onScrollOrResize);
     return () => {
+      clearTimeout(retryTimer);
       window.removeEventListener('scroll', onScrollOrResize, { capture: true } as never);
       window.removeEventListener('resize', onScrollOrResize);
     };
   });
 
   onDestroy(() => {
+    clearTimeout(retryTimer);
     window.removeEventListener('scroll', onScrollOrResize, { capture: true } as never);
     window.removeEventListener('resize', onScrollOrResize);
   });

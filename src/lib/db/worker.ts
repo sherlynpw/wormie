@@ -10,6 +10,7 @@ import {
 } from './enrichment-worker';
 import { runGseaSync, type GseaKind, type GseaInput, type CustomGseaSet } from './gsea-worker';
 import { execAll } from './sql';
+import { ensurePropagated, usesPropagated } from './propagation';
 import { MIN_SCHEMA } from './schema';
 import { fetchAndDecompress } from './fetch-stream';
 import {
@@ -703,6 +704,7 @@ async function ensureDbOpfs(sqlite3: any, dbUrl: string, version: string, pinned
 }
 
 function runQuery(sql: string, params: unknown[] = []) {
+  if (usesPropagated(sql)) ensurePropagated(db);
   return execAll<Record<string, unknown>>(db, sql, params);
 }
 

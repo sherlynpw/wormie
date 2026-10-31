@@ -14,6 +14,7 @@ export type EnrichmentKind =
   | 'pathway';
 
 import { GO_POSITIVE, CENGEN_MIN_THRESHOLD } from './term-filters';
+import { ensurePropagated } from './propagation';
 import { classById } from '../synaptogenesis-references';
 import { buildWormcatTerms, WORMCAT_LEVEL_ROWS_SQL, type WormcatLevelRow } from './wormcat-terms';
 
@@ -61,6 +62,7 @@ const bgCache: Partial<Record<EnrichmentKind, BgInfo>> = {};
 
 function loadBackground(db: any, kind: EnrichmentKind): BgInfo {
   if (bgCache[kind]) return bgCache[kind]!;
+  if (kind === 'phenotype' || kind === 'tissue') ensurePropagated(db);
   let counts: { term_id: string; df: number; name: string; namespace?: string }[];
   let N: number;
   if (kind === 'go') {
@@ -80,13 +82,13 @@ function loadBackground(db: any, kind: EnrichmentKind): BgInfo {
       `SELECT gp.term_id,
 			        COUNT(DISTINCT gp.wormbase_gene) AS df,
 			        COALESCE(pt.name, gp.term_id) AS name
-			 FROM gene_phenotype gp
+			 FROM gene_phenotype_all gp
 			 LEFT JOIN phenotype_terms pt ON pt.term_id = gp.term_id
 			 GROUP BY gp.term_id, pt.name`,
     );
     N = execAll<{ n: number }>(
       db,
-      'SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_phenotype',
+      'SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_phenotype_all',
     )[0].n;
   } else if (kind === 'wormcat') {
     const terms = wormcatTerms(db);
@@ -200,13 +202,13 @@ function loadBackground(db: any, kind: EnrichmentKind): BgInfo {
         `SELECT ga.term_id,
 				        COUNT(DISTINCT ga.wormbase_gene) AS df,
 				        COALESCE(at.name, ga.term_id) AS name
-				 FROM gene_anatomy ga
+				 FROM gene_anatomy_all ga
 				 LEFT JOIN anatomy_terms at ON at.term_id = ga.term_id
 				 GROUP BY ga.term_id, at.name`,
       );
       N = execAll<{ n: number }>(
         db,
-        'SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_anatomy',
+        'SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_anatomy_all',
       )[0].n;
     } catch {
       counts = [];
@@ -250,6 +252,7 @@ const annotIndexCache: Partial<Record<EnrichmentKind, Map<string, string[]>>> = 
 
 function loadAnnotationIndex(db: any, kind: EnrichmentKind): Map<string, string[]> {
   if (annotIndexCache[kind]) return annotIndexCache[kind]!;
+  if (kind === 'phenotype' || kind === 'tissue') ensurePropagated(db);
   let rows: { wormbase_gene: string; term_id: string }[];
   if (kind === 'go') {
     rows = execAll<{ wormbase_gene: string; term_id: string }>(
@@ -259,7 +262,7 @@ function loadAnnotationIndex(db: any, kind: EnrichmentKind): Map<string, string[
   } else if (kind === 'phenotype') {
     rows = execAll<{ wormbase_gene: string; term_id: string }>(
       db,
-      'SELECT DISTINCT wormbase_gene, term_id FROM gene_phenotype',
+      'SELECT DISTINCT wormbase_gene, term_id FROM gene_phenotype_all',
     );
   } else if (kind === 'wormcat') {
     rows = [];
@@ -322,7 +325,7 @@ function loadAnnotationIndex(db: any, kind: EnrichmentKind): Map<string, string[
     try {
       rows = execAll<{ wormbase_gene: string; term_id: string }>(
         db,
-        'SELECT DISTINCT wormbase_gene, term_id FROM gene_anatomy',
+        'SELECT DISTINCT wormbase_gene, term_id FROM gene_anatomy_all',
       );
     } catch {
       rows = [];

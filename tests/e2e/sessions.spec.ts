@@ -68,7 +68,7 @@ test('gmt session round-trip', async ({ page }) => {
 
   await page.goto('/datasets');
   await expect(page.getByText('gmt-test')).toBeVisible();
-  await page.getByRole('button', { name: 'Custom gene sets' }).first().click();
+  await page.getByRole('button', { name: 'Custom gene set testing' }).first().click();
 
   await expect(page).toHaveURL(/\/gmt\?load=session/);
   await expect(page.locator('textarea').first()).toHaveValue(
@@ -114,7 +114,7 @@ test('gmt session restores mode and nperm', async ({ page }) => {
   await expect(page.getByText(/session saved/i)).toBeVisible();
 
   await page.goto('/datasets');
-  await page.getByRole('button', { name: 'Custom gene sets' }).first().click();
+  await page.getByRole('button', { name: 'Custom gene set testing' }).first().click();
   await expect(page).toHaveURL(/\/gmt\?load=session/);
 
   // The GSEA tab should be active again, and nperm should be 2500.

@@ -358,7 +358,7 @@
         {
           key: 'syn',
           example: 'syn:innexin',
-          help: 'Synapse panel class, subclass or notes (put multi-word text in quotes)',
+          help: 'Synaptic gene class, subclass or notes (put multi-word text in quotes)',
         },
       ],
     },

@@ -44,8 +44,8 @@
       { path: '/enrichment', param: 'deseq2', label: 'Over-representation (DE subset)' },
       { path: '/gsea', param: 'ranked', label: 'Ranked-list enrichment' },
     ],
-    gmt: [{ path: '/gmt', param: 'gmt', label: 'Custom gene sets' }],
-    counts: [{ path: '/ssgsea', param: 'counts', label: 'Per-sample set scores' }],
+    gmt: [{ path: '/gmt', param: 'gmt', label: 'Custom gene set testing' }],
+    counts: [{ path: '/ssgsea', param: 'counts', label: 'Per-sample gene set scoring' }],
     'gsea-bundle': [{ path: '/gsea/intersect', param: 'bundle', label: 'Ranked-list consensus' }],
     // Placeholder replaced by sessionTargets() at render time.
     session: [{ path: '', param: 'session', label: 'Open session' }],
@@ -226,8 +226,8 @@
       {:else if datasets.items.length === 0}
         <div class="text-sm text-muted-foreground">
           No saved datasets. Use the <span class="font-semibold text-foreground">Save</span> button on
-          any tool page (Over-representation, Ranked-list enrichment, Custom gene sets, Per-sample set
-          scores) to add one here.
+          any tool page (Over-representation, Ranked-list enrichment, Custom gene set testing, Per-sample
+          gene set scoring) to add one here.
         </div>
       {:else}
         <div class="overflow-x-auto rounded-lg border bg-card">

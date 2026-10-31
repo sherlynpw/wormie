@@ -16,7 +16,6 @@
   import { applyLayout, type LayoutKind } from '$lib/components/graph/layout';
   import { theme } from '$lib/stores/theme.svelte';
   import GenePill from '$lib/components/GenePill.svelte';
-  import PageHint from '$lib/components/PageHint.svelte';
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import TermCrossRef from '$lib/components/TermCrossRef.svelte';
   import { query } from '$lib/db/client';
@@ -230,13 +229,10 @@
     Back to GO browser
   </Button>
 
-  <PageHint id="go-term" title="Gene Ontology (GO) term graph">
-    Gene Ontology (GO) terms form a tree where a broad term has more specific child terms. Click a
-    parent or child chip to move through the tree. The gene count of a term includes the genes
-    annotated to its child terms (the GOALL method used by clusterProfiler, an R enrichment
-    package). For example, a gene annotated to "cilium" also counts under "cell projection". The
-    list at the bottom of the page and the gene pages show only the annotations curated directly.
-  </PageHint>
+  <p class="text-xs text-muted-foreground">
+    Gene counts include genes annotated to child terms. The gene list at the bottom shows only the
+    genes annotated directly to this term.
+  </p>
 
   {#if loading}
     <div class="text-sm text-muted-foreground">Loading GO neighborhood...</div>

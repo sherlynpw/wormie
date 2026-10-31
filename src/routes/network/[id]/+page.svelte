@@ -25,7 +25,6 @@
   import { cn } from '$lib/utils';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import Download from 'lucide-svelte/icons/download';
-  import PageHint from '$lib/components/PageHint.svelte';
   import { CATEGORICAL_PALETTE } from '$lib/plot-colors';
 
   const id = $derived(page.params.id ?? '');
@@ -596,13 +595,10 @@
     Back to gene detail
   </Button>
 
-  <PageHint id="network" title="Interaction neighborhood">
-    Interactions for this gene from the Biological General Repository for Interaction Datasets
-    (BioGRID). Each dot is a gene and each line is a recorded interaction. Click a neighbor gene to
-    make it the center. Lines are weighted by the number of evidence records. Only interactions
-    recorded in BioGRID are shown, and none are inferred. A hop is one interaction step away from
-    the center gene.
-  </PageHint>
+  <p class="text-xs text-muted-foreground">
+    Interactions recorded in BioGRID, none inferred. Lines are weighted by the number of evidence
+    records.
+  </p>
 
   {#if loading}
     <div class="text-sm text-muted-foreground">Loading interaction network...</div>

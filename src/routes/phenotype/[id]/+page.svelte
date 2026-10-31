@@ -21,7 +21,6 @@
   import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
   import GenePill from '$lib/components/GenePill.svelte';
-  import PageHint from '$lib/components/PageHint.svelte';
   import ControlHint from '$lib/components/ControlHint.svelte';
   import TermCrossRef from '$lib/components/TermCrossRef.svelte';
   import { query } from '$lib/db/client';
@@ -75,9 +74,9 @@
       getGenesForPhenotype(cur, 200),
       expandParents(cur, true),
       expandChildren(cur, true),
-      query<{ n: number }>('SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_phenotype'),
+      query<{ n: number }>('SELECT COUNT(DISTINCT wormbase_gene) AS n FROM gene_phenotype_all'),
       query<{ wormbase_gene: string }>(
-        'SELECT DISTINCT wormbase_gene FROM gene_phenotype WHERE term_id = ?',
+        'SELECT DISTINCT wormbase_gene FROM gene_phenotype_all WHERE term_id = ?',
         [cur],
       ),
     ]);
@@ -182,12 +181,9 @@
     Back
   </Button>
 
-  <PageHint id="phenotype-term" title="Phenotype navigator">
-    Phenotype terms come from the WormBase Phenotype Ontology (WBPhenotype), a tree where a broad
-    term has more specific child terms. Click a parent or child chip to move through the tree. The
-    genes shown are annotated directly to this term. Genes annotated to its child terms are not
-    included. Hover over a gene to preview it.
-  </PageHint>
+  <p class="text-xs text-muted-foreground">
+    The genes listed are annotated to this term or to a more specific term below it.
+  </p>
 
   {#if loading}
     <div class="text-sm text-muted-foreground">Loading phenotype...</div>
@@ -332,12 +328,12 @@
         <CardTitle class="inline-flex items-center gap-1.5 text-base">
           Annotated genes
           <ControlHint id="pheno-genes" title="Annotated genes">
-            Genes directly annotated to <i>{term.name}</i> from RNA interference (RNAi) or allele
-            (mutant) experiments. Each gene shows one count. A bold count is the number of alleles (<i
-              >n_alleles</i
-            >, WormBase variation IDs) that show this phenotype. A muted count with the "RNAi" label
-            is the number of evidence records (<i>n_evidence</i>) for a gene with RNAi or other
-            non-allele evidence only.
+            Genes annotated to <i>{term.name}</i> or to a more specific term below it, from RNA
+            interference (RNAi) or allele (mutant) experiments. Each gene shows one count. A bold
+            count is the number of alleles (<i>n_alleles</i>, WormBase variation IDs) that show this
+            phenotype. A muted count with the "RNAi" label is the number of evidence records (<i
+              >n_evidence</i
+            >) for a gene with RNAi or other non-allele evidence only.
           </ControlHint>
         </CardTitle>
         {@const rnaiOnlyGeneCount = genes.filter((g) => g.n_alleles === 0).length}

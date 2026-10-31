@@ -281,7 +281,7 @@
         });
       } else {
         toast.success(
-          `Per-sample set scores: ${res.results.length} sets · ${(elapsed / 1000).toFixed(1)}s`,
+          `Per-sample gene set scoring: ${res.results.length} sets · ${(elapsed / 1000).toFixed(1)}s`,
         );
       }
     } catch (e) {
@@ -292,7 +292,7 @@
   }
 </script>
 
-<svelte:head><title>Per-sample set scores · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Per-sample gene set scoring · wormie.rs.ht</title></svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href={resolve('/')} class="self-start">
@@ -301,7 +301,7 @@
   </Button>
 
   <header class="space-y-1">
-    <h1 class="text-2xl font-semibold">Per-sample set scores</h1>
+    <h1 class="text-2xl font-semibold">Per-sample gene set scoring</h1>
     <p class="text-sm text-muted-foreground">One score per gene set, per sample</p>
   </header>
 
@@ -336,7 +336,7 @@ mitochondrial     0.12   0.15   0.14    0.11    0.09    0.07</pre>
         <ControlHint id="ssgsea-expr" title="Which values to paste">
           Genes down the rows, samples across the columns, one expression value per cell, tab or
           comma separated with a header row of sample names. The <b
-            >Continue to per-sample set scores</b
+            >Continue to per-sample gene set scoring</b
           >
           button on the differential expression page sends one of these for you.
           <br /><br />

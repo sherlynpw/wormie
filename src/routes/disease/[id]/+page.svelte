@@ -7,7 +7,6 @@
   import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
   import GenePill from '$lib/components/GenePill.svelte';
-  import PageHint from '$lib/components/PageHint.svelte';
   import ControlHint from '$lib/components/ControlHint.svelte';
   import TermCrossRef from '$lib/components/TermCrossRef.svelte';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
@@ -99,12 +98,9 @@
     Back
   </Button>
 
-  <PageHint id="disease-term" title="Disease term">
-    C. elegans genes linked to this Disease Ontology (DO) term by the Alliance of Genome Resources.
-    Most links are inferred from a human ortholog (the matching human gene). For those genes, the
-    text after the gene name shows the ortholog the link came from. The table below tests whether
-    any of your saved gene lists has more genes with this term than expected by chance.
-  </PageHint>
+  <p class="text-xs text-muted-foreground">
+    Most links are inferred from a human ortholog, which is shown after the gene name.
+  </p>
 
   {#if loading}
     <div class="text-sm text-muted-foreground">Loading disease...</div>

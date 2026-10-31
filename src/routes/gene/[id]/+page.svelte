@@ -72,7 +72,6 @@
   import ExternalLink from 'lucide-svelte/icons/external-link';
   import CopyButton from '$lib/components/CopyButton.svelte';
   import Copyable from '$lib/components/Copyable.svelte';
-  import PageHint from '$lib/components/PageHint.svelte';
   import ControlHint from '$lib/components/ControlHint.svelte';
   import CengenStripPlot from '$lib/components/CengenStripPlot.svelte';
   import AllelePhenotypeBar from '$lib/components/AllelePhenotypeBar.svelte';
@@ -400,19 +399,19 @@
     const perturbation: TocLeaf[] = [
       { id: 'alleles', label: 'Alleles' },
       { id: 'phenotypes', label: 'Phenotypes' },
-      { id: 'diseases', label: 'Diseases' },
+      { id: 'diseases', label: 'Human diseases' },
     ];
     const annotation: TocLeaf[] = [
       { id: 'go', label: 'Gene Ontology' },
       { id: 'wormcat', label: 'WormCat' },
       { id: 'neuronal', label: 'Neuronal genes' },
-      { id: 'synaptogenesis', label: 'Synapse panel' },
+      { id: 'synaptogenesis', label: 'Synaptic genes' },
       ...(KEGG_ENABLED ? [{ id: 'pathways', label: 'KEGG' }] : []),
     ];
     const expression: TocLeaf[] = [
       { id: 'tissues', label: 'Tissues' },
       { id: 'stages', label: 'Life stages' },
-      { id: 'cengen', label: 'Neuron types (CeNGEN)' },
+      { id: 'cengen', label: 'Neuron types' },
     ];
     const related: TocLeaf[] = [
       { id: 'interactions', label: 'Experimental (BioGRID)' },
@@ -570,14 +569,6 @@
         </div>
       </div>
     {/if}
-
-    <PageHint id="gene-detail" title="What's on this page">
-      Everything the database holds for one gene: descriptions, gene class, links to other
-      databases, Gene Ontology (GO) annotations, phenotypes from RNA interference (RNAi) and allele
-      (mutant) experiments, expression, interactions, orthologs (matching genes in other species),
-      and citations. GO annotations shown are the ones curated for this gene, not inherited from
-      parent terms. Hover over any other gene or term to preview it without leaving the page.
-    </PageHint>
 
     {#if loading}
       <div class="text-sm text-muted-foreground">Loading gene...</div>
@@ -1519,12 +1510,12 @@
         <Card id="synaptogenesis">
           <CardHeader class="pb-3">
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Synapse development and function panel
-              <ControlHint id="gene-synaptogenesis" title="Synapse development and function panel">
-                A curated panel of 178 genes in 12 functional classes, from activity-regulated
-                transcription through synaptic machinery to neurotransmitter identity. The papers
-                listed are the primary research articles this gene was curated from. The reviews
-                behind each class are on the panel view.
+              Synaptic genes
+              <ControlHint id="gene-synaptogenesis" title="Synaptic genes">
+                The synapse development and function classification: 178 genes in 12 functional
+                classes, from activity-regulated transcription through synaptic machinery to
+                neurotransmitter identity. The papers listed are the primary research articles this
+                gene was curated from. The reviews behind each class are on the Synaptic genes view.
               </ControlHint>
             </CardTitle>
             <div class="text-xs text-muted-foreground">
@@ -1576,8 +1567,8 @@
       {:else}
         <EmptyPanel
           id="synaptogenesis"
-          title="Synapse development and function panel"
-          message="This gene is not in the curated synapse development and function panel."
+          title="Synaptic genes"
+          message="This gene is not in the synapse development and function classification."
         />
       {/if}
 

@@ -34,24 +34,44 @@
 
   type IconComponent = any;
 
-  const VIEWS: { key: ViewKey; label: string; icon: IconComponent }[] = [
-    { key: 'wormcat', label: 'WormCat', icon: FolderTree },
-    { key: 'go', label: 'GO terms', icon: Network },
-    { key: 'neuronal', label: 'Neuronal genes', icon: Brain },
-    { key: 'synaptogenesis', label: 'Synapse panel', icon: Cable },
-  ];
-
   type ToolLink = { href: string; match: string; label: string; icon: IconComponent };
 
-  // Direct-route annotation browsers; active on the route and on its detail pages.
-  const ANNOTATION_PAGES: ToolLink[] = [
-    { href: resolve('/cell-type'), match: '/cell-type', label: 'Neuron types', icon: Waypoints },
-    { href: resolve('/phenotype'), match: '/phenotype', label: 'Phenotypes', icon: Eye },
-    { href: resolve('/disease'), match: '/disease', label: 'Human diseases', icon: HeartPulse },
-    { href: resolve('/tissue'), match: '/tissue', label: 'Tissues', icon: Layers },
+  // Home-page views (`view`) and direct-route browsers (`link`, active on the route and its
+  // detail pages), in the manuscript's order with the two curated sets last.
+  type AnnotationEntry =
+    | { kind: 'view'; key: ViewKey; label: string; icon: IconComponent }
+    | ({ kind: 'link' } & ToolLink);
+
+  const ANNOTATIONS: AnnotationEntry[] = [
+    { kind: 'view', key: 'go', label: 'Gene Ontology', icon: Network },
+    { kind: 'view', key: 'wormcat', label: 'WormCat', icon: FolderTree },
+    {
+      kind: 'link',
+      href: resolve('/phenotype'),
+      match: '/phenotype',
+      label: 'Phenotypes',
+      icon: Eye,
+    },
+    { kind: 'link', href: resolve('/tissue'), match: '/tissue', label: 'Tissues', icon: Layers },
+    {
+      kind: 'link',
+      href: resolve('/disease'),
+      match: '/disease',
+      label: 'Human diseases',
+      icon: HeartPulse,
+    },
+    {
+      kind: 'link',
+      href: resolve('/cell-type'),
+      match: '/cell-type',
+      label: 'Neuron types',
+      icon: Waypoints,
+    },
+    { kind: 'view', key: 'neuronal', label: 'Neuronal genes', icon: Brain },
+    { kind: 'view', key: 'synaptogenesis', label: 'Synaptic genes', icon: Cable },
   ];
 
-  // Rendered above the separator: exploration, with the annotation views.
+  // Rendered above the separator, under the annotation entries. Each takes one list.
   // The analysis groups below the line are TOOL_GROUPS.
   const EXPLORE_TOOLS: ToolLink[] = [
     {
@@ -60,23 +80,18 @@
       label: 'Gene name resolver',
       icon: FileSearch,
     },
+    { href: resolve('/nta'), match: '/nta', label: 'Network connectivity', icon: Network },
     {
       href: resolve('/compare'),
       match: '/compare',
       label: 'Annotation overlap',
       icon: GitCompare,
     },
-    {
-      href: resolve('/compare/lists'),
-      match: '/compare/lists',
-      label: 'Gene overlap',
-      icon: GitCompare,
-    },
   ];
 
   const TOOL_GROUPS: { heading: string; items: ToolLink[] }[] = [
     {
-      heading: 'From reads to results',
+      heading: 'Turn reads into contrasts',
       items: [
         { href: resolve('/counts'), match: '/counts', label: 'Read counting', icon: Sigma },
         { href: resolve('/de'), match: '/de', label: 'Differential expression', icon: TrendingUp },
@@ -86,6 +101,11 @@
           label: 'Contrast comparison',
           icon: TrendingUp,
         },
+      ],
+    },
+    {
+      heading: 'Test for enrichment',
+      items: [
         {
           href: resolve('/enrichment'),
           match: '/enrichment',
@@ -98,13 +118,29 @@
           label: 'Ranked-list enrichment',
           icon: TrendingUp,
         },
+        {
+          href: resolve('/ssgsea'),
+          match: '/ssgsea',
+          label: 'Per-sample gene set scoring',
+          icon: TrendingUp,
+        },
+        {
+          href: resolve('/gmt'),
+          match: '/gmt',
+          label: 'Custom gene set testing',
+          icon: TrendingUp,
+        },
       ],
     },
     {
-      heading: 'Standalone analyses',
+      heading: 'Compare lists and results',
       items: [
-        { href: resolve('/gmt'), match: '/gmt', label: 'Custom gene sets', icon: TrendingUp },
-        { href: resolve('/nta'), match: '/nta', label: 'Network connectivity', icon: Network },
+        {
+          href: resolve('/compare/lists'),
+          match: '/compare/lists',
+          label: 'Gene overlap',
+          icon: GitCompare,
+        },
         {
           href: resolve('/enrichment/overlap'),
           match: '/enrichment/overlap',
@@ -122,12 +158,6 @@
           match: '/gsea/intersect',
           label: 'Ranked-list consensus',
           icon: GitCompare,
-        },
-        {
-          href: resolve('/ssgsea'),
-          match: '/ssgsea',
-          label: 'Per-sample set scores',
-          icon: TrendingUp,
         },
       ],
     },
@@ -174,7 +204,7 @@
             : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
         )}
       >
-        <Icon class="h-4 w-4" />
+        <Icon class="h-4 w-4 shrink-0" />
         {t.label}
       </a>
     {/each}
@@ -186,18 +216,27 @@
     ? 'flex h-full min-h-0 w-full flex-col overflow-y-auto px-3 py-4'
     : 'sticky top-12 hidden h-[calc(100vh-3rem)] w-56 shrink-0 flex-col self-start overflow-y-auto border-r bg-card px-3 py-4 md:flex'}
 >
-  <div class="mb-4">
+  <div class="mb-4" data-tour="explore">
     <div
       class="mb-1.5 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
     >
       Explore by annotation
     </div>
     <nav class="flex flex-col gap-0.5">
-      {#each VIEWS as v (v.key)}
-        {@const active = onHome && currentView === v.key}
-        {@const Icon = v.icon}
+      {#each ANNOTATIONS as e (e.label)}
+        {#if e.kind === 'view' && e.key === 'neuronal'}
+          <div class="mt-1.5 px-2 text-[0.6rem] font-medium text-muted-foreground/70">
+            Curated gene sets
+          </div>
+        {/if}
+        {@const Icon = e.icon}
+        {@const path = page.url.pathname}
+        {@const active =
+          e.kind === 'view'
+            ? onHome && currentView === e.key
+            : path === e.match || path.startsWith(`${e.match}/`)}
         <a
-          href={resolve(buildUrl({ view: v.key }) as '/')}
+          href={e.kind === 'view' ? resolve(buildUrl({ view: e.key }) as '/') : e.href}
           class={cn(
             'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
             active
@@ -205,24 +244,8 @@
               : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
           )}
         >
-          <Icon class="h-4 w-4" />
-          {v.label}
-        </a>
-      {/each}
-      {#each ANNOTATION_PAGES as t (t.match)}
-        {@const Icon = t.icon}
-        {@const path = page.url.pathname}
-        <a
-          href={t.href}
-          class={cn(
-            'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-            path === t.match || path.startsWith(`${t.match}/`)
-              ? 'bg-accent font-medium text-accent-foreground'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-          )}
-        >
-          <Icon class="h-4 w-4" />
-          {t.label}
+          <Icon class="h-4 w-4 shrink-0" />
+          {e.label}
         </a>
       {/each}
     </nav>
@@ -237,7 +260,7 @@
 
   <Separator />
 
-  <div class="my-4">
+  <div class="my-4" data-tour="analyses">
     {#each TOOL_GROUPS as g, gi (g.heading)}
       <div
         class="mb-1 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground {gi >
@@ -249,9 +272,13 @@
       </div>
       {@render toolNav(g.items)}
     {/each}
+  </div>
 
+  <Separator />
+
+  <div class="my-4" data-tour="saved">
     <div
-      class="mb-1 mt-3 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+      class="mb-1 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
     >
       Saved locally
     </div>
@@ -267,7 +294,7 @@
               : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
           )}
         >
-          <Icon class="h-4 w-4" />
+          <Icon class="h-4 w-4 shrink-0" />
           {t.label}
         </a>
       {/each}
@@ -280,7 +307,7 @@
             : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
         )}
       >
-        <Star class="h-4 w-4" />
+        <Star class="h-4 w-4 shrink-0" />
         Marked genes
         {#if bookmarks.initialized && bookmarks.count() > 0}
           <span class="ml-auto font-mono text-[0.65rem] tabular-nums text-muted-foreground">
@@ -289,13 +316,10 @@
         {/if}
       </a>
     </nav>
-  </div>
 
-  {#if viewedGenes.length > 0}
-    <Separator />
-    <div class="my-4">
+    {#if viewedGenes.length > 0}
       <div
-        class="mb-1.5 flex items-center gap-1.5 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
+        class="mb-1.5 mt-3 flex items-center gap-1.5 px-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground"
       >
         <Clock class="h-3 w-3" />
         Recently viewed
@@ -318,8 +342,8 @@
           </GeneHover>
         {/each}
       </nav>
-    </div>
-  {/if}
+    {/if}
+  </div>
 
   {#if db.phase === 'ready'}
     <div class="mt-auto pt-4">

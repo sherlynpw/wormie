@@ -79,18 +79,18 @@
   </header>
 
   <PageHint id="nta.intro" title="What this step does">
-    Network topology analysis (NTA) asks whether the genes in your list interact with each other.
-    Input: a list of genes. The Biological General Repository for Interaction Datasets (BioGRID)
-    records pairs of genes that interact. Physical interactions are where the proteins bind. Genetic
-    interactions are where mutating both genes has an effect that neither mutation has alone.
-    Picture this as a network: genes are dots and interactions are lines between them. The tool
-    counts the lines among your genes. It compares that count with the counts for many random gene
-    sets of the same size (permutations). Output: the observed and expected number of lines, and a
-    z-score (how many standard deviations the observed count is above the expected count). A high
-    count suggests that your genes work together. Well-studied genes have more known partners
-    because more people looked at them. So by default each gene in a random set is swapped in for
-    one of your genes with a similar degree (number of partners). Many genes have no recorded
-    interaction. The result states how many of your genes could be tested.
+    Network connectivity asks whether the genes in your list interact with each other. Input: a list
+    of genes. The Biological General Repository for Interaction Datasets (BioGRID) records pairs of
+    genes that interact. Physical interactions are where the proteins bind. Genetic interactions are
+    where mutating both genes has an effect that neither mutation has alone. Picture this as a
+    network: genes are dots and interactions are lines between them. The tool counts the lines among
+    your genes. It compares that count with the counts for many random gene sets of the same size
+    (permutations). Output: the observed and expected number of lines, and a z-score (how many
+    standard deviations the observed count is above the expected count). A high count suggests that
+    your genes work together. Well-studied genes have more known partners because more people looked
+    at them. So by default each gene in a random set is swapped in for one of your genes with a
+    similar degree (number of partners). Many genes have no recorded interaction. The result states
+    how many of your genes could be tested.
   </PageHint>
 
   <Card>
