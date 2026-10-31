@@ -31,9 +31,14 @@ env:
   DISABLE_KEGG: ${{ github.event.inputs.disable_kegg == 'true' && '1' || vars.DISABLE_KEGG }}
 
 jobs:
+  # One job builds and deploys, so the site and the 200 MB DB never pass through
+  # GitHub artifact storage, whose quota on this plan a single run could fill.
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - uses: actions/checkout@v4
 
@@ -135,22 +140,6 @@ jobs:
       - name: Build SvelteKit
         run: bun run build
 
-      # Only the deploy job of this run reads these, and the DB copy is about 200 MB a run.
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: build
-          retention-days: 1
-
-      - name: Upload DB artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deploy-data
-          path: deploy-data
-          retention-days: 1
-          if-no-files-found: error
-
       - name: Put the DB back for the cache save
         if: ${{ steps.db-cache.outputs.cache-hit != 'true' }}
         run: |
@@ -170,37 +159,6 @@ jobs:
             static/data/version.json
             static/data/unresolved-symbols.txt
           key: ${{ steps.db-key.outputs.key }}
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ github.event_name != 'pull_request' }}
-    permissions:
-      contents: read
-      deployments: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: build
-
-      - name: Download DB artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: deploy-data
-          path: deploy-data
 
       - name: Ensure R2 bucket exists
         env:
