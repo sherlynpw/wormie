@@ -13,6 +13,8 @@ import {
   escapeFts,
   parseQuery,
   FTS_OP_COLUMNS,
+  ALL_FTS_FIELDS,
+  FTS_FIELD_LABELS,
   globToLike,
   type ParsedQuery,
   type FtsField,
@@ -866,6 +868,73 @@ export async function runSearch(
     return r;
   });
   return { rows, parsed };
+}
+
+export interface FieldHits {
+  field: FtsField;
+  label: string;
+  total: number;
+  genes: { wormbase_gene: string; name: string; terms: string[] }[];
+}
+
+/**
+ * Per full-text field outside `searched`, the genes a text search would match there, best
+ * first, so an empty search can say where its words occur. Empty for anything but a text search.
+ */
+export async function getFieldHits(
+  input: string,
+  searched: readonly FtsField[],
+  perField = 5,
+): Promise<FieldHits[]> {
+  const parsed = parseQuery(input);
+  if (parsed.mode !== 'search') return [];
+  const fields = availableFtsFields(ALL_FTS_FIELDS).filter((f) => !searched.includes(f));
+  const out: FieldHits[] = [];
+  for (const field of fields) {
+    const { ftsExpr, intersects, params } = routeQuery(parsed, [field]);
+    if (!ftsExpr || intersects.length === 0) return [];
+    const intersected = intersects.join(' INTERSECT ');
+    const [count] = await query<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM (${intersected})`,
+      params,
+    );
+    if (!count?.n) continue;
+    // Column 0 of genes_fts is the unindexed wormbase_gene, so field i sits at i + 1.
+    const col = ALL_FTS_FIELDS.indexOf(field) + 1;
+    const rows = await query<{
+      wormbase_gene: string;
+      gene_name: string | null;
+      sequence_name: string | null;
+      snip: string | null;
+    }>(
+      `SELECT a.wormbase_gene, a.gene_name, a.sequence_name,
+		        snippet(genes_fts, ${col}, '${MATCH_START}', '${MATCH_END}', '', 8) AS snip
+		   FROM annotations a
+		   JOIN genes_fts f ON f.wormbase_gene = a.wormbase_gene
+		  WHERE a.wormbase_gene IN (${intersected})
+		    AND genes_fts MATCH ?
+		  ORDER BY ${HAS_NAME} DESC, bm25(genes_fts)
+		  LIMIT ?`,
+      [...params, ftsExpr, perField],
+    );
+    out.push({
+      field,
+      label: FTS_FIELD_LABELS[field],
+      total: count.n,
+      genes: rows.map((r) => ({
+        wormbase_gene: r.wormbase_gene,
+        name: r.gene_name ?? r.sequence_name ?? r.wormbase_gene,
+        terms: [
+          ...new Map(
+            parseSnippet(r.snip)
+              .segments.filter((s) => s.m)
+              .map((s) => [s.t.toLowerCase(), s.t] as const),
+          ).values(),
+        ],
+      })),
+    });
+  }
+  return out.sort((a, b) => b.total - a.total);
 }
 
 // Convenience wrapper for callers that only need the gene rows.

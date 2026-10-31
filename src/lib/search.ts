@@ -304,6 +304,27 @@ export const ALL_FTS_FIELDS = [
 ] as const;
 export type FtsField = (typeof ALL_FTS_FIELDS)[number];
 
+export const FTS_FIELD_LABELS: Record<FtsField, string> = {
+  gene_name: 'Gene name',
+  wb_id: 'WormBase ID',
+  entrez_id: 'Entrez ID',
+  sequence_name: 'Sequence name',
+  other_names: 'Synonyms',
+  gene_class_description: 'Gene class',
+  concise_description: 'Concise description',
+  legacy_description: 'Automated description',
+  phenotypes: 'Phenotypes',
+  alleles: 'Alleles',
+  tissues: 'Tissues',
+  go_terms: 'GO terms',
+  wormcat: 'WormCat',
+  neuronal: 'Neuronal categories',
+  orthologs: 'Ortholog symbols',
+  synaptogenesis: 'Synapse panel',
+  pathways: 'KEGG pathways',
+  domains: 'Protein domains',
+};
+
 // Default fields: name + WBGene/Entrez IDs (pipelines emit these; paste-to-find works).
 // sequence_name is off by default (toggleable) as it is a less common lookup path.
 export const DEFAULT_FTS_FIELDS: readonly FtsField[] = [
