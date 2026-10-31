@@ -343,7 +343,7 @@
   const resultCount = $derived(enrichResults?.length ?? gseaResults?.length ?? 0);
 </script>
 
-<svelte:head><title>Custom gene sets · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Custom gene set testing · wormie.rs.ht</title></svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/" class="self-start">
@@ -352,7 +352,7 @@
   </Button>
 
   <header class="space-y-1">
-    <h1 class="text-2xl font-semibold">Custom gene sets</h1>
+    <h1 class="text-2xl font-semibold">Custom gene set testing</h1>
     <p class="text-sm text-muted-foreground">Tests your genes against gene sets that you provide</p>
   </header>
 
@@ -375,7 +375,7 @@
 
   <Card>
     <CardHeader>
-      <CardTitle class="text-xl">Custom gene sets</CardTitle>
+      <CardTitle class="text-xl">Custom gene set testing</CardTitle>
       <div class="text-sm text-muted-foreground">
         Paste or upload a gene matrix transposed (GMT) collection, such as exports from the
         Molecular Signatures Database (MSigDB), Reactome, the Kyoto Encyclopedia of Genes and

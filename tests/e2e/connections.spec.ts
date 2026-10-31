@@ -261,7 +261,7 @@ test('gene overlap slot fills from the selection', async ({ page }) => {
   await expect(page.locator('textarea').first()).toHaveValue(/WBGene00000898/);
 });
 
-test('custom gene sets list fills from the selection', async ({ page }) => {
+test('custom gene set testing list fills from the selection', async ({ page }) => {
   await seedSelection(page, GENES);
   await page.goto('/gmt');
   // The run card (and its gene-list input) only renders once a GMT parses.
@@ -297,7 +297,7 @@ test('datasets Open in -> ssGSEA loads a counts matrix', async ({ page }) => {
   await page.goto('/datasets');
   await expect(page.getByText('conn counts')).toBeVisible({ timeout: 15_000 });
   // Single-target rows label their button "Open"; the target is in the tooltip.
-  await page.getByTitle('Open in Per-sample set scores').click();
+  await page.getByTitle('Open in Per-sample gene set scoring').click();
   await expect(page).toHaveURL(/\/ssgsea\?load=counts/, { timeout: 15_000 });
   await expect(page.locator('textarea').first()).toHaveValue(/sampleA\tsampleB/, {
     timeout: 15_000,

@@ -1355,7 +1355,7 @@ WBGene00000001\tI\t...\t...\t+\t1200\t12\t8
             disabled={!fit?.normalizedCountsTsv}
             title="Send the normalized count matrix (all samples) to the single-sample gene set enrichment analysis (ssGSEA) page"
           >
-            Continue to per-sample set scores <ArrowRight class="h-4 w-4" />
+            Continue to per-sample gene set scoring <ArrowRight class="h-4 w-4" />
           </Button>
           <Button
             variant="outline"

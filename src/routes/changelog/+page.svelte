@@ -12,6 +12,24 @@
   // Newest first. Add a new entry at the top for each notable release.
   const ENTRIES: Entry[] = [
     {
+      date: '2026-10-31',
+      title: 'Phenotype and tissue sets include their more specific terms',
+      changes: [
+        'Count a gene annotated to a specific phenotype or tissue toward every broader term above it, as Gene Ontology already does and as WormBase Tissue Enrichment Analysis does. For example, "locomotion variant" now has 2,027 genes, not 1,479, and "neuron" has 3,372, not 977.',
+        'This changes phenotype and tissue results in over-representation, ranked-list enrichment and per-sample gene set scoring, and the gene counts and gene lists on the phenotype and tissue pages. Rerun an analysis to get the new results.',
+      ],
+    },
+    {
+      date: '2026-10-30',
+      title: 'Names that match the paper',
+      changes: [
+        'Rename the synapse development and function panel to "Synaptic genes", to pair with "Neuronal genes". Rename the GO terms view to "Gene Ontology", the Diseases tab to "Human diseases" and network topology analysis to "Network connectivity". The syn: search prefix does not change.',
+        'Rename two tool pages for what they do: "Per-sample gene set scoring" (single-sample GSEA) and "Custom gene set testing".',
+        'Group the sidebar by what each tool does: explore by annotation, explore a gene list, turn reads into contrasts, test for enrichment, and compare lists and results. Saved datasets, marked genes and recently viewed genes now sit together below the tools. The enrichment tabs use the same names and order as the sidebar.',
+        'Add a title and a one-line description to the Neuron types, Phenotypes, Human diseases and Tissues pages.',
+      ],
+    },
+    {
       date: '2026-10-30',
       title: 'Clearer neuron names and searches that find more',
       changes: [

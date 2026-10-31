@@ -178,7 +178,7 @@ jobs:
             scripts/wasm-cran/bin/emscripten/contrib/4.5/*.tgz
             scripts/wasm-cran/bin/emscripten/contrib/4.5/PACKAGES*
             scripts/wasm-cran/webr-pthread/v0.5.9/**
-          retention-days: 30
+          retention-days: 7
 
       - name: Ensure R2 bucket exists
         if: ${{ github.event.inputs.deploy != 'false' }}

@@ -3,7 +3,6 @@
   import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
-  import PageHint from '$lib/components/PageHint.svelte';
   import { onMount } from 'svelte';
   import { resolve } from '$app/paths';
   import { getGenesByNeuronType, type NeuronGeneRow } from '$lib/queries';
@@ -66,14 +65,11 @@
     {/if}
   </div>
 
-  <PageHint id="cell-type-detail" title="One neuron type">
-    Genes called expressed in <span class="font-mono">{data.neuronClass}</span> by CeNGEN (C. elegans
-    Neuronal Gene Expression Network), which used single-cell RNA sequencing with thresholds calibrated
-    on cells sorted by fluorescence-activated cell sorting (FACS) (Taylor et al. 2021). The threshold
-    sets how sure a call must be. Liberal returns the most genes. Stringent keeps only the most certain
-    calls. Bulk TMM is the expression level in sorted bulk samples, given as trimmed mean of M-values
-    (TMM, a normalized count).
-  </PageHint>
+  <p class="text-xs text-muted-foreground">
+    Genes called expressed in <span class="font-mono">{data.neuronClass}</span> by CeNGEN single-cell
+    RNA sequencing (Taylor et al. 2021). Liberal returns the most genes and stringent keeps only the most
+    certain calls. Bulk TMM is a normalized expression level from sorted bulk samples.
+  </p>
 
   <Card>
     <CardHeader>

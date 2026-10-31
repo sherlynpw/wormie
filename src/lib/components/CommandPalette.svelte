@@ -82,9 +82,9 @@
     { key: 'cards', label: 'Cards', icon: LayoutGrid },
     { key: 'table', label: 'Table', icon: Table },
     { key: 'wormcat', label: 'WormCat', icon: FolderTree },
-    { key: 'go', label: 'GO terms', icon: Network },
+    { key: 'go', label: 'Gene Ontology', icon: Network },
     { key: 'neuronal', label: 'Neuronal genes', icon: Brain },
-    { key: 'synaptogenesis', label: 'Synapse panel', icon: Cable },
+    { key: 'synaptogenesis', label: 'Synaptic genes', icon: Cable },
   ] as const;
 
   function recentHref(r: Recent): string {
@@ -314,7 +314,7 @@
               Contrast comparison
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
-              value="custom gene sets gmt"
+              value="custom gene set testing sets gmt"
               onSelect={() => navigate('/gmt')}
               class={cn(
                 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
@@ -322,7 +322,7 @@
               )}
             >
               <TrendingUp class="h-4 w-4 text-muted-foreground" />
-              Custom gene sets
+              Custom gene set testing
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="datasets saved inputs"
@@ -413,7 +413,7 @@
               Ranked-list enrichment
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
-              value="ssgsea single-sample per-sample set scores"
+              value="ssgsea single-sample per-sample gene set scoring scores"
               onSelect={() => navigate('/ssgsea')}
               class={cn(
                 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm',
@@ -421,7 +421,7 @@
               )}
             >
               <TrendingUp class="h-4 w-4 text-muted-foreground" />
-              Per-sample set scores
+              Per-sample gene set scoring
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="nta network topology connectivity"
@@ -443,7 +443,7 @@
               )}
             >
               <Brain class="h-4 w-4 text-muted-foreground" />
-              Neuron types (CeNGEN)
+              Neuron types
             </CommandPrimitive.Item>
             <CommandPrimitive.Item
               value="about"

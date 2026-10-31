@@ -72,6 +72,6 @@ export function sessionToolLabel(tool: SessionTool): string {
     case 'gsea':
       return 'Ranked-list enrichment';
     case 'gmt':
-      return 'Custom gene sets';
+      return 'Custom gene set testing';
   }
 }

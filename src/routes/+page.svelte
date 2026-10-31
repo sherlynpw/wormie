@@ -146,11 +146,11 @@
   const totalPages = $derived(facets ? Math.max(1, Math.ceil(facets.n_genes / PAGE_SIZE)) : 1);
   const VIEW_HEADERS: Record<string, { title: string; caption: string }> = {
     wormcat: { title: 'WormCat', caption: 'Genes grouped by WormCat category' },
-    go: { title: 'GO terms', caption: 'Genes grouped by Gene Ontology (GO) term' },
+    go: { title: 'Gene Ontology', caption: 'Genes grouped by Gene Ontology (GO) term' },
     neuronal: { title: 'Neuronal genes', caption: 'Genes grouped by neuronal gene category' },
     synaptogenesis: {
-      title: 'Synapse development and function',
-      caption: 'Genes grouped by synapse panel class',
+      title: 'Synaptic genes',
+      caption: 'Genes grouped by synaptic gene class',
     },
   };
   const viewHeader = $derived(VIEW_HEADERS[view] ?? null);
@@ -289,7 +289,7 @@
       ],
     },
     {
-      group: 'Synapse panel',
+      group: 'Synaptic genes',
       chips: [
         { q: 'syn:"activity regulated"', label: 'Activity-regulated TFs' },
         { q: 'syn:"mRNA export"', label: 'RNA export / processing' },
@@ -646,8 +646,8 @@
             class="underline underline-offset-2 hover:text-foreground">WormBook</a
           >
         {:else if view === 'synaptogenesis'}
-          Synapse development and function panel, curated from the primary literature. Each gene
-          links to the papers it was curated from.
+          The synapse development and function classification, curated from the primary literature.
+          Each gene links to the papers it was curated from.
         {/if}
       </p>
     </header>

@@ -29,6 +29,35 @@ test('sidebar links to the four annotation browsers', async ({ page }) => {
   }
 });
 
+test('sidebar lists the annotation entries in the manuscript order', async ({ page }) => {
+  await page.goto('/');
+  const aside = page.locator('aside').first();
+  const names = [
+    'Gene Ontology',
+    'WormCat',
+    'Phenotypes',
+    'Tissues',
+    'Human diseases',
+    'Neuron types',
+    'Neuronal genes',
+    'Synaptic genes',
+  ];
+  const links = aside.locator('nav').first().getByRole('link');
+  await expect(links).toHaveText(names);
+});
+
+test('the four annotation browsers have a heading', async ({ page }) => {
+  for (const [path, name] of [
+    ['/cell-type', 'Neuron types'],
+    ['/phenotype', 'Phenotypes'],
+    ['/disease', 'Human diseases'],
+    ['/tissue', 'Tissues'],
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible({ timeout: 60_000 });
+  }
+});
+
 // CI tests against the deployed DB, which gains anatomy_relations only with the build after
 // this change; without it /tissue lists tissues flat. Each test checks the mode it got.
 const FLAT_NOTE = /has no anatomy hierarchy/;
@@ -65,6 +94,17 @@ test('phenotype index shows a tree', async ({ page }) => {
   const nodes = page.getByRole('button', { name: /^(Expand|Collapse) / });
   await expect(nodes.first()).toBeVisible({ timeout: 120_000 });
   expect(await nodes.count()).toBeGreaterThan(1);
+});
+
+// A gene annotated to a specific phenotype also counts toward its parents, as in WormBase's
+// enrichment tools. Only 6 genes sit directly on the root, so a direct count would stay tiny.
+test('phenotype tree counts genes from child terms', async ({ page }) => {
+  await page.goto('/phenotype');
+  const root = page.getByRole('link', { name: 'nematode phenotype' }).locator('xpath=..');
+  await expect(root).toBeVisible({ timeout: 120_000 });
+  const badge = root.locator('[title$="or a more specific one"]');
+  const count = Number((await badge.innerText()).replace(/,/g, ''));
+  expect(count).toBeGreaterThan(1000);
 });
 
 test('disease index lists diseases', async ({ page }) => {

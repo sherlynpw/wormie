@@ -74,14 +74,14 @@
 
   const ALL_KINDS: { key: GseaKind; label: string }[] = [
     { key: 'go', label: 'Gene Ontology' },
-    { key: 'phenotype', label: 'Phenotypes' },
-    { key: 'disease', label: 'Diseases' },
-    { key: 'domain', label: 'Protein domains' },
     { key: 'wormcat', label: 'WormCat' },
-    { key: 'neuronal', label: 'Neuronal genes' },
+    { key: 'phenotype', label: 'Phenotypes' },
     { key: 'tissue', label: 'Tissues' },
-    { key: 'cell-type', label: 'Neuron types (CeNGEN)' },
-    { key: 'synaptogenesis', label: 'Synapse development and function' },
+    { key: 'disease', label: 'Human diseases' },
+    { key: 'domain', label: 'Protein domains' },
+    { key: 'cell-type', label: 'Neuron types' },
+    { key: 'neuronal', label: 'Neuronal genes' },
+    { key: 'synaptogenesis', label: 'Synaptic genes' },
     { key: 'pathway', label: 'KEGG' },
   ];
   // KEGG excluded from the build drops the pathway category (license).

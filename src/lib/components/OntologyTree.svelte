@@ -81,7 +81,7 @@
   <Badge
     variant="muted"
     class="ml-auto shrink-0 tabular-nums"
-    title={`${n.n_genes.toLocaleString()} genes annotated directly to this term`}
+    title={`${n.n_genes.toLocaleString()} genes annotated to this term or a more specific one`}
   >
     {n.n_genes.toLocaleString()}
   </Badge>

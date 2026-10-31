@@ -153,7 +153,7 @@
       license: 'CC BY 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
       description:
-        'The C. elegans Neuronal Gene Expression Network (CeNGEN) atlas of the L4 larval nervous system, made by single-cell RNA sequencing (Taylor et al. 2021, Cell). It has four tables of expressed or not expressed calls, with thresholds calibrated on cells sorted by fluorescence-activated cell sorting (FACS): 1 = liberal, 2 = medium, 3 = conservative, 4 = stringent. They cover 128 neuron types. It also has a table that combines bulk and single-cell expression for 52 neuron types, with contamination removed (Barrett et al. 2025). The Neuron types (CeNGEN) options in the enrichment tools, the /cell-type pages and the heatmap on each gene page use it. Cite Taylor et al. 2021.',
+        'The C. elegans Neuronal Gene Expression Network (CeNGEN) atlas of the L4 larval nervous system, made by single-cell RNA sequencing (Taylor et al. 2021, Cell). It has four tables of expressed or not expressed calls, with thresholds calibrated on cells sorted by fluorescence-activated cell sorting (FACS): 1 = liberal, 2 = medium, 3 = conservative, 4 = stringent. They cover 128 neuron types. It also has a table that combines bulk and single-cell expression for 52 neuron types, with contamination removed (Barrett et al. 2025). The Neuron types options in the enrichment tools, the /cell-type pages and the heatmap on each gene page use it. Cite Taylor et al. 2021.',
     },
     {
       name: 'WormBase RNAi phenotypes',
@@ -192,12 +192,12 @@
         'C. elegans pathway gene sets from the Kyoto Encyclopedia of Genes and Genomes (KEGG) (about 150 maps, including insulin/IGF, TGF-beta, FoxO, longevity and autophagy), the table linking KEGG Orthology (KO) IDs to worm genes, and the pathway map images (lossless WebP, re-encoded from the KEGG PNG files). All of it is downloaded from the KEGG REST service when the database is built and stored in the local SQLite database, so the /pathway/[id] viewer works offline. KEGG REST access is free for academic use. Redistribution of the full KEGG data is restricted by the license, so this site ships only the per-pathway files that the viewer needs. Cite Kanehisa et al., as KEGG requires.',
     },
     {
-      name: 'Synapse development and function panel (v6)',
+      name: 'Synaptic genes: synapse development and function classification (v6)',
       version: 'celegans-pipeline refs/gene_sets',
       url: 'https://github.com/rayandrew/celegans-pipeline',
       license: 'project-internal',
       description:
-        'A panel of 178 genes in 12 functional classes, ordered from synapse formation to synapse function: activity-regulated transcription factors, RNA export, synapse positioning, adhesion, active zone, synapse growth control, cargo transport, synaptic vesicle (SV) release, postsynaptic, neurotransmitter identity, innexins (gap junction proteins) and remodeling. Curated by the Richardson Lab. Every gene cites at least one primary research article from a list of 139 publications. The Synapse development and function options in the enrichment tools and the panel card on each gene page use it.',
+        'A classification of 178 genes in 12 functional classes, ordered from synapse formation to synapse function: activity-regulated transcription factors, RNA export, synapse positioning, adhesion, active zone, synapse growth control, cargo transport, synaptic vesicle (SV) release, postsynaptic, neurotransmitter identity, innexins (gap junction proteins) and remodeling. Curated by the Richardson Lab. Every gene cites at least one primary research article from a list of 139 publications. The Synaptic genes options in the enrichment tools and the Synaptic genes card on each gene page use it.',
     },
   ]);
 

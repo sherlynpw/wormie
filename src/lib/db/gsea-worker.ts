@@ -6,6 +6,7 @@
 import { multilevelP } from './fgsea-multilevel';
 import { bhFdr } from './stats';
 import { GO_POSITIVE, CENGEN_MIN_THRESHOLD } from './term-filters';
+import { ensurePropagated } from './propagation';
 import { buildWormcatTerms, WORMCAT_LEVEL_ROWS_SQL, type WormcatLevelRow } from './wormcat-terms';
 import { classById } from '../synaptogenesis-references';
 // Permutation strategy: gene-set permutation (random samples of size |S| from
@@ -154,6 +155,7 @@ interface TermSet {
 }
 
 function loadTermSets(db: any, kind: GseaKind): TermSet[] {
+  if (kind === 'phenotype' || kind === 'tissue') ensurePropagated(db);
   if (kind === 'go') {
     const rows = execAll<{ go_id: string; name: string; namespace: string; wormbase_gene: string }>(
       db,
@@ -178,7 +180,7 @@ function loadTermSets(db: any, kind: GseaKind): TermSet[] {
     const rows = execAll<{ term_id: string; name: string; wormbase_gene: string }>(
       db,
       `SELECT DISTINCT gp.term_id, COALESCE(pt.name, gp.term_id) AS name, gp.wormbase_gene
-			 FROM gene_phenotype gp
+			 FROM gene_phenotype_all gp
 			 LEFT JOIN phenotype_terms pt ON pt.term_id = gp.term_id`,
     );
     const sets = new Map<string, TermSet>();
@@ -336,7 +338,7 @@ function loadTermSets(db: any, kind: GseaKind): TermSet[] {
       `SELECT DISTINCT ga.term_id,
 			        COALESCE(at.name, ga.term_id) AS name,
 			        ga.wormbase_gene
-			 FROM gene_anatomy ga
+			 FROM gene_anatomy_all ga
 			 LEFT JOIN anatomy_terms at ON at.term_id = ga.term_id`,
     );
   } catch {

@@ -316,11 +316,11 @@ export const FTS_FIELD_LABELS: Record<FtsField, string> = {
   phenotypes: 'Phenotypes',
   alleles: 'Alleles',
   tissues: 'Tissues',
-  go_terms: 'GO terms',
+  go_terms: 'Gene Ontology',
   wormcat: 'WormCat',
   neuronal: 'Neuronal categories',
   orthologs: 'Ortholog symbols',
-  synaptogenesis: 'Synapse panel',
+  synaptogenesis: 'Synaptic genes',
   pathways: 'KEGG pathways',
   domains: 'Protein domains',
 };

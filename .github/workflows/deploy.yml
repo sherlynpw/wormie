@@ -135,19 +135,20 @@ jobs:
       - name: Build SvelteKit
         run: bun run build
 
+      # Only the deploy job of this run reads these, and the DB copy is about 200 MB a run.
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build
           path: build
-          retention-days: 7
+          retention-days: 1
 
       - name: Upload DB artifact
         uses: actions/upload-artifact@v4
         with:
           name: deploy-data
           path: deploy-data
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: error
 
       - name: Put the DB back for the cache save

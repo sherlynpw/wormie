@@ -14,7 +14,6 @@
   import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
   import GenePill from '$lib/components/GenePill.svelte';
-  import PageHint from '$lib/components/PageHint.svelte';
   import ArrowLeft from 'lucide-svelte/icons/arrow-left';
   import ExternalLink from 'lucide-svelte/icons/external-link';
 
@@ -91,13 +90,10 @@
     All tissues
   </Button>
 
-  <PageHint id="tissue-term" title="Tissue page">
-    A tissue or cell type from the WormBase anatomy ontology (WBbt). Parents are broader terms and
-    children are more specific ones. A link marked "part of" means this term is a part of the linked
-    term, not a kind of it. The genes listed have expression reported directly in this tissue
-    (Alliance of Genome Resources expression data). Genes reported only in a child term are not
-    included. Click a gene to open its page.
-  </PageHint>
+  <p class="text-xs text-muted-foreground">
+    The genes listed have expression reported in this tissue or in a part or more specific tissue
+    below it. "Part of" means this term is a part of the linked term, not a kind of it.
+  </p>
 
   {#if loading}
     <div class="text-sm text-muted-foreground">Loading tissue...</div>

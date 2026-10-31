@@ -82,7 +82,7 @@ test('differential expression reads a plain gene-by-sample matrix', async ({ pag
   await expect(rows.first()).toContainText('WT_1');
 });
 
-test('per-sample set scores resolve a matrix keyed by gene names', async ({ page }) => {
+test('per-sample gene set scoring resolve a matrix keyed by gene names', async ({ page }) => {
   const names = [
     'daf-2',
     'daf-16',
@@ -111,7 +111,7 @@ test('per-sample set scores resolve a matrix keyed by gene names', async ({ page
   const minGenes = page.locator('label', { hasText: 'Min genes' }).locator('input');
   await minGenes.fill('1');
   await page.getByRole('button', { name: 'Run scoring' }).click();
-  await expect(page.getByText(/Per-sample set scores: [1-9]\d* sets/)).toBeVisible({
+  await expect(page.getByText(/Per-sample gene set scoring: [1-9]\d* sets/)).toBeVisible({
     timeout: 120_000,
   });
 });
@@ -162,7 +162,7 @@ test('contrast comparison uses the significance cutoff the user sets', async ({ 
   await expect(page.getByText('(significant in both at padj < 0.02)')).toBeVisible();
 });
 
-test('per-sample set scores offer the CeNGEN neuron-type collection', async ({ page }) => {
+test('per-sample gene set scoring offer the CeNGEN neuron-type collection', async ({ page }) => {
   const names = [
     'unc-17',
     'cha-1',
@@ -187,11 +187,11 @@ test('per-sample set scores offer the CeNGEN neuron-type collection', async ({ p
   await page.locator('#expr').fill(lines.join('\n'));
   await page
     .locator('select')
-    .filter({ has: page.locator('option', { hasText: 'Neuron types (CeNGEN)' }) })
-    .selectOption({ label: 'Neuron types (CeNGEN)' });
+    .filter({ has: page.locator('option', { hasText: 'Neuron types' }) })
+    .selectOption({ label: 'Neuron types' });
   await page.locator('label', { hasText: 'Min genes' }).locator('input').fill('1');
   await page.getByRole('button', { name: 'Run scoring' }).click();
-  await expect(page.getByText(/Per-sample set scores: [1-9]\d* sets/)).toBeVisible({
+  await expect(page.getByText(/Per-sample gene set scoring: [1-9]\d* sets/)).toBeVisible({
     timeout: 120_000,
   });
 });

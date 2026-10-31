@@ -562,11 +562,11 @@
     can paste gene names, or paste a differential expression (DE) table from DESeq2, edgeR or limma
     and choose which genes to test. Each gene has annotations of {kindCount} kinds: Gene Ontology (GO)
     terms (what the gene does), phenotypes (what happens when it breaks), tissues and C. elegans Neuronal
-    Gene Expression Map and Network (CeNGEN) neuron types (where it is expressed), WormCat categories,
-    diseases tied to its human orthologs, InterPro protein domains, neuronal or synaptogenesis panels{KEGG_ENABLED
-      ? ', and Kyoto Encyclopedia of Genes and Genomes (KEGG) pathways'
-      : ''}. This tool tests whether each annotation is shared by more genes in your list than
-    expected if the same number of genes were drawn at random. Output: for each annotation, a
+    Gene Expression Network (CeNGEN) neuron types (where it is expressed), WormCat categories, diseases
+    tied to its human orthologs, InterPro protein domains, the curated Neuronal genes and Synaptic genes
+    sets{KEGG_ENABLED ? ', and Kyoto Encyclopedia of Genes and Genomes (KEGG) pathways' : ''}. This
+    tool tests whether each annotation is shared by more genes in your list than expected if the
+    same number of genes were drawn at random. Output: for each annotation, a
     <b>fold enrichment</b> (how many times more genes than expected) and a <b>q-value</b> (the
     p-value corrected for testing many annotations, which is the false discovery rate, FDR). A
     q-value of 0.05 or lower is the usual cutoff. If no gene passes a cutoff in your data, use

@@ -20,8 +20,8 @@ test.beforeEach(async ({ page }) => {
 
 test('cell-type index lists neuron types', async ({ page }) => {
   await page.goto('/cell-type');
-  // Wait for the table to populate; the title shows the count once loaded.
-  await expect(page.getByRole('heading', { name: /Neuron types \(\d+/ })).toBeVisible({
+  // Wait for the table to populate; the count line appears once loaded.
+  await expect(page.getByText(/Showing\s+\d+\s+of\s+\d+\s+neuron types/)).toBeVisible({
     timeout: 120_000,
   });
   // CeNGEN has 128 neuron types; even if the count varies, expect a few canonical ones.

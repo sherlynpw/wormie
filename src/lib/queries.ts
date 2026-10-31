@@ -48,7 +48,7 @@ const MATCH_COLS: { idx: number; field: MatchField; label: string }[] = [
   { idx: 13, field: 'wormcat', label: 'WormCat' },
   { idx: 14, field: 'neuronal', label: 'Neuronal genes' },
   { idx: 15, field: 'orthologs', label: 'Orthologs' },
-  { idx: 16, field: 'synaptogenesis', label: 'Synapse panel' },
+  { idx: 16, field: 'synaptogenesis', label: 'Synaptic genes' },
 ];
 const DOMAINS_MATCH_COL = { idx: 18, field: 'domains' as MatchField, label: 'Domain' };
 function matchCols() {
@@ -953,7 +953,7 @@ export interface PhenotypeDetail {
 export async function getPhenotypeDetail(term_id: string): Promise<PhenotypeDetail | null> {
   const rows = await query<PhenotypeDetail>(
     `SELECT pt.term_id, pt.name, pt.definition,
-		        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_phenotype WHERE term_id = pt.term_id) AS n_genes
+		        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_phenotype_all WHERE term_id = pt.term_id) AS n_genes
 		 FROM phenotype_terms pt
 		 WHERE pt.term_id = ? AND COALESCE(pt.is_obsolete, 0) = 0`,
     [term_id],
@@ -982,7 +982,7 @@ export async function getPhenotypeParentsBulk(
     `WITH inputs(child) AS (SELECT value FROM json_each(?))
 		 SELECT r.child_id, r.parent_id,
 		        COALESCE(pt.name, r.parent_id) AS parent_name,
-		        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_phenotype WHERE term_id = r.parent_id) AS parent_n_genes
+		        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_phenotype_all WHERE term_id = r.parent_id) AS parent_n_genes
 		 FROM phenotype_relations r
 		 JOIN inputs i ON i.child = r.child_id
 		 LEFT JOIN phenotype_terms pt ON pt.term_id = r.parent_id
@@ -998,13 +998,13 @@ export async function getPhenotypeEdges(
   const sql =
     direction === 'parents'
       ? `SELECT t.term_id, t.name,
-			          (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_phenotype WHERE term_id = t.term_id) AS n_genes
+			          (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_phenotype_all WHERE term_id = t.term_id) AS n_genes
 			   FROM phenotype_relations r
 			   JOIN phenotype_terms t ON t.term_id = r.parent_id
 			   WHERE r.child_id = ? AND COALESCE(t.is_obsolete, 0) = 0
 			   ORDER BY t.name`
       : `SELECT t.term_id, t.name,
-			          (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_phenotype WHERE term_id = t.term_id) AS n_genes
+			          (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_phenotype_all WHERE term_id = t.term_id) AS n_genes
 			   FROM phenotype_relations r
 			   JOIN phenotype_terms t ON t.term_id = r.child_id
 			   WHERE r.parent_id = ? AND COALESCE(t.is_obsolete, 0) = 0
@@ -1063,7 +1063,7 @@ export async function getTermMembers(
   if (kind === 'phenotype') {
     return query<TermMemberRow>(
       `SELECT DISTINCT gp.wormbase_gene, a.gene_name
-			 FROM gene_phenotype gp LEFT JOIN annotations a ON a.wormbase_gene = gp.wormbase_gene
+			 FROM gene_phenotype_all gp LEFT JOIN annotations a ON a.wormbase_gene = gp.wormbase_gene
 			 WHERE gp.term_id = ?`,
       [term_id],
     );
@@ -1115,7 +1115,7 @@ export async function getTermMembers(
     try {
       return await query<TermMemberRow>(
         `SELECT DISTINCT ga.wormbase_gene, a.gene_name
-				 FROM gene_anatomy ga LEFT JOIN annotations a ON a.wormbase_gene = ga.wormbase_gene
+				 FROM gene_anatomy_all ga LEFT JOIN annotations a ON a.wormbase_gene = ga.wormbase_gene
 				 WHERE ga.term_id = ?`,
         [term_id],
       );
@@ -1156,23 +1156,29 @@ export async function getGenesForPhenotype(
   limit = 100,
 ): Promise<PhenotypeGeneRow[]> {
   // gene_phenotype covers allele + RNAi + transgene; allele_phenotype is the WBVar subset.
-  // n_alleles=0 with n_evidence>0 means RNAi/non-allele evidence only.
+  // n_alleles=0 with n_evidence>0 means RNAi/non-allele evidence only. A gene annotated to a
+  // child term belongs to this term too, so both counts cover the term and its descendants.
   return query<PhenotypeGeneRow>(
-    `SELECT a.wormbase_gene, a.gene_name, a.concise_description,
+    `WITH RECURSIVE sub(term_id) AS (
+		   SELECT ?
+		   UNION
+		   SELECT r.child_id FROM phenotype_relations r JOIN sub s ON r.parent_id = s.term_id
+		 )
+		 SELECT a.wormbase_gene, a.gene_name, a.concise_description,
 		        COUNT(*) AS n_evidence,
 		        COALESCE(
 		          (SELECT COUNT(DISTINCT ap.allele_id)
 		           FROM allele_phenotype ap
-		           WHERE ap.wormbase_gene = a.wormbase_gene AND ap.term_id = ?),
+		           WHERE ap.wormbase_gene = a.wormbase_gene AND ap.term_id IN (SELECT term_id FROM sub)),
 		          0
 		        ) AS n_alleles
 		 FROM gene_phenotype gp
 		 JOIN annotations a ON a.wormbase_gene = gp.wormbase_gene
-		 WHERE gp.term_id = ?
+		 WHERE gp.term_id IN (SELECT term_id FROM sub)
 		 GROUP BY a.wormbase_gene
 		 ORDER BY n_alleles DESC, n_evidence DESC, a.gene_name
 		 LIMIT ?`,
-    [term_id, term_id, limit],
+    [term_id, limit],
   );
 }
 
@@ -1187,7 +1193,7 @@ export async function getAnatomyDetail(term_id: string): Promise<AnatomyDetail |
   try {
     const rows = await query<AnatomyDetail>(
       `SELECT at.term_id, at.name, at.definition,
-			        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_anatomy WHERE term_id = at.term_id) AS n_genes
+			        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_anatomy_all WHERE term_id = at.term_id) AS n_genes
 			 FROM anatomy_terms at
 			 WHERE at.term_id = ?`,
       [term_id],
@@ -3280,7 +3286,7 @@ export async function getTermSets(
     phenotype: {
       table: 'gene_phenotype',
       sql: `SELECT gp.term_id, COALESCE(pt.name, gp.term_id) AS name, gp.wormbase_gene AS gene
-         FROM gene_phenotype gp LEFT JOIN phenotype_terms pt ON pt.term_id = gp.term_id`,
+         FROM gene_phenotype_all gp LEFT JOIN phenotype_terms pt ON pt.term_id = gp.term_id`,
     },
     neuronal: {
       table: 'neuronal',
@@ -3290,7 +3296,7 @@ export async function getTermSets(
     tissue: {
       table: 'gene_anatomy',
       sql: `SELECT ga.term_id, COALESCE(at.name, ga.term_id) AS name, ga.wormbase_gene AS gene
-         FROM gene_anatomy ga LEFT JOIN anatomy_terms at ON at.term_id = ga.term_id`,
+         FROM gene_anatomy_all ga LEFT JOIN anatomy_terms at ON at.term_id = ga.term_id`,
     },
     disease: {
       table: 'gene_disease',
@@ -3349,7 +3355,7 @@ export interface OntologyNode {
   id: string;
   name: string;
   n_children: number;
-  // Genes annotated directly to this term, not to its descendants.
+  // Genes annotated to this term or any of its descendants.
   n_genes: number;
   // Set for anatomy children: 'part_of' when the only edge from the parent is part_of.
   rel_type?: string;
@@ -3359,7 +3365,7 @@ const PHENO_NODE_SELECT = `t.term_id AS id, t.name,
 	        (SELECT COUNT(*) FROM phenotype_relations cr
 	           JOIN phenotype_terms ct ON ct.term_id = cr.child_id
 	           WHERE cr.parent_id = t.term_id AND COALESCE(ct.is_obsolete, 0) = 0) AS n_children,
-	        (SELECT COUNT(DISTINCT gp.wormbase_gene) FROM gene_phenotype gp
+	        (SELECT COUNT(DISTINCT gp.wormbase_gene) FROM gene_phenotype_all gp
 	           WHERE gp.term_id = t.term_id) AS n_genes`;
 
 export async function getPhenotypeRoots(): Promise<OntologyNode[]> {
@@ -3406,7 +3412,7 @@ export async function searchPhenotypeTerms(term: string, limit = 100): Promise<O
 const ANAT_NODE_SELECT = `t.term_id AS id, t.name,
 	        (SELECT COUNT(DISTINCT cr.child_id) FROM anatomy_relations cr
 	           WHERE cr.parent_id = t.term_id) AS n_children,
-	        (SELECT COUNT(DISTINCT ga.wormbase_gene) FROM gene_anatomy ga
+	        (SELECT COUNT(DISTINCT ga.wormbase_gene) FROM gene_anatomy_all ga
 	           WHERE ga.term_id = t.term_id) AS n_genes`;
 
 // True when the loaded DB has the anatomy hierarchy; older builds only have the flat tissue list.
@@ -3449,7 +3455,7 @@ export async function searchAnatomyTerms(term: string, limit = 100): Promise<Ont
     : '0';
   return query<OntologyNode>(
     `SELECT t.term_id AS id, t.name, ${nChildren} AS n_children,
-		        (SELECT COUNT(DISTINCT ga.wormbase_gene) FROM gene_anatomy ga
+		        (SELECT COUNT(DISTINCT ga.wormbase_gene) FROM gene_anatomy_all ga
 		           WHERE ga.term_id = t.term_id) AS n_genes
 		 FROM anatomy_terms t
 		 WHERE COALESCE(t.is_obsolete, 0) = 0
@@ -3468,7 +3474,7 @@ export async function getAnatomyTermsWithGenes(): Promise<OntologyNode[]> {
     return await query<OntologyNode>(
       `SELECT t.term_id AS id, t.name, 0 AS n_children,
 			        COUNT(DISTINCT ga.wormbase_gene) AS n_genes
-			 FROM gene_anatomy ga
+			 FROM gene_anatomy_all ga
 			 JOIN anatomy_terms t ON t.term_id = ga.term_id
 			 WHERE COALESCE(t.is_obsolete, 0) = 0
 			 GROUP BY t.term_id
@@ -3491,7 +3497,7 @@ export async function getAnatomyTermDetail(term_id: string): Promise<AnatomyTerm
   try {
     const rows = await query<Omit<AnatomyTermDetail, 'synonyms'>>(
       `SELECT t.term_id, t.name, t.definition,
-			        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_anatomy WHERE term_id = t.term_id) AS n_genes
+			        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_anatomy_all WHERE term_id = t.term_id) AS n_genes
 			 FROM anatomy_terms t
 			 WHERE t.term_id = ? AND COALESCE(t.is_obsolete, 0) = 0`,
       [term_id],
@@ -3523,7 +3529,7 @@ export async function getAnatomyNeighbors(
   const otherCol = direction === 'parents' ? 'parent_id' : 'child_id';
   return query<AnatomyNeighbor>(
     `SELECT t.term_id, t.name, MIN(r.rel_type) AS rel_type,
-		        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_anatomy WHERE term_id = t.term_id) AS n_genes
+		        (SELECT COUNT(DISTINCT wormbase_gene) FROM gene_anatomy_all WHERE term_id = t.term_id) AS n_genes
 		 FROM anatomy_relations r
 		 JOIN anatomy_terms t ON t.term_id = r.${otherCol}
 		 WHERE r.${selfCol} = ? AND COALESCE(t.is_obsolete, 0) = 0
@@ -3540,11 +3546,12 @@ export interface AnatomyGeneRow {
   concise_description: string | null;
 }
 
-// Genes annotated directly to the term; the total is n_genes from getAnatomyTermDetail.
+// Genes annotated to the term or any of its descendants; the total is n_genes from
+// getAnatomyTermDetail.
 export async function getGenesForAnatomy(term_id: string, limit = 200): Promise<AnatomyGeneRow[]> {
   return query<AnatomyGeneRow>(
     `SELECT a.wormbase_gene, a.gene_name, a.sequence_name, a.concise_description
-		 FROM (SELECT DISTINCT wormbase_gene FROM gene_anatomy WHERE term_id = ?) ga
+		 FROM (SELECT DISTINCT wormbase_gene FROM gene_anatomy_all WHERE term_id = ?) ga
 		 JOIN annotations a ON a.wormbase_gene = ga.wormbase_gene
 		 ORDER BY a.gene_name IS NULL, a.gene_name, a.wormbase_gene
 		 LIMIT ?`,
