@@ -167,7 +167,9 @@ jobs:
           find scripts/wasm-cran -type f -printf '%P\t%s\n' | sort >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
+      # A convenience copy only; R2 keeps every bundle, so a full artifact quota must not stop it.
       - name: Upload bundle artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: deseq2-bundle
@@ -360,6 +362,7 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: featurecounts-wasm
