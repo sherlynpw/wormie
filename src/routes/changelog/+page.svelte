@@ -13,9 +13,10 @@
   const ENTRIES: Entry[] = [
     {
       date: '2026-10-30',
-      title: 'Clearer names for the two neuron data sets',
+      title: 'Clearer neuron names and searches that find more',
       changes: [
         'Rename the Hobert catalogue of neuronal genes to "Neuronal genes" and the CeNGEN (C. elegans Neuronal Gene Expression Network) single-cell data to "Neuron types", so a group of genes and a group of cells no longer have almost the same name. The neuronal: and expressed: search prefixes do not change.',
+        'Show where a search would match when nothing matches in gene names and IDs. For example, TFEB now lists hlh-30 under ortholog symbols, with a link to its gene page, and does not stop at "Found 0 genes".',
       ],
     },
     {
