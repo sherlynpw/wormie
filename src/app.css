@@ -107,3 +107,35 @@
     font-feature-settings: 'cv11', 'ss01';
   }
 }
+
+@layer base {
+  /* Firefox and Chromium use the standard properties and ignore the
+     ::-webkit-scrollbar rules below once these are set. Safari has no
+     scrollbar-color, so it falls through to the pseudo-elements. */
+  @supports (scrollbar-color: auto) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: hsl(var(--primary) / 0.4) transparent;
+    }
+    *:hover {
+      scrollbar-color: hsl(var(--primary) / 0.75) transparent;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+    background-color: hsl(var(--primary) / 0.4);
+  }
+  :hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--primary) / 0.75);
+  }
+}
