@@ -8,8 +8,10 @@
     runSearch,
     getFacets,
     getMatchedIds,
+    getFieldHits,
     type GeneRow,
     type Facets,
+    type FieldHits,
   } from '$lib/queries';
   import { readIdsFromUrl } from '$lib/share';
   import { cn } from '$lib/utils';
@@ -47,6 +49,8 @@
   let rows = $state<GeneRow[]>([]);
   let parsed = $state<ParsedQuery | null>(null);
   let facets = $state<Facets | null>(null);
+  // Null until the lookup in the other fields has run for the current empty search.
+  let fieldHits = $state<FieldHits[] | null>(null);
   let elapsedMs = $state(0);
   let loading = $state(false);
   let loadingMore = $state(false);
@@ -143,7 +147,7 @@
   const VIEW_HEADERS: Record<string, { title: string; caption: string }> = {
     wormcat: { title: 'WormCat', caption: 'Genes grouped by WormCat category' },
     go: { title: 'GO terms', caption: 'Genes grouped by Gene Ontology (GO) term' },
-    neuronal: { title: 'Neuronal class', caption: 'Genes grouped by neuronal classification' },
+    neuronal: { title: 'Neuronal genes', caption: 'Genes grouped by neuronal gene category' },
     synaptogenesis: {
       title: 'Synapse development and function',
       caption: 'Genes grouped by synapse panel class',
@@ -171,6 +175,7 @@
   async function runQuery(eq: string, nl: boolean, pageNum: number, af: FtsField[] | undefined) {
     const my = ++queryToken;
     loading = true;
+    fieldHits = null;
     const t0 = performance.now();
     const offset = (pageNum - 1) * PAGE_SIZE;
     const facetsPromise = getFacets(eq, af);
@@ -189,6 +194,17 @@
     hasMore = nl && r.rows.length === PAGE_SIZE && (f?.n_genes ?? 0) > shown;
     elapsedMs = performance.now() - t0;
     loading = false;
+    if (nl && rows.length === 0 && r.parsed?.mode === 'search' && af) {
+      const hits = await getFieldHits(eq, af);
+      if (my === queryToken) fieldHits = hits;
+    }
+  }
+
+  function searchWithField(field: FtsField) {
+    const url = new URL(page.url);
+    url.searchParams.set('fields', [...(activeFields ?? []), field].join(','));
+    url.searchParams.delete('page');
+    goto(resolve((url.pathname + url.search) as '/'), { keepFocus: true, noScroll: true });
   }
 
   async function loadMore() {
@@ -482,21 +498,56 @@
     <FacetsBar {facets} {elapsedMs} />
   {/if}
 
-  {#if needsGeneList && !loading && rows.length === 0 && parsed?.mode === 'search' && activeFields}
-    <div class="flex flex-wrap items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm">
-      <span class="text-muted-foreground"> No matches in gene names and IDs. </span>
-      <button
-        type="button"
-        class="text-primary underline-offset-2 hover:underline"
-        onclick={() => {
-          const url = new URL(page.url);
-          url.searchParams.set('fields', availableFtsFields(ALL_FTS_FIELDS).join(','));
-          url.searchParams.delete('page');
-          goto(resolve((url.pathname + url.search) as '/'), { keepFocus: true, noScroll: true });
-        }}
-      >
-        Search all fields, including descriptions and annotations
-      </button>
+  {#if needsGeneList && !loading && rows.length === 0 && parsed?.mode === 'search' && activeFields && fieldHits?.length !== 0}
+    <div class="space-y-1.5 rounded-md border bg-card px-3 py-2 text-sm">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-muted-foreground"> No matches in gene names and IDs. </span>
+        <button
+          type="button"
+          class="text-primary underline-offset-2 hover:underline"
+          onclick={() => {
+            const url = new URL(page.url);
+            url.searchParams.set('fields', availableFtsFields(ALL_FTS_FIELDS).join(','));
+            url.searchParams.delete('page');
+            goto(resolve((url.pathname + url.search) as '/'), { keepFocus: true, noScroll: true });
+          }}
+        >
+          Search all fields, including descriptions and annotations
+        </button>
+      </div>
+      {#if fieldHits === null}
+        <div class="text-xs text-muted-foreground">Looking in the other fields...</div>
+      {:else}
+        <ul class="space-y-1">
+          {#each fieldHits as group (group.field)}
+            <li class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+              <span class="text-muted-foreground">
+                {group.total.toLocaleString()}
+                {group.total === 1 ? 'gene matches' : 'genes match'} in {group.label}:
+              </span>
+              {#each group.genes as g, i (g.wormbase_gene)}
+                <span>
+                  <a
+                    href={resolve(`/gene/${encodeURIComponent(g.wormbase_gene)}`)}
+                    class="font-medium text-primary underline-offset-2 hover:underline">{g.name}</a
+                  >{#if g.terms.length}<span class="text-muted-foreground"
+                      >{` (${g.terms.join(', ')})`}</span
+                    >{/if}{i < group.genes.length - 1 ? ',' : ''}
+                </span>
+              {/each}
+              {#if group.total > group.genes.length}
+                <button
+                  type="button"
+                  class="text-primary underline-offset-2 hover:underline"
+                  onclick={() => searchWithField(group.field)}
+                >
+                  and {(group.total - group.genes.length).toLocaleString()} more
+                </button>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </div>
   {/if}
 
@@ -587,7 +638,7 @@
             class="underline underline-offset-2 hover:text-foreground">browse at WormBase</a
           >
         {:else if view === 'neuronal'}
-          Neuronal gene classes from Hobert's survey of the <em>C. elegans</em> neuronal genome:
+          Neuronal gene categories from Hobert's survey of the <em>C. elegans</em> neuronal genome:
           <a
             href="https://www.ncbi.nlm.nih.gov/books/NBK116086/"
             target="_blank"

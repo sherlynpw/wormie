@@ -24,14 +24,14 @@ test('cell-type index lists neuron types', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Neuron types \(\d+/ })).toBeVisible({
     timeout: 120_000,
   });
-  // CeNGEN has 128 neuron classes; even if the count varies, expect a few canonical ones.
+  // CeNGEN has 128 neuron types; even if the count varies, expect a few canonical ones.
   await expect(page.getByRole('link', { name: 'ADL' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'AVA' })).toBeVisible();
 });
 
 test('cell-type detail page lists genes', async ({ page }) => {
   await page.goto('/cell-type/ADL');
-  // Title shows the neuron class.
+  // Title shows the neuron type.
   await expect(page.getByRole('heading', { name: 'ADL' })).toBeVisible({ timeout: 120_000 });
   // Wait for gene rows to load; we don't assert specific genes, just that some appear.
   await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 60_000 });

@@ -42,7 +42,7 @@
         { keys: ['g', 't'], label: 'Go to Table view' },
         { keys: ['g', 'w'], label: 'Go to WormCat view' },
         { keys: ['g', 'o'], label: 'Go to GO terms view' },
-        { keys: ['g', 'n'], label: 'Go to Neuronal view' },
+        { keys: ['g', 'n'], label: 'Go to Neuronal genes view' },
         { keys: ['g', 's'], label: 'Go to Synapse panel view' },
       ],
     },

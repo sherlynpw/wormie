@@ -128,7 +128,7 @@ test('tissue: operator filters by anatomy', async ({ page }) => {
   await expectAnyResults(page);
 });
 
-test('neuronal: operator filters by neuronal classification', async ({ page }) => {
+test('neuronal: operator filters by neuronal gene category', async ({ page }) => {
   // neuronal_genes.csv categories use phrases like "Potassium channels",
   // "Chloride channels", grouped under supercategory "Ion channels".
   await search(page, 'neuronal:channel');
@@ -157,9 +157,9 @@ test('type: operator filters by biotype', async ({ page }) => {
   await expectAnyResults(page);
 });
 
-test('expressed: operator filters by CeNGEN neuron class', async ({ page }) => {
+test('expressed: operator filters by CeNGEN neuron type', async ({ page }) => {
   await search(page, 'expressed:ADL');
-  // ADL is a canonical CeNGEN-mapped neuron class.
+  // ADL is a canonical CeNGEN-mapped neuron type.
   await expectAnyResults(page);
 });
 
@@ -236,6 +236,20 @@ test('view=wormcat survives a search', async ({ page }) => {
 });
 
 // ---------- Edge cases ----------
+
+// A human symbol has no hit in worm names and IDs, so the page looks in the
+// other fields at once and names the gene that carries it as an ortholog.
+for (const symbol of ['TFEB', 'tfeb', 'MITF', 'TFE3']) {
+  test(`${symbol} with no name hit lists hlh-30 under ortholog symbols`, async ({ page }) => {
+    await search(page, symbol);
+    const line = page.locator('li', { hasText: /in Ortholog symbols:/ });
+    await expect(line).toBeVisible({ timeout: 60_000 });
+    await expect(line.getByRole('link', { name: 'hlh-30' })).toHaveAttribute(
+      'href',
+      /\/gene\/WBGene00020930$/,
+    );
+  });
+}
 
 test('empty result for nonsense query', async ({ page }) => {
   await search(page, 'this-is-not-a-real-gene-name-xyzzy');

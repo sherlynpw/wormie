@@ -187,8 +187,8 @@ test('per-sample set scores offer the CeNGEN neuron-type collection', async ({ p
   await page.locator('#expr').fill(lines.join('\n'));
   await page
     .locator('select')
-    .filter({ has: page.locator('option', { hasText: 'Neurons (CeNGEN)' }) })
-    .selectOption({ label: 'Neurons (CeNGEN)' });
+    .filter({ has: page.locator('option', { hasText: 'Neuron types (CeNGEN)' }) })
+    .selectOption({ label: 'Neuron types (CeNGEN)' });
   await page.locator('label', { hasText: 'Min genes' }).locator('input').fill('1');
   await page.getByRole('button', { name: 'Run scoring' }).click();
   await expect(page.getByText(/Per-sample set scores: [1-9]\d* sets/)).toBeVisible({

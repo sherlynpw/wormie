@@ -8,7 +8,7 @@
   import Search from 'lucide-svelte/icons/search';
   import Share2 from 'lucide-svelte/icons/share-2';
   import Check from 'lucide-svelte/icons/check';
-  import { ALL_FTS_FIELDS, DEFAULT_FTS_FIELDS, type FtsField } from '$lib/search';
+  import { ALL_FTS_FIELDS, DEFAULT_FTS_FIELDS, FTS_FIELD_LABELS, type FtsField } from '$lib/search';
   import { KEGG_ENABLED } from '$lib/config';
   import {
     availableFtsFields,
@@ -58,27 +58,6 @@
   $effect(() => {
     value = initial;
   });
-
-  const FIELD_LABELS: Record<FtsField, string> = {
-    gene_name: 'Gene name',
-    wb_id: 'WormBase ID',
-    entrez_id: 'Entrez ID',
-    sequence_name: 'Sequence name',
-    other_names: 'Synonyms',
-    gene_class_description: 'Gene class',
-    concise_description: 'Concise description',
-    legacy_description: 'Automated description',
-    phenotypes: 'Phenotypes',
-    alleles: 'Alleles',
-    tissues: 'Tissues',
-    go_terms: 'GO terms',
-    wormcat: 'WormCat',
-    neuronal: 'Neuronal categories',
-    orthologs: 'Ortholog symbols',
-    synaptogenesis: 'Synapse panel',
-    pathways: 'KEGG pathways',
-    domains: 'Protein domains',
-  };
 
   const activeFields = $derived.by<FtsField[]>(() => {
     const raw = page.url.searchParams.get('fields');
@@ -374,7 +353,7 @@
         {
           key: 'neuronal',
           example: 'neuronal:GABA',
-          help: 'Neuronal gene classification from the Hobert lab catalogue',
+          help: 'Category in the Hobert lab catalogue of neuronal genes',
         },
         {
           key: 'syn',
@@ -389,7 +368,7 @@
         {
           key: 'expressed',
           example: 'expressed:AVA',
-          help: 'Expressed in a neuron class of CeNGEN (C. elegans Neuronal Gene Expression Network)',
+          help: 'Expressed in a neuron type of CeNGEN (C. elegans Neuronal Gene Expression Network)',
         },
         {
           key: 'tissue',
@@ -573,7 +552,7 @@
         class="inline-flex cursor-pointer select-none items-center gap-1 transition-colors hover:text-foreground"
       >
         <input type="checkbox" {checked} onchange={() => toggleField(f)} class="h-3 w-3 rounded" />
-        <span class={checked ? 'text-foreground' : ''}>{FIELD_LABELS[f]}</span>
+        <span class={checked ? 'text-foreground' : ''}>{FTS_FIELD_LABELS[f]}</span>
       </label>
     {/each}
     <div class="ml-auto flex items-center gap-2">

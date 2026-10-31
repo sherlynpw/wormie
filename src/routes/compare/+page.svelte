@@ -207,7 +207,7 @@
       },
     },
     {
-      label: 'Neuronal',
+      label: 'Neuronal genes',
       render: (r) =>
         r.neuronal.map((n) => [n.supercategory, n.category].filter(Boolean).join(' › ')).join('; '),
     },

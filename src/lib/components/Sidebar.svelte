@@ -37,7 +37,7 @@
   const VIEWS: { key: ViewKey; label: string; icon: IconComponent }[] = [
     { key: 'wormcat', label: 'WormCat', icon: FolderTree },
     { key: 'go', label: 'GO terms', icon: Network },
-    { key: 'neuronal', label: 'Neuronal class', icon: Brain },
+    { key: 'neuronal', label: 'Neuronal genes', icon: Brain },
     { key: 'synaptogenesis', label: 'Synapse panel', icon: Cable },
   ];
 
@@ -45,7 +45,7 @@
 
   // Direct-route annotation browsers; active on the route and on its detail pages.
   const ANNOTATION_PAGES: ToolLink[] = [
-    { href: resolve('/cell-type'), match: '/cell-type', label: 'Neuron classes', icon: Waypoints },
+    { href: resolve('/cell-type'), match: '/cell-type', label: 'Neuron types', icon: Waypoints },
     { href: resolve('/phenotype'), match: '/phenotype', label: 'Phenotypes', icon: Eye },
     { href: resolve('/disease'), match: '/disease', label: 'Human diseases', icon: HeartPulse },
     { href: resolve('/tissue'), match: '/tissue', label: 'Tissues', icon: Layers },
@@ -343,7 +343,7 @@
           <dd>{db.totalWormCat.toLocaleString()}</dd>
         </div>
         <div class="flex justify-between">
-          <dt>Neuronal</dt>
+          <dt>Neuronal genes</dt>
           <dd>{db.totalNeuronal.toLocaleString()}</dd>
         </div>
         {#if db.version}

@@ -405,14 +405,14 @@
     const annotation: TocLeaf[] = [
       { id: 'go', label: 'Gene Ontology' },
       { id: 'wormcat', label: 'WormCat' },
-      { id: 'neuronal', label: 'Neuronal class' },
+      { id: 'neuronal', label: 'Neuronal genes' },
       { id: 'synaptogenesis', label: 'Synapse panel' },
       ...(KEGG_ENABLED ? [{ id: 'pathways', label: 'KEGG' }] : []),
     ];
     const expression: TocLeaf[] = [
       { id: 'tissues', label: 'Tissues' },
       { id: 'stages', label: 'Life stages' },
-      { id: 'cengen', label: 'Neurons (CeNGEN)' },
+      { id: 'cengen', label: 'Neuron types (CeNGEN)' },
     ];
     const related: TocLeaf[] = [
       { id: 'interactions', label: 'Experimental (BioGRID)' },
@@ -1487,11 +1487,11 @@
         <Card id="neuronal">
           <CardHeader class="pb-3">
             <CardTitle class="inline-flex items-center gap-1.5 text-base">
-              Neuronal classification
-              <ControlHint id="gene-neuronal" title="Neuronal classification">
-                The Hobert lab's catalogue of neuronal genes. Each gene is classed by function (for
-                example transcription factor, neuropeptide or receptor) and by a broader
-                supercategory.
+              Neuronal genes
+              <ControlHint id="gene-neuronal" title="Neuronal genes">
+                The Hobert lab's catalogue of neuronal genes. Each gene is placed in a category by
+                function (for example transcription factor, neuropeptide or receptor) and by a
+                broader supercategory.
               </ControlHint>
             </CardTitle>
           </CardHeader>
@@ -1510,8 +1510,8 @@
       {:else}
         <EmptyPanel
           id="neuronal"
-          title="Neuronal classification"
-          message="This gene is not in Hobert's survey of neuronal gene classes."
+          title="Neuronal genes"
+          message="This gene is not in Hobert's catalogue of neuronal genes."
         />
       {/if}
 
@@ -1708,10 +1708,9 @@
                 Network). Bars show the combined expression for the 52 neuron types sequenced in
                 bulk after sorting. Transcripts that leaked in from other cell types are subtracted
                 using the single-cell atlas (Barrett et al. 2025). Dots are the single-cell
-                threshold calls (expressed or not) for all 128 neuron classes. The bulk values
-                detect more genes, but they are not the same quantity as the transcripts per million
-                (TPM) in the CeNGEN single-cell app. Compare ranks within one neuron, not the
-                numbers.
+                threshold calls (expressed or not) for all 128 neuron types. The bulk values detect
+                more genes, but they are not the same quantity as the transcripts per million (TPM)
+                in the CeNGEN single-cell app. Compare ranks within one neuron, not the numbers.
               </ControlHint>
             </CardTitle>
             <span class="font-mono text-xs text-muted-foreground">
@@ -1991,7 +1990,7 @@
               <div class="grid grid-cols-[auto_auto_1fr] items-baseline gap-x-3 gap-y-1 text-xs">
                 <span
                   class="cursor-help text-right text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground"
-                  title="Pearson correlation (how closely two expression patterns rise and fall together) of log1p (log of 1 plus the value) expression across the 52 neuron types that CeNGEN (C. elegans Neuronal Gene Expression Network) sequenced in bulk.&#10;Scale (higher = more similar expression pattern):&#10;  1.00&#9;identical pattern&#10;  0.8 to 0.99&#9;very tight: same neuron-type specificity&#10;  0.5 to 0.8&#9;strong: shared dominant neuron classes&#10;  0.3 to 0.5&#9;moderate: overlapping but distinct programs&#10;  0.1 to 0.3&#9;weak: barely above coincidence"
+                  title="Pearson correlation (how closely two expression patterns rise and fall together) of log1p (log of 1 plus the value) expression across the 52 neuron types that CeNGEN (C. elegans Neuronal Gene Expression Network) sequenced in bulk.&#10;Scale (higher = more similar expression pattern):&#10;  1.00&#9;identical pattern&#10;  0.8 to 0.99&#9;very tight: same neuron-type specificity&#10;  0.5 to 0.8&#9;strong: shared dominant neuron types&#10;  0.3 to 0.5&#9;moderate: overlapping but distinct programs&#10;  0.1 to 0.3&#9;weak: barely above coincidence"
                 >
                   Pearson
                 </span>

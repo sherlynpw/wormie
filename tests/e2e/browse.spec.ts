@@ -20,7 +20,7 @@ test('sidebar links to the four annotation browsers', async ({ page }) => {
   await page.goto('/');
   const aside = page.locator('aside').first();
   for (const [name, href] of [
-    ['Neuron classes', '/cell-type'],
+    ['Neuron types', '/cell-type'],
     ['Phenotypes', '/phenotype'],
     ['Human diseases', '/disease'],
     ['Tissues', '/tissue'],
