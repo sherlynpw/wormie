@@ -1,0 +1,11 @@
+# Deployed to the OLD Cloudflare account, which still holds the wormie.rs.ht zone.
+# The name matches the old site worker so this replaces it and keeps its domain.
+#
+# Deploy (after wormie.bio is live):  cd redirect && bunx wrangler deploy
+
+name = "wormie"
+main = "worker.ts"
+compatibility_date = "2025-09-01"
+workers_dev = false
+
+routes = [{ pattern = "wormie.rs.ht", custom_domain = true }]

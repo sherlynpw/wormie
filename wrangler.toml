@@ -10,6 +10,8 @@ main = "src/worker.ts"
 tsconfig = "src/worker.tsconfig.json"
 compatibility_date = "2025-09-01"
 
+routes = [{ pattern = "wormie.bio", custom_domain = true }]
+
 [assets]
 directory = "./build"
 binding = "ASSETS"
