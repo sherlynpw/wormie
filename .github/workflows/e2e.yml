@@ -38,12 +38,12 @@ jobs:
           set -euo pipefail
           mkdir -p static/data
           retry=(--retry 4 --retry-delay 5 --retry-all-errors)
-          curl -fsSL "${retry[@]}" -o static/data/version.json https://wormie.rs.ht/data/version.json
-          curl -fsSL "${retry[@]}" -o static/data/wormie.sqlite.gz https://wormie.rs.ht/data/wormie.sqlite.gz
+          curl -fsSL "${retry[@]}" -o static/data/version.json https://wormie.bio/data/version.json
+          curl -fsSL "${retry[@]}" -o static/data/wormie.sqlite.gz https://wormie.bio/data/wormie.sqlite.gz
           # Absent until the first deploy that ships it; the client falls back to the .gz.
-          curl -fsSL "${retry[@]}" -o static/data/wormie.sqlite.zst https://wormie.rs.ht/data/wormie.sqlite.zst || rm -f static/data/wormie.sqlite.zst
+          curl -fsSL "${retry[@]}" -o static/data/wormie.sqlite.zst https://wormie.bio/data/wormie.sqlite.zst || rm -f static/data/wormie.sqlite.zst
           # version.json advertises the bundled annotation, so /counts offers it; serve it too.
-          curl -fsSL "${retry[@]}" -o static/data/annotation.saf.gz https://wormie.rs.ht/data/annotation.saf.gz
+          curl -fsSL "${retry[@]}" -o static/data/annotation.saf.gz https://wormie.bio/data/annotation.saf.gz
           ls -lh static/data/
 
       # The /de tests run real DESeq2 in WebR; the runtime and bundle live in

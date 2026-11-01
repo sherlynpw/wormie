@@ -77,7 +77,7 @@ fi
 # upload that follows pushes the old bundle straight back to R2 and every rebuild
 # is a silent no-op. Set SKIP_BUNDLE_MIRROR=1 wherever the bundle was just baked.
 BUNDLE_DIR="${REPO_DIR}/scripts/wasm-cran"
-SITE="https://wormie.rs.ht/wasm-cran"
+SITE="https://wormie.bio/wasm-cran"
 if [ "${SKIP_BUNDLE_MIRROR:-0}" = "1" ]; then
   echo "==> SKIP_BUNDLE_MIRROR=1, keeping the locally baked deseq2 bundle"
   echo "==> done. Listing:"

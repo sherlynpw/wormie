@@ -95,6 +95,7 @@ jobs:
             static/data/wormie.sqlite.gz
             static/data/wormie.sqlite.zst
             static/data/version.json
+            static/data/annotation.saf.gz
             static/data/unresolved-symbols.txt
           key: ${{ steps.db-key.outputs.key }}
           restore-keys: |
@@ -146,6 +147,7 @@ jobs:
           set -euo pipefail
           cp deploy-data/wormie.sqlite.gz deploy-data/version.json static/data/
           [ -f deploy-data/wormie.sqlite.zst ] && cp deploy-data/wormie.sqlite.zst static/data/ || true
+          [ -f deploy-data/annotation.saf.gz ] && cp deploy-data/annotation.saf.gz static/data/ || true
           [ -f deploy-data/unresolved-symbols.txt ] && cp deploy-data/unresolved-symbols.txt static/data/ || true
 
       # Scheduled builds save too, so pushes later in the week reuse the Monday build.
@@ -157,6 +159,7 @@ jobs:
             static/data/wormie.sqlite.gz
             static/data/wormie.sqlite.zst
             static/data/version.json
+            static/data/annotation.saf.gz
             static/data/unresolved-symbols.txt
           key: ${{ steps.db-key.outputs.key }}
 
