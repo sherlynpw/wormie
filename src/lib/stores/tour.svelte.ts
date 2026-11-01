@@ -20,7 +20,7 @@ export type TourStep = {
 export const TOUR_STEPS: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to wormie.rs.ht',
+    title: 'Welcome to wormie.bio',
     body: 'A C. elegans gene browser and analysis tool. The database downloads once into your browser, and after that everything runs on your computer, even offline. There are no accounts and no usage tracking. This tour takes about 60 seconds.',
   },
   {

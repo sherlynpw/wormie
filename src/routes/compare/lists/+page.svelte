@@ -143,7 +143,7 @@
   const nonEmptySlots = $derived(slots.filter((s) => s.body.trim().length > 0).length);
 </script>
 
-<svelte:head><title>Gene overlap · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Gene overlap · wormie.bio</title></svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/compare" class="self-start">

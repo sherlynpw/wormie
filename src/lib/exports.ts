@@ -62,7 +62,7 @@ export async function exportGeneNames(ids: string[]) {
 }
 
 export function exportGmt(ids: string[], label = 'wb_selection') {
-  const line = [label, 'wormie.rs.ht export', ...ids].join('\t');
+  const line = [label, 'wormie.bio export', ...ids].join('\t');
   download(`${label}_${ts()}.gmt`, line + '\n', 'text/plain');
 }
 
@@ -139,7 +139,7 @@ export async function exportJson(ids: string[]) {
     JSON.stringify(
       {
         exported_at: new Date().toISOString(),
-        source: 'wormie.rs.ht',
+        source: 'wormie.bio',
         count: rows.length,
         genes: rows,
       },

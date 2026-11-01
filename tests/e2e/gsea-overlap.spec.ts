@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import { resetClientStorage } from './helpers';
 
 // Two-input UpSet smoke test for /gsea/overlap. We paste two synthetic GSEA
-// result TSVs (the wormie.rs.ht export format) and verify the leading-edge gene
+// result TSVs (the wormie.bio export format) and verify the leading-edge gene
 // intersections.
 
 test.beforeEach(async ({ page }) => {

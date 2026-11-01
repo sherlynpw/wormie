@@ -1,5 +1,5 @@
 // Serialize in-memory EnrichmentResult/GseaResult back to clusterProfiler-style CSV
-// and wormie.rs.ht GSEA TSV for the UpSet routes. Round-tripping through text keeps the
+// and wormie.bio GSEA TSV for the UpSet routes. Round-tripping through text keeps the
 // existing parse path unchanged (session blobs -> textarea input).
 
 import type { EnrichmentResult } from '$lib/db/client';

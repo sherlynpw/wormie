@@ -1,4 +1,4 @@
-// Parser for the wormie.rs.ht GSEA results TSV (from GseaResults.exportTsv).
+// Parser for the wormie.bio GSEA results TSV (from GseaResults.exportTsv).
 // Columns: term_id, name, namespace, size, es, nes, p, q, leading_edge (pipe-delimited).
 // Returns parsed rows + dropped count for bad-input detection.
 
@@ -45,7 +45,7 @@ export function parseGseaTsv(text: string): ParsedGseaTsv {
 
   if (idCol < 0 || nesCol < 0 || qCol < 0) {
     throw new Error(
-      'Could not detect required columns. Expected at least term_id, nes, q (this is the wormie.rs.ht GSEA export format).',
+      'Could not detect required columns. Expected at least term_id, nes, q (this is the wormie.bio GSEA export format).',
     );
   }
 

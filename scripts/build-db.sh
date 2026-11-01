@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the entire wormie.rs.ht database from scratch using only public sources +
+# Build the entire wormie.bio database from scratch using only public sources +
 # the two static CSVs committed under data/. No external pipeline DB required,
 # fully reproducible, designed to run in CI on a clean checkout.
 #

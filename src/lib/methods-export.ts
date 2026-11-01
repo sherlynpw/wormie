@@ -120,7 +120,7 @@ export function buildMethods(ctx: MethodsContext, bundle: MethodsBundle): string
     ctx.inputSummary ? `Input: ${ctx.inputSummary}.\n` : '',
     '### Reproducibility',
     '',
-    `- Tool: wormie.rs.ht v${bundle.appVersion}`,
+    `- Tool: wormie.bio v${bundle.appVersion}`,
     `- WebR runtime: ${bundle.webrVersion}`,
     `- Annotation database build: ${bundle.dbVersion}`,
     ...(bundle.rPackages

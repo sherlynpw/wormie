@@ -585,7 +585,7 @@
 </script>
 
 <svelte:head
-  ><title>{center ? (center.gene_name ?? center.wormbase_gene) : id} · network · wormie.rs.ht</title
+  ><title>{center ? (center.gene_name ?? center.wormbase_gene) : id} · network · wormie.bio</title
   ></svelte:head
 >
 

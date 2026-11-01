@@ -99,8 +99,8 @@ export default defineConfig({
       scope: '/',
       base: '/',
       manifest: {
-        name: 'wormie.rs.ht — Worm Integrated Explorer',
-        short_name: 'wormie.rs.ht',
+        name: 'wormie.bio — Worm Integrated Explorer',
+        short_name: 'wormie.bio',
         description:
           'Offline-first WormBase gene browser with WormCat, neuronal classification, and GO ontology.',
         theme_color: '#825F8A',

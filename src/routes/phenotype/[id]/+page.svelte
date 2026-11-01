@@ -172,7 +172,7 @@
 </script>
 
 <svelte:head>
-  <title>{term?.name ?? id} · phenotype · wormie.rs.ht</title>
+  <title>{term?.name ?? id} · phenotype · wormie.bio</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl space-y-4 p-4 md:p-6">

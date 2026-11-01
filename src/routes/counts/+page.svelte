@@ -290,7 +290,7 @@
   });
 </script>
 
-<svelte:head><title>Read counting · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Read counting · wormie.bio</title></svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href={resolve('/')} class="self-start">

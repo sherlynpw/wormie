@@ -1,6 +1,6 @@
 {
   "name": "WormIE — Worm Integrated Explorer",
-  "short_name": "wormie.rs.ht",
+  "short_name": "wormie.bio",
   "description": "Offline-first WormBase gene browser with WormCat, neuronal genes, and GO ontology.",
   "start_url": "/",
   "scope": "/",

@@ -12,6 +12,15 @@
   // Newest first. Add a new entry at the top for each notable release.
   const ENTRIES: Entry[] = [
     {
+      date: '2026-11-01',
+      title: 'WormIE moves to wormie.bio',
+      changes: [
+        'The site is now at wormie.bio. Links to wormie.rs.ht open the same page on wormie.bio, so old links in papers and bookmarks keep working.',
+        'Saved datasets, sessions and marked genes stay in the browser storage of wormie.rs.ht and do not move to wormie.bio. To use them on wormie.bio, load your original files again.',
+        'Exports, reports, citations and page titles now name wormie.bio.',
+      ],
+    },
+    {
       date: '2026-10-31',
       title: 'Phenotype and tissue sets include their more specific terms',
       changes: [
@@ -195,7 +204,7 @@
 </script>
 
 <svelte:head>
-  <title>Changelog · wormie.rs.ht</title>
+  <title>Changelog · wormie.bio</title>
 </svelte:head>
 
 <div class="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
@@ -207,9 +216,7 @@
   <Card>
     <CardHeader>
       <CardTitle class="text-xl">Changelog</CardTitle>
-      <div class="text-sm text-muted-foreground">
-        Notable changes to wormie.rs.ht, newest first.
-      </div>
+      <div class="text-sm text-muted-foreground">Notable changes to wormie.bio, newest first.</div>
     </CardHeader>
   </Card>
 

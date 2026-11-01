@@ -208,7 +208,7 @@
   const keggUrl = $derived(`https://www.kegg.jp/pathway/${pathwayId.replace(/^path:/, '')}`);
 </script>
 
-<svelte:head><title>{pathwayName || pathwayId} · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>{pathwayName || pathwayId} · wormie.bio</title></svelte:head>
 
 <div class="container mx-auto max-w-7xl space-y-4 p-4">
   {#if !KEGG_ENABLED}

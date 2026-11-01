@@ -60,7 +60,7 @@
 </script>
 
 <svelte:head>
-  <title>{term?.name ?? id} · tissue · wormie.rs.ht</title>
+  <title>{term?.name ?? id} · tissue · wormie.bio</title>
 </svelte:head>
 
 {#snippet neighborList(items: AnatomyNeighbor[], empty: string)}
