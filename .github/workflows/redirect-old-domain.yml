@@ -29,7 +29,9 @@ jobs:
           retry=(--retry 5 --retry-delay 10 --retry-all-errors)
           curl -fsS "${retry[@]}" -o /dev/null https://wormie.bio/
           curl -fsS "${retry[@]}" https://wormie.bio/data/version.json | python3 -c 'import json,sys; json.load(sys.stdin)'
-          curl -fsSI "${retry[@]}" https://wormie.bio/data/wormie.sqlite.gz | grep -qi '^content-length:'
+          # The worker streams R2 bodies without a content-length, so check the gzip magic bytes.
+          magic=$({ curl -fsS https://wormie.bio/data/wormie.sqlite.gz 2>/dev/null || true; } | head -c 2 | od -An -tx1 | tr -d ' \n')
+          [ "$magic" = 1f8b ] || { echo "::error::wormie.bio/data/wormie.sqlite.gz is not gzip (got '$magic')" >&2; exit 1; }
           curl -fsS "${retry[@]}" -o /dev/null https://wormie.bio/wasm-cran/deseq2-bundle.manifest.json
 
       - uses: oven-sh/setup-bun@v2
