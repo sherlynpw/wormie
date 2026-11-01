@@ -3,7 +3,7 @@
     class?: string;
     title?: string;
   };
-  let { class: className = '', title = 'wormie.rs.ht' }: Props = $props();
+  let { class: className = '', title = 'wormie.bio' }: Props = $props();
 </script>
 
 <svg

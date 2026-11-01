@@ -343,7 +343,7 @@
   }
 </script>
 
-<svelte:head><title>Data sources &amp; credits · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Data sources &amp; credits · wormie.bio</title></svelte:head>
 
 <div class="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/" class="self-start">
@@ -355,10 +355,10 @@
     <CardHeader>
       <CardTitle class="text-xl">Data sources and credits</CardTitle>
       <div class="text-sm text-muted-foreground">
-        wormie.rs.ht is a browser tool for C. elegans gene annotations, classifications, Gene
-        Ontology (GO) terms, orthologs (matching genes in other species) and interactions. The data
-        is stored in a SQLite database file that your browser downloads once and keeps, so the site
-        works offline.
+        wormie.bio is a browser tool for C. elegans gene annotations, classifications, Gene Ontology
+        (GO) terms, orthologs (matching genes in other species) and interactions. The data is stored
+        in a SQLite database file that your browser downloads once and keeps, so the site works
+        offline.
       </div>
     </CardHeader>
     <CardContent>

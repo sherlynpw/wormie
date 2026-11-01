@@ -500,8 +500,7 @@
 </script>
 
 <svelte:head
-  ><title>{gene ? (gene.gene_name ?? gene.wormbase_gene) : 'Gene'} · wormie.rs.ht</title
-  ></svelte:head
+  ><title>{gene ? (gene.gene_name ?? gene.wormbase_gene) : 'Gene'} · wormie.bio</title></svelte:head
 >
 
 <div

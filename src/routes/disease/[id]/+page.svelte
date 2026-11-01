@@ -89,7 +89,7 @@
 </script>
 
 <svelte:head>
-  <title>{term?.do_name ?? id} · disease · wormie.rs.ht</title>
+  <title>{term?.do_name ?? id} · disease · wormie.bio</title>
 </svelte:head>
 
 <div class="mx-auto max-w-7xl space-y-4 p-4 md:p-6">

@@ -368,7 +368,7 @@
 </script>
 
 <svelte:head>
-  <title>Contrast comparison · wormie.rs.ht</title>
+  <title>Contrast comparison · wormie.bio</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">

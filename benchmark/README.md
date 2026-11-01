@@ -1,7 +1,7 @@
 # Benchmark: browser/WASM vs native R
 
 Measures the four analysis pipelines (DESeq2, preranked GSEA, hypergeometric
-ORA, ssGSEA) in two arms: the real wormie.rs.ht engines driven headlessly, and
+ORA, ssGSEA) in two arms: the real wormie.bio engines driven headlessly, and
 native R/Bioconductor as the reference. See `../docs/paper/benchmark-plan.md`
 for the methodology.
 

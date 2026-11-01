@@ -182,7 +182,7 @@
 </script>
 
 <svelte:head>
-  <title>Ranked-list consensus · wormie.rs.ht</title>
+  <title>Ranked-list consensus · wormie.bio</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">

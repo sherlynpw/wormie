@@ -46,7 +46,7 @@
 </script>
 
 <svelte:head>
-  <title>Marked genes · wormie.rs.ht</title>
+  <title>Marked genes · wormie.bio</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">

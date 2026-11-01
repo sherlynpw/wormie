@@ -144,7 +144,7 @@
   // Same palette as /enrichment/overlap; term tinted by first slot it appears in (all-blue = contrast A, mixed = shared).
   const SLOT_COLORS = CONDITION_PALETTE;
 
-  // Heatmap: significant GSEA terms with leading-edge gene lists (always populated in the wormie.rs.ht export format).
+  // Heatmap: significant GSEA terms with leading-edge gene lists (always populated in the wormie.bio export format).
   const heatmapTerms = $derived.by<HeatmapTerm[]>(() => {
     const out: HeatmapTerm[] = [];
     // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -199,7 +199,7 @@
   const nonEmptySlots = $derived(slots.filter((s) => s.body.trim().length > 0).length);
 </script>
 
-<svelte:head><title>Leading-edge overlap · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Leading-edge overlap · wormie.bio</title></svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/gsea" class="self-start">

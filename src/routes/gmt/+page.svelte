@@ -343,7 +343,7 @@
   const resultCount = $derived(enrichResults?.length ?? gseaResults?.length ?? 0);
 </script>
 
-<svelte:head><title>Custom gene set testing · wormie.rs.ht</title></svelte:head>
+<svelte:head><title>Custom gene set testing · wormie.bio</title></svelte:head>
 
 <div class="mx-auto max-w-6xl space-y-4 p-4 md:p-6">
   <Button variant="ghost" size="sm" href="/" class="self-start">

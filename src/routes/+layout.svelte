@@ -141,10 +141,10 @@
           href={resolve('/')}
           class="flex items-center gap-2 transition-opacity hover:opacity-80"
           aria-label="WormIE home"
-          title="wormie.rs.ht, explorer of the worm seas"
+          title="wormie.bio, explorer of the worm seas"
         >
           <Logo class="h-9 w-auto" />
-          <span class="sr-only">wormie.rs.ht</span>
+          <span class="sr-only">wormie.bio</span>
         </a>
         <span class="hidden text-xs text-muted-foreground sm:inline">Worm Integrated Explorer</span>
       </div>
